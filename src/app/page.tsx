@@ -31,7 +31,7 @@ export default function Home() {
           {greeting}! I&apos;m Your Name.
         </h1>
 
-        <div className="space-y-3 text-sm leading-relaxed mobile-left-text">
+        <div className="space-y-3 text-base leading-relaxed mobile-left-text">
           <p>
             I&apos;m currently building something meaningful, focusing on creating
             spaces and experiences that bring people together.
@@ -68,7 +68,7 @@ export default function Home() {
         </div>
 
         {/* Photo section - only visible on mobile */}
-        <div className="hidden mobile-show-photo pt-4 pb-16">
+        <div className="hidden mobile-show-photo pt-4 pb-4">
           <div className="w-48 h-64 bg-muted/10 rounded-2xl flex items-center justify-center mx-auto">
             <span className="text-muted text-sm">photo</span>
           </div>

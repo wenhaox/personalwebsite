@@ -364,13 +364,15 @@ nav, .fixed.bottom-8 {
   
   .mobile-nav {
     position: fixed !important;
-    top: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
     height: auto !important;
-    min-height: auto !important;
-    padding: 1.5rem 7vw 0.5rem 7vw !important;
+    min-height: 3.5rem !important;
+    padding: 1.25rem 7vw 0.5rem 7vw !important;
+    display: flex !important;
     flex-direction: row !important;
     justify-content: center !important;
     align-items: center !important;
@@ -378,6 +380,7 @@ nav, .fixed.bottom-8 {
     backdrop-filter: blur(8px) !important;
     z-index: 50 !important;
     gap: 2rem !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
   }
   
   .mobile-nav-content {
@@ -426,10 +429,12 @@ nav, .fixed.bottom-8 {
   }
   
   .mobile-main-content {
-    padding-top: 6rem !important;
+    padding-top: 2rem !important;
+    padding-bottom: 8rem !important;
     padding-left: 10vw !important;
     padding-right: 10vw !important;
     justify-content: center !important;
+    align-items: center !important;
   }
   
   .mobile-main-content > div {
@@ -445,8 +450,10 @@ nav, .fixed.bottom-8 {
   
   .mobile-left-text {
     text-align: left !important;
-    font-size: 1.125rem !important;
-    line-height: 1.5 !important;
+    font-size: 0.95rem !important;
+    line-height: 1.7 !important;
+    hyphens: auto !important;
+    word-spacing: -0.05em !important;
   }
   
   .mobile-hide-title {
@@ -455,13 +462,14 @@ nav, .fixed.bottom-8 {
   
   /* Mobile home page - more margins for text */
   .mobile-home-content {
-    padding-left: 12vw !important;
-    padding-right: 12vw !important;
+    padding-left: 10vw !important;
+    padding-right: 10vw !important;
   }
   
   /* Override desktop fixed padding on mobile */
   .desktop-home-padding {
-    padding-top: 7rem !important;
+    padding-top: 2rem !important;
+    padding-bottom: 8rem !important;
     padding-left: 7vw !important;
     padding-right: 7vw !important;
   }
@@ -473,6 +481,12 @@ nav, .fixed.bottom-8 {
   
   .dark .mobile-nav {
     background: rgba(26, 26, 26, 0.95) !important;
+  }
+  
+  /* Move theme toggle button above bottom nav on mobile */
+  .mobile-theme-toggle {
+    bottom: 6rem !important;
+    right: 1.5rem !important;
   }
 }
 

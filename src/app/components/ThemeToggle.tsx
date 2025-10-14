@@ -30,7 +30,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={() => setIsDark(!isDark)}
-      className="fixed bottom-8 right-8 p-3 bg-card border border-border rounded-xl shadow-lg transition-all duration-300 z-50"
+      className="fixed bottom-8 right-8 md:bottom-8 md:right-8 p-3 bg-card border border-border rounded-xl shadow-lg transition-all duration-300 z-50 mobile-theme-toggle"
       aria-label="Toggle dark mode"
       style={{maxWidth: 'calc(100vw - 4rem)'}}
     >
