@@ -1,18 +1,18 @@
 export default function Resume() {
   return (
-    <div className="flex items-start justify-start min-h-screen px-32 py-16">
-      <div className="w-full">
+    <div className="flex items-start justify-start min-h-screen px-32 py-16 mobile-main-content">
+      <div className="max-w-4xl mx-auto">
         <section>
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div>
-            <h1 className="text-4xl md:text-5xl font-serif italic leading-tight mb-6">Resume</h1>
+            <h1 className="text-3xl md:text-4xl font-serif italic leading-tight mb-6 mobile-hide-title">Resume</h1>
             <p className="text-sm text-muted leading-relaxed">
               A snapshot of my journey, skills, and experiences that have shaped who I am today.
             </p>
           </div>
 
           {/* Experience */}
-          <div className="grid md:grid-cols-1 gap-8 pt-8 border-t border-border">
+          <div className="grid md:grid-cols-1 gap-8 pt-8">
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-serif mb-4">Experience</h2>

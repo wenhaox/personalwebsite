@@ -6,6 +6,20 @@ export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
+    // Check system preference on mount
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setIsDark(mediaQuery.matches)
+    
+    // Listen for system preference changes
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsDark(e.matches)
+    }
+    
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark')
     } else {
@@ -16,10 +30,11 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={() => setIsDark(!isDark)}
-      className="fixed bottom-4 right-4 md:bottom-6 md:right-6 p-3 md:p-4 bg-card border border-border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 z-50"
+      className="fixed bottom-8 right-8 p-3 bg-card border border-border rounded-xl shadow-lg transition-all duration-300 z-50"
       aria-label="Toggle dark mode"
+      style={{maxWidth: 'calc(100vw - 4rem)'}}
     >
-      <span className="text-lg md:text-xl">
+      <span className="text-xl">
         {isDark ? '☀️' : '🌙'}
       </span>
     </button>

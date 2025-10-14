@@ -7,19 +7,19 @@
   --color-accent-light: #9333ea;
   --color-muted: #6b7280;
   --color-border: #e5e7eb;
-  --color-card: #ffffff;
+  --color-card: #f5f4f2;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-serif: var(--font-crimson-text), Georgia, serif;
 }
 
 .dark {
-  --color-background: #0f0f0f;
-  --color-foreground: #e5e5e5;
-  --color-accent: #a855f7;
-  --color-accent-light: #c084fc;
+  --color-background: #1a1a1a;
+  --color-foreground: #e8e6e3;
+  --color-accent: #a78bfa;
+  --color-accent-light: #c4b5fd;
   --color-muted: #9ca3af;
   --color-border: #374151;
-  --color-card: #1f1f1f;
+  --color-card: #242424;
 }
 
 body {
@@ -35,6 +35,500 @@ h1, h2, h3, h4, h5, h6 {
   font-style: italic;
   line-height: 1.2;
 }
+
+/* Very subtle entrance animations - run only once on page load */
+/* Subtle Notion-style page appear */
+@keyframes notionPageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notion-page-appear {
+  animation: notionPageAppear 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-fade-in {
+  animation: fadeIn 1s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.9s ease-out forwards;
+  opacity: 0;
+}
+
+/* Stagger animation delays */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+.delay-500 {
+  animation-delay: 0.5s;
+}
+
+/* Notion-style interactions */
+.notion-card {
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.notion-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.notion-link {
+  transition: all 0.12s ease;
+  position: relative;
+}
+
+.notion-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-accent);
+  transition: width 0.2s ease;
+}
+
+.notion-link:hover::after {
+  width: 100%;
+}
+
+.notion-button {
+  transition: all 0.12s ease;
+  position: relative;
+}
+
+.notion-button:hover {
+  transform: scale(1.02);
+}
+
+.notion-button:active {
+  transform: scale(0.98);
+}
+
+/* Smooth page transitions and scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Loading skeleton */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.loading-skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    var(--color-muted) 4%,
+    var(--color-muted-foreground) 25%,
+    var(--color-muted) 36%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Button hover states - subtle with micro-interactions */
+button, .notion-button {
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:hover, .notion-button:hover {
+  opacity: 0.8;
+}
+
+button:active, .notion-button:active {
+  opacity: 0.6;
+  transform: scale(0.98);
+}
+
+/* Better focus states */
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+nav, .fixed.bottom-8 {
+  transition: all 0.3s ease;
+}
+
+/* Collapsible sections - Notion style */
+.collapsible-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.collapsible-icon {
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.collapsible-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.collapsible-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.collapsible-content.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
+}
+
+/* Inline link preview - Notion style */
+.link-preview {
+  position: absolute;
+  z-index: 100;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  min-width: 300px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.link-preview.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Photo hover preview - appears after 3s */
+.photo-preview {
+  position: fixed;
+  z-index: 90;
+  max-width: 400px;
+  max-height: 400px;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.photo-preview.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Empty states - friendly */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+  line-height: 1;
+}
+
+.empty-state-title {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: var(--color-foreground);
+}
+
+.empty-state-message {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* Checkbox animation */
+@keyframes checkmark {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.checkbox-checked {
+  animation: checkmark 0.3s ease;
+}
+
+/* Page transitions */
+@keyframes pageTransition {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-transition {
+  animation: pageTransition 0.2s ease;
+}
+
+/* Desktop home page padding - fixed to prevent movement on resize */
+.desktop-home-padding {
+  padding-top: calc(20vh - 0.25rem);
+  padding-left: 7rem;
+  padding-right: 8rem;
+}
+
+/* Mobile styles - keep desktop untouched */
+@media (max-width: 1024px) {
+  .desktop-main-offset {
+    margin-left: 0 !important;
+  }
+  
+  .mobile-nav {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    padding: 1.5rem 7vw 0.5rem 7vw !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: rgba(250, 249, 247, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    z-index: 50 !important;
+    gap: 2rem !important;
+  }
+  
+  .mobile-nav-content {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 2rem !important;
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  
+  .mobile-nav-content > * + * {
+    margin-top: 0 !important;
+  }
+  
+  .mobile-nav-links {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 1.5rem !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+  
+  .mobile-nav-links > * {
+    margin: 0 !important;
+    display: inline-block !important;
+  }
+  
+  .mobile-nav-links > * + * {
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+  }
+  
+  .mobile-hide-photo {
+    display: none !important;
+  }
+  
+  .mobile-hide-line {
+    display: none !important;
+  }
+  
+  .mobile-show-photo {
+    display: block !important;
+  }
+  
+  .mobile-main-content {
+    padding-top: 6rem !important;
+    padding-left: 10vw !important;
+    padding-right: 10vw !important;
+    justify-content: center !important;
+  }
+  
+  .mobile-main-content > div {
+    max-width: 100% !important;
+    text-align: left !important;
+  }
+  
+  h1.mobile-center-title {
+    text-align: left !important;
+    font-size: 1.75rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .mobile-left-text {
+    text-align: left !important;
+    font-size: 1.125rem !important;
+    line-height: 1.5 !important;
+  }
+  
+  .mobile-hide-title {
+    display: none !important;
+  }
+  
+  /* Mobile home page - match margins to nav bar */
+  .mobile-home-content {
+    padding-left: 7vw !important;
+    padding-right: 7vw !important;
+  }
+  
+  /* Override desktop fixed padding on mobile */
+  .desktop-home-padding {
+    padding-top: 7rem !important;
+    padding-left: 7vw !important;
+    padding-right: 7vw !important;
+  }
+  
+  /* Center h1 on mobile */
+  .mobile-home-content h1 {
+    text-align: center !important;
+  }
+  
+  .dark .mobile-nav {
+    background: rgba(26, 26, 26, 0.95) !important;
+  }
+}
+
+/* Photo grid fixes for wide images */
+.photo-grid-container {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.photo-grid-container > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Lightbox mobile fixes */
+@media (max-width: 1024px) {
+  .lightbox-container {
+    padding: 2rem !important;
+    max-width: 85vw !important;
+    max-height: 90vh !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  
+  .lightbox-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+    max-height: none !important;
+  }
+  
+  .lightbox-image {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    object-fit: contain !important;
+  }
+  
+  /* Override all aspect ratio classes in lightbox */
+  .lightbox-image.aspect-\[16\/9\],
+  .lightbox-image.aspect-\[5\/4\],
+  .lightbox-image.aspect-\[4\/3\] {
+    aspect-ratio: unset !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  .lightbox-details {
+    padding-left: 4rem !important;
+    padding-right: 4rem !important;
+    text-align: center !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  .lightbox-details * {
+    text-align: center !important;
+  }
+  
+  .lightbox-details .flex {
+    justify-content: center !important;
+  }
+}
+
 
 .prose {
   font-family: var(--font-serif);
