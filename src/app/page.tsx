@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 
 export default function Home() {
-  const [greeting, setGreeting] = useState('')
+  const [greeting, setGreeting] = useState('Hello')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -21,8 +21,6 @@ export default function Home() {
     
     setMounted(true)
   }, [])
-
-  if (!mounted) return null
 
   return (
     <div className="flex items-start justify-start min-h-screen mobile-main-content mobile-home-content desktop-home-padding">

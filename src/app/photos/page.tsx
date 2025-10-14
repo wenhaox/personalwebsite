@@ -268,10 +268,12 @@ export default function Photography() {
 
               <div className="grid md:grid-cols-2 gap-8 bg-card rounded-lg overflow-hidden lightbox-grid">
                 {/* Image */}
-                <div className={`relative ${selectedPhoto.aspectRatio} bg-gradient-to-br from-muted/10 to-muted/30 flex items-center justify-center min-h-[400px] lightbox-image`}>
-                  <div className="text-center text-muted">
-                    <div className="text-6xl mb-4">📸</div>
-                    <p className="text-lg">{selectedPhoto.title}</p>
+                <div className="relative bg-gradient-to-br from-muted/10 to-muted/30 flex items-center justify-center min-h-[400px] w-full lightbox-image">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-muted">
+                      <div className="text-6xl mb-4">📸</div>
+                      <p className="text-lg">{selectedPhoto.title}</p>
+                    </div>
                   </div>
                   {/* <Image
                     src={selectedPhoto.imageUrl}
