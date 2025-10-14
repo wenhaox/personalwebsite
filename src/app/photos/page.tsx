@@ -11,10 +11,6 @@ export default function Photography() {
   const [categories, setCategories] = useState<string[]>([]);
   const [hoveredPhoto, setHoveredPhoto] = useState<any>(null);
   const [filterTag, setFilterTag] = useState<string>('');
-  const [previewPhoto, setPreviewPhoto] = useState<any>(null);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
 
   useEffect(() => {
     // Load custom photos from localStorage
@@ -225,34 +221,13 @@ export default function Photography() {
 
         {/* Masonry Photo Grid */}
         <div className="columns-2 sm:columns-2 lg:columns-3 gap-4 mb-12 photo-grid-container"> {/* 2 columns on mobile, tighter gap */}
-          {sortedPhotos.length === 0 ? (
-            <div className="empty-state col-span-full">
-              <div className="empty-state-icon">📸</div>
-              <div className="empty-state-title">No photos found</div>
-              <div className="empty-state-message">Try a different filter or add some photos!</div>
-            </div>
-          ) : (
-            sortedPhotos.map((photo) => (
+          {sortedPhotos.map((photo) => (
             <div
               key={photo.id}
               className="break-inside-avoid mb-4 group cursor-pointer"
               onClick={() => openLightbox(photo)}
-              onMouseEnter={(e) => {
-                setHoveredPhoto(photo)
-                const timeout = setTimeout(() => {
-                  setPreviewPhoto({
-                    ...photo,
-                    x: e.clientX + 20,
-                    y: e.clientY + 20
-                  })
-                }, 1500)
-                setHoverTimeout(timeout)
-              }}
-              onMouseLeave={() => {
-                setHoveredPhoto(null)
-                setPreviewPhoto(null)
-                if (hoverTimeout) clearTimeout(hoverTimeout)
-              }}
+              onMouseEnter={() => setHoveredPhoto(photo)}
+              onMouseLeave={() => setHoveredPhoto(null)}
             >
               <div className="relative overflow-hidden transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-lg w-full">
                 {/* Photo Container with Dynamic Aspect Ratio */}
@@ -274,8 +249,7 @@ export default function Photography() {
                 </div>
               </div>
             </div>
-          ))
-          )}
+          ))}
         </div>
 
         {/* Lightbox */}
@@ -283,18 +257,6 @@ export default function Photography() {
           <div
             className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
             onClick={closeLightbox}
-            onTouchStart={(e) => setTouchStart(e.targetTouches[0].clientX)}
-            onTouchMove={(e) => setTouchEnd(e.targetTouches[0].clientX)}
-            onTouchEnd={() => {
-              if (touchStart - touchEnd > 150) {
-                // Swiped left - close lightbox
-                closeLightbox()
-              }
-              if (touchEnd - touchStart > 150) {
-                // Swiped right - close lightbox
-                closeLightbox()
-              }
-            }}
           >
             <div className="relative max-w-5xl max-h-full lightbox-container" onClick={(e) => e.stopPropagation()}>
               <button
@@ -331,25 +293,6 @@ export default function Photography() {
                   </div>
                   <p className="text-xs text-muted leading-relaxed mb-4 text-center w-full">{selectedPhoto.description}</p>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Photo hover preview - appears after 3 seconds */}
-        {previewPhoto && (
-          <div
-            className="photo-preview show"
-            style={{
-              left: `${previewPhoto.x}px`,
-              top: `${previewPhoto.y}px`
-            }}
-          >
-            <div className={`${previewPhoto.aspectRatio} bg-gradient-to-br from-muted/10 to-muted/30 flex items-center justify-center`} style={{minHeight: '200px'}}>
-              <div className="text-center p-4">
-                <div className="text-4xl mb-2">📸</div>
-                <p className="text-sm font-medium">{previewPhoto.title}</p>
-                <p className="text-xs text-muted">{previewPhoto.location}</p>
               </div>
             </div>
           </div>

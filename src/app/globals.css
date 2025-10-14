@@ -22,11 +22,19 @@
   --color-card: #242424;
 }
 
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
   line-height: 1.6;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -445,10 +453,10 @@ nav, .fixed.bottom-8 {
     display: none !important;
   }
   
-  /* Mobile home page - match margins to nav bar */
+  /* Mobile home page - more margins for text */
   .mobile-home-content {
-    padding-left: 7vw !important;
-    padding-right: 7vw !important;
+    padding-left: 12vw !important;
+    padding-right: 12vw !important;
   }
   
   /* Override desktop fixed padding on mobile */
@@ -477,6 +485,22 @@ nav, .fixed.bottom-8 {
 .photo-grid-container > * {
   max-width: 100%;
   box-sizing: border-box;
+}
+
+/* Photo cards bigger on mobile - 2 columns minimum */
+@media (max-width: 1024px) {
+  .photo-grid-container {
+    columns: 2 !important;
+    gap: 0.75rem !important;
+  }
+  
+  .photo-grid-container > * {
+    margin-bottom: 0.75rem !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    display: inline-block !important;
+    width: 100% !important;
+  }
 }
 
 /* Lightbox mobile fixes */

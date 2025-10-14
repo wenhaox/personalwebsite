@@ -99,7 +99,7 @@ export default function Recently() {
           <div>
             <h1 className="text-3xl md:text-4xl font-serif italic leading-tight mb-4 mobile-hide-title">Recently</h1>
             <p className="text-sm text-muted leading-relaxed mb-2">
-              A glimpse into what's been capturing my attention, inspiring me, and shaping my days.
+              A glimpse into what&apos;s been capturing my attention, inspiring me, and shaping my days.
             </p>
             <p className="text-xs text-muted italic">Last updated: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
           </div>
@@ -255,7 +255,7 @@ export default function Recently() {
           {/* Footer note */}
           <div className="pt-8 border-t border-border">
             <p className="text-sm text-muted italic">
-              This page is a living document - I update it regularly with whatever's 
+              This page is a living document - I update it regularly with whatever&apos;s 
               currently inspiring me or occupying my thoughts. Check back often!
             </p>
           </div>
