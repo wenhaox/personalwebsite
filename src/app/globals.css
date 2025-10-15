@@ -588,21 +588,7 @@ nav, .fixed.bottom-8 {
     height: auto !important;
   }
   
-  .lightbox-details {
-    padding-left: 4rem !important;
-    padding-right: 4rem !important;
-    text-align: center !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-  
-  .lightbox-details * {
-    text-align: center !important;
-  }
-  
-  .lightbox-details .flex {
-    justify-content: center !important;
-  }
+  /* Lightbox details centering removed - handled inline */
 }
 
 

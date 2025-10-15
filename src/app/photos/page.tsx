@@ -255,45 +255,41 @@ export default function Photography() {
         {/* Lightbox */}
         {selectedPhoto && (
           <div
-            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 md:p-8"
             onClick={closeLightbox}
           >
-            <div className="relative max-w-5xl max-h-full lightbox-container" onClick={(e) => e.stopPropagation()}>
+            <div className="relative w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
+              {/* Close button */}
               <button
                 onClick={closeLightbox}
-                className="absolute top-4 right-4 md:-top-10 md:right-0 w-10 h-10 md:w-8 md:h-8 bg-accent/90 hover:bg-accent text-stone-50 rounded-lg md:rounded-full flex items-center justify-center transition-all z-10 text-base md:text-sm font-light shadow-lg"
+                className="absolute -top-2 right-2 md:-top-10 md:right-0 w-7 h-7 md:w-6 md:h-6 bg-accent/50 hover:bg-accent/80 text-stone-50 rounded-lg md:rounded-full flex items-center justify-center transition-all z-10 text-xs font-light"
               >
                 ✕
               </button>
 
-              <div className="grid md:grid-cols-2 gap-8 bg-card rounded-lg overflow-hidden lightbox-grid">
-                {/* Image */}
-                <div className="relative bg-gradient-to-br from-muted/10 to-muted/30 min-h-[400px] w-full lightbox-image">
-                  <div className="absolute inset-0 flex items-center justify-center p-4">
-                    <div className="text-center text-muted">
-                      <div className="text-6xl mb-4">📸</div>
-                      <p className="text-lg">{selectedPhoto.title}</p>
-                    </div>
+              {/* Card */}
+              <div className="grid grid-cols-1 md:grid-cols-2 bg-card rounded-lg overflow-hidden shadow-2xl">
+                {/* Image side */}
+                <div className="relative bg-gradient-to-br from-muted/10 to-muted/30 min-h-[300px] md:min-h-[400px] flex items-center justify-center p-8">
+                  <div className="text-center text-muted">
+                    <div className="text-6xl mb-4">📸</div>
+                    <p className="text-lg">{selectedPhoto.title}</p>
                   </div>
-                  {/* <Image
-                    src={selectedPhoto.imageUrl}
-                    alt={selectedPhoto.title}
-                    fill
-                    className="object-cover"
-                  /> */}
                 </div>
 
-                {/* Details */}
-                <div className="py-4 px-4 md:py-6 md:px-8 flex flex-col justify-center items-center lightbox-details">
-                  <h2 className="text-base md:text-lg font-serif mb-2 text-center w-full">{selectedPhoto.title}</h2>
-                  <div className="text-[0.65rem] md:text-xs text-muted mb-2 flex flex-wrap items-center justify-center gap-1 md:gap-2 w-full">
-                    <span>{selectedPhoto.location}</span>
-                    <span>|</span>
-                    <span>{selectedPhoto.color}</span>
-                    <span>|</span>
-                    <span>{selectedPhoto.theme}</span>
+                {/* Details side */}
+                <div className="flex items-center justify-center p-6 md:p-8">
+                  <div className="text-center space-y-3 w-full">
+                    <h2 className="text-lg md:text-xl font-serif italic">{selectedPhoto.title}</h2>
+                    <div className="text-xs md:text-sm text-muted flex flex-wrap items-center justify-center gap-2">
+                      <span>{selectedPhoto.location}</span>
+                      <span>|</span>
+                      <span>{selectedPhoto.color}</span>
+                      <span>|</span>
+                      <span>{selectedPhoto.theme}</span>
+                    </div>
+                    <p className="text-xs md:text-sm text-muted leading-relaxed">{selectedPhoto.description}</p>
                   </div>
-                  <p className="text-[0.65rem] md:text-xs text-muted leading-relaxed mb-3 text-center w-full">{selectedPhoto.description}</p>
                 </div>
               </div>
             </div>
