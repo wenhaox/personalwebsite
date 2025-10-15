@@ -261,15 +261,15 @@ export default function Photography() {
             <div className="relative max-w-5xl max-h-full lightbox-container" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={closeLightbox}
-                className="absolute -top-12 right-0 w-10 h-10 bg-black/50 hover:bg-accent/80 text-white rounded-full flex items-center justify-center transition-all z-10"
+                className="absolute top-4 right-4 md:-top-10 md:right-0 w-10 h-10 md:w-8 md:h-8 bg-accent/90 hover:bg-accent text-stone-50 rounded-lg md:rounded-full flex items-center justify-center transition-all z-10 text-base md:text-sm font-light shadow-lg"
               >
                 ✕
               </button>
 
               <div className="grid md:grid-cols-2 gap-8 bg-card rounded-lg overflow-hidden lightbox-grid">
                 {/* Image */}
-                <div className="relative bg-gradient-to-br from-muted/10 to-muted/30 flex items-center justify-center min-h-[400px] w-full lightbox-image">
-                  <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative bg-gradient-to-br from-muted/10 to-muted/30 min-h-[400px] w-full lightbox-image">
+                  <div className="absolute inset-0 flex items-center justify-center p-4">
                     <div className="text-center text-muted">
                       <div className="text-6xl mb-4">📸</div>
                       <p className="text-lg">{selectedPhoto.title}</p>
@@ -284,16 +284,16 @@ export default function Photography() {
                 </div>
 
                 {/* Details */}
-                <div className="py-6 px-8 flex flex-col justify-center items-center lightbox-details">
-                  <h2 className="text-lg font-serif mb-3 text-center w-full">{selectedPhoto.title}</h2>
-                  <div className="text-xs text-muted mb-3 flex items-center justify-center gap-2 w-full">
-                    <span>{selectedPhoto.location}</span>
+                <div className="py-4 px-4 md:py-6 md:px-8 flex flex-col justify-center items-center lightbox-details">
+                  <h2 className="text-base md:text-lg font-serif mb-2 text-center w-full">{selectedPhoto.title}</h2>
+                  <div className="text-[0.65rem] md:text-xs text-muted mb-2 flex flex-wrap items-center justify-center gap-1 md:gap-2 w-full">
+                    <span className="truncate max-w-[80px] md:max-w-none">{selectedPhoto.location}</span>
                     <span>|</span>
-                    <span>{selectedPhoto.color}</span>
+                    <span className="truncate max-w-[60px] md:max-w-none">{selectedPhoto.color}</span>
                     <span>|</span>
-                    <span>{selectedPhoto.theme}</span>
+                    <span className="truncate max-w-[60px] md:max-w-none">{selectedPhoto.theme}</span>
                   </div>
-                  <p className="text-xs text-muted leading-relaxed mb-4 text-center w-full">{selectedPhoto.description}</p>
+                  <p className="text-[0.65rem] md:text-xs text-muted leading-relaxed mb-3 text-center w-full">{selectedPhoto.description}</p>
                 </div>
               </div>
             </div>

@@ -5,22 +5,16 @@ import { useEffect, useState } from 'react'
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [displayChildren, setDisplayChildren] = useState(children)
-  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [key, setKey] = useState(0)
 
   useEffect(() => {
-    setIsTransitioning(true)
-    const timer = setTimeout(() => {
-      setDisplayChildren(children)
-      setIsTransitioning(false)
-    }, 75)
-    
-    return () => clearTimeout(timer)
-  }, [pathname, children])
+    // Force re-render with new key to trigger animation
+    setKey(prev => prev + 1)
+  }, [pathname])
 
   return (
-    <div className={`page-transition ${isTransitioning ? 'page-transition-out' : ''}`}>
-      {displayChildren}
+    <div key={key} className="page-transition">
+      {children}
     </div>
   )
 }

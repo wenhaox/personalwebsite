@@ -357,28 +357,15 @@ nav, .fixed.bottom-8 {
 }
 
 .page-transition {
-  animation: pageTransitionIn 0.15s ease-out;
+  animation: pageTransitionFade 0.2s ease-in-out;
 }
 
-.page-transition-out {
-  animation: pageTransitionOut 0.075s ease-in;
-}
-
-@keyframes pageTransitionIn {
+@keyframes pageTransitionFade {
   from {
-    opacity: 0.92;
+    opacity: 0.85;
   }
   to {
     opacity: 1;
-  }
-}
-
-@keyframes pageTransitionOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0.92;
   }
 }
 
@@ -402,9 +389,9 @@ nav, .fixed.bottom-8 {
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    height: 3.5rem !important;
+    height: auto !important;
     min-height: 3.5rem !important;
-    padding: 0 7vw !important;
+    padding: 0.5rem 7vw !important;
     margin: 0 !important;
     display: flex !important;
     flex-direction: row !important;
