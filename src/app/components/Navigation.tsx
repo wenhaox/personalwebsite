@@ -56,7 +56,7 @@ export default function Navigation() {
             <Link
               key={item.name}
               href={item.href}
-              className={`block text-sm transition-colors hover:text-accent animate-fade-in delay-${(index + 2) * 100} ${
+              className={`block text-sm transition-colors hover:text-accent ${
                 pathname === item.href ? 'text-accent font-medium' : ''
               }`}
             >
@@ -66,10 +66,12 @@ export default function Navigation() {
         </div>
 
 
-        {/* Photo - hidden on mobile, shown on desktop */}
-        <div className="w-48 h-64 bg-muted/10 rounded-2xl flex items-center justify-center mobile-hide-photo">
-          <span className="text-muted text-sm">photo</span>
-        </div>
+        {/* Photo - hidden on mobile, shown on desktop home page only */}
+        {pathname === '/' && (
+          <div className="w-48 h-64 bg-muted/10 rounded-2xl flex items-center justify-center mobile-hide-photo">
+            <span className="text-muted text-sm">photo</span>
+          </div>
+        )}
       </div>
     </nav>
   )

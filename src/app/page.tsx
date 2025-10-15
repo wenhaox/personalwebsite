@@ -23,7 +23,7 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="flex items-start justify-start min-h-screen mobile-main-content mobile-home-content desktop-home-padding">
+    <div className="flex items-start justify-start min-h-screen mobile-main-content mobile-home-content desktop-home-padding bg-background">
       <div className="max-w-xl space-y-5">
         <h1 className="text-2xl md:text-3xl font-serif italic leading-tight text-left">
           {greeting}! I&apos;m Your Name.

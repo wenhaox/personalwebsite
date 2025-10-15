@@ -4,6 +4,7 @@ import "./globals.css";
 import Navigation from "./components/Navigation";
 import ThemeToggle from "./components/ThemeToggle";
 import ScrollProgress from "./components/ScrollProgress";
+import PageTransition from "./components/PageTransition";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,7 +39,9 @@ export default function RootLayout({
       <body className={`${inter.variable} ${crimsonText.variable} antialiased`}>
         <ScrollProgress />
         <Navigation />
-        <main className="ml-80 min-h-screen desktop-main-offset page-transition">{children}</main>
+        <main className="ml-80 min-h-screen desktop-main-offset">
+          <PageTransition>{children}</PageTransition>
+        </main>
         <ThemeToggle />
       </body>
     </html>

@@ -63,7 +63,7 @@ export default function Connect() {
   }
   
   return (
-    <div className="flex items-start justify-start min-h-screen px-32 py-16 mobile-main-content">
+    <div className="flex items-start justify-start min-h-screen px-32 py-16 mobile-main-content bg-background">
       <div className="max-w-3xl mx-auto">
         <section>
         <div className="space-y-4">

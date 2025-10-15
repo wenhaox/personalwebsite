@@ -144,7 +144,7 @@ export default function Photography() {
   };
 
   return (
-    <div className="flex items-start justify-start min-h-screen px-32 py-16 mobile-main-content">
+    <div className="flex items-start justify-start min-h-screen px-32 py-16 mobile-main-content bg-background">
       <div className="max-w-5xl mx-auto"> {/* Wider container */}
         {/* Header */}
         <section className="mb-6">
