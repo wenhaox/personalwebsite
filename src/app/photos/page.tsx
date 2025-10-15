@@ -287,11 +287,11 @@ export default function Photography() {
                 <div className="py-4 px-4 md:py-6 md:px-8 flex flex-col justify-center items-center lightbox-details">
                   <h2 className="text-base md:text-lg font-serif mb-2 text-center w-full">{selectedPhoto.title}</h2>
                   <div className="text-[0.65rem] md:text-xs text-muted mb-2 flex flex-wrap items-center justify-center gap-1 md:gap-2 w-full">
-                    <span className="truncate max-w-[80px] md:max-w-none">{selectedPhoto.location}</span>
+                    <span>{selectedPhoto.location}</span>
                     <span>|</span>
-                    <span className="truncate max-w-[60px] md:max-w-none">{selectedPhoto.color}</span>
+                    <span>{selectedPhoto.color}</span>
                     <span>|</span>
-                    <span className="truncate max-w-[60px] md:max-w-none">{selectedPhoto.theme}</span>
+                    <span>{selectedPhoto.theme}</span>
                   </div>
                   <p className="text-[0.65rem] md:text-xs text-muted leading-relaxed mb-3 text-center w-full">{selectedPhoto.description}</p>
                 </div>

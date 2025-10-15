@@ -357,12 +357,12 @@ nav, .fixed.bottom-8 {
 }
 
 .page-transition {
-  animation: pageTransitionFade 0.2s ease-in-out;
+  animation: pageTransitionFade 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes pageTransitionFade {
   from {
-    opacity: 0.85;
+    opacity: 0.7;
   }
   to {
     opacity: 1;
