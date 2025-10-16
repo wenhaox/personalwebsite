@@ -1,26 +1,44 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 export default function ScrollProgress() {
   const [scrollProgress, setScrollProgress] = useState(0)
+  const rafRef = useRef<number>()
 
   useEffect(() => {
     const updateScrollProgress = () => {
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight
-      const scrolled = window.scrollY
-      const progress = (scrolled / scrollHeight) * 100
-      setScrollProgress(progress)
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+      }
+
+      rafRef.current = requestAnimationFrame(() => {
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight
+        const scrolled = window.scrollY
+        const progress = Math.min(100, Math.max(0, (scrolled / scrollHeight) * 100))
+        setScrollProgress(progress)
+      })
     }
 
-    window.addEventListener('scroll', updateScrollProgress)
-    return () => window.removeEventListener('scroll', updateScrollProgress)
+    // Initial update
+    updateScrollProgress()
+
+    window.addEventListener('scroll', updateScrollProgress, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', updateScrollProgress)
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+      }
+    }
   }, [])
 
   return (
     <div 
-      className="fixed top-0 left-0 h-1 bg-accent transition-all duration-150 z-50"
-      style={{ width: `${scrollProgress}%` }}
+      className="fixed top-0 left-0 h-1 bg-accent z-50 transition-all duration-100 ease-out"
+      style={{ 
+        width: `${scrollProgress}%`,
+        willChange: 'width'
+      }}
     />
   )
 }
