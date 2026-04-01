@@ -2,17 +2,39 @@
 
 import { useState, useEffect } from 'react'
 
+const THEME_KEY = 'theme-preference'
+
+const readThemePreference = (): 'dark' | 'light' | null => {
+  const stored = localStorage.getItem(THEME_KEY)
+  if (stored === 'dark' || stored === 'light') {
+    return stored
+  }
+
+  return null
+}
+
+const getSystemTheme = (): 'dark' | 'light' => (
+  window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+)
+
 export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(false)
+  const [isThemeReady, setIsThemeReady] = useState(false)
 
   useEffect(() => {
-    // Check system preference on mount
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    setIsDark(mediaQuery.matches)
+    const storedTheme = readThemePreference()
+    const initialTheme = storedTheme || getSystemTheme()
+    setIsDark(initialTheme === 'dark')
+    setIsThemeReady(true)
     
-    // Listen for system preference changes
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDark(e.matches)
+    const handleChange = () => {
+      const persistedTheme = readThemePreference()
+      if (persistedTheme) {
+        return
+      }
+
+      setIsDark(mediaQuery.matches)
     }
     
     mediaQuery.addEventListener('change', handleChange)
@@ -20,12 +42,25 @@ export default function ThemeToggle() {
   }, [])
 
   useEffect(() => {
+    if (!isThemeReady) return
+
+    const root = document.documentElement
+    const body = document.body
+
     if (isDark) {
-      document.documentElement.classList.add('dark')
+      root.classList.add('dark')
+      root.style.colorScheme = 'dark'
+      root.style.backgroundColor = '#1a1a1a'
+      body.style.backgroundColor = '#1a1a1a'
     } else {
-      document.documentElement.classList.remove('dark')
+      root.classList.remove('dark')
+      root.style.colorScheme = 'light'
+      root.style.backgroundColor = '#faf9f7'
+      body.style.backgroundColor = '#faf9f7'
     }
-  }, [isDark])
+
+    localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light')
+  }, [isDark, isThemeReady])
 
   return (
     <button

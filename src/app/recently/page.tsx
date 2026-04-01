@@ -1,271 +1,454 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Camera, Disc, FilmStrip, TelevisionSimple, VinylRecord } from '@phosphor-icons/react'
+import { motion } from 'motion/react'
+import { useEffect, useMemo, useState } from 'react'
+import { Rnd } from 'react-rnd'
+
+interface RecentlyLink {
+  url: string
+  text: string
+}
+
+interface RecentlyItem {
+  category: string
+  item: string
+  emoji: string
+  description: string
+  date: string
+  spotifyEmbed?: string
+  podcastEmbed?: string
+  image?: string
+  images?: string[]
+  link?: string
+  linkText?: string
+  links?: RecentlyLink[]
+}
+
+interface FavoriteObject {
+  name: string
+  image: string
+  note: string
+  finish: string
+  acquired: string
+}
+
+type BoardObjectKind = 'record' | 'camera' | 'movie' | 'artifact'
+
+interface BoardObject {
+  id: string
+  kind: BoardObjectKind
+  title: string
+  subtitle: string
+  description: string
+  image?: string
+  link?: RecentlyLink
+}
+
+interface BoardRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+type BoardLayout = Record<string, BoardRect>
+
+const BOARD_LAYOUT_KEY = 'recentlyMiroLayoutV2'
+
+const DEFAULT_LAYOUT: BoardLayout = {
+  record: { x: 74, y: 96, width: 340, height: 300 },
+  camera: { x: 468, y: 122, width: 300, height: 250 },
+  movie: { x: 830, y: 108, width: 350, height: 280 },
+  'object-0': { x: 90, y: 468, width: 210, height: 210 },
+  'object-1': { x: 336, y: 488, width: 210, height: 210 },
+  'object-2': { x: 590, y: 474, width: 210, height: 210 },
+  'object-3': { x: 862, y: 486, width: 210, height: 210 },
+}
+
+const DEFAULT_FAVORITE_OBJECTS: FavoriteObject[] = [
+  {
+    name: 'Leica M6',
+    image: 'https://picsum.photos/id/1062/900/620',
+    note: 'Still my favorite camera body for intentional frames and slower days.',
+    finish: 'Mechanical film camera',
+    acquired: '2019',
+  },
+  {
+    name: 'Traveler Notebook',
+    image: 'https://picsum.photos/id/180/900/620',
+    note: 'Daily scratchpad for ideas, places, and lists I keep revisiting.',
+    finish: 'Leather + refill inserts',
+    acquired: '2021',
+  },
+  {
+    name: 'Porcelain Dripper',
+    image: 'https://picsum.photos/id/433/900/620',
+    note: 'Makes my morning ritual feel slow and exact in the best way.',
+    finish: 'Hand-pour setup',
+    acquired: '2022',
+  },
+  {
+    name: 'Studio Headphones',
+    image: 'https://picsum.photos/id/903/900/620',
+    note: 'My focus cue for deep work and long editing sessions.',
+    finish: 'Closed-back monitor pair',
+    acquired: '2024',
+  },
+]
+
+const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
+  {
+    category: 'Music',
+    item: 'Rosalia - MOTOMAMI',
+    emoji: '🎵',
+    description: 'The production still feels weird and alive every listen.',
+    date: 'This week',
+    spotifyEmbed: 'https://open.spotify.com/embed/album/5G2f63n7IPVPPjfNIGih7Q',
+    link: 'https://open.spotify.com/album/5G2f63n7IPVPPjfNIGih7Q',
+    linkText: 'Open in Spotify',
+  },
+  {
+    category: 'Watching',
+    item: 'Perfect Days',
+    emoji: '🎬',
+    description: 'Quiet and detailed. I keep thinking about its pacing and framing.',
+    date: 'Last weekend',
+    image: 'https://picsum.photos/id/1018/900/620',
+    link: 'https://www.imdb.com/title/tt27503384/',
+    linkText: 'View on IMDB',
+  },
+  {
+    category: 'Place',
+    item: 'Golden Gate Park sunrise loop',
+    emoji: '🌅',
+    description: 'Cold air, empty paths, and the best start before laptop hours.',
+    date: 'This morning',
+    images: [
+      'https://picsum.photos/id/1036/800/540',
+      'https://picsum.photos/id/1037/800/540',
+      'https://picsum.photos/id/1038/800/540',
+    ],
+  },
+]
+
+const parseArray = <T,>(value: string | null): T[] => {
+  if (!value) return []
+
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const readLocalStorageObject = (value: string | null): Record<string, unknown> => {
+  if (!value) return {}
+
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {}
+  } catch {
+    return {}
+  }
+}
+
+const getPrimaryImage = (item: RecentlyItem | null): string | undefined => {
+  if (!item) return undefined
+  if (typeof item.image === 'string' && item.image.trim()) return item.image
+  if (Array.isArray(item.images) && item.images[0]) return item.images[0]
+  return undefined
+}
+
+const getPrimaryLink = (item: RecentlyItem | null): RecentlyLink | undefined => {
+  if (!item) return undefined
+
+  if (typeof item.link === 'string' && item.link.trim()) {
+    return {
+      url: item.link,
+      text: item.linkText?.trim() || 'Open link',
+    }
+  }
+
+  if (Array.isArray(item.links) && item.links[0]?.url) {
+    return item.links[0]
+  }
+
+  return undefined
+}
+
+const getDefaultRect = (object: BoardObject, index: number): BoardRect => {
+  const known = DEFAULT_LAYOUT[object.id]
+  if (known) return known
+
+  return {
+    x: 120 + (index % 4) * 250,
+    y: 720 + Math.floor(index / 4) * 240,
+    width: 210,
+    height: 210,
+  }
+}
+
+const parseLayout = (value: string | null): BoardLayout => {
+  const parsed = readLocalStorageObject(value)
+  const layout: BoardLayout = {}
+
+  Object.entries(parsed).forEach(([key, rect]) => {
+    if (!rect || typeof rect !== 'object') return
+
+    const candidate = rect as Record<string, unknown>
+    const x = Number(candidate.x)
+    const y = Number(candidate.y)
+    const width = Number(candidate.width)
+    const height = Number(candidate.height)
+
+    if (![x, y, width, height].every((n) => Number.isFinite(n))) return
+    if (width <= 80 || height <= 80) return
+
+    layout[key] = { x, y, width, height }
+  })
+
+  return layout
+}
+
+function renderObjectVisual(object: BoardObject, onOpenImage: (url: string) => void) {
+  if (object.kind === 'record') {
+    return (
+      <div className="miro-record-object" aria-hidden="true">
+        <VinylRecord className="miro-record-vinyl" weight="duotone" />
+        <Disc className="miro-record-center" weight="fill" />
+        <span className="miro-record-arm" />
+        <span className="miro-record-arm-head" />
+      </div>
+    )
+  }
+
+  if (object.kind === 'camera') {
+    return (
+      <div className="miro-camera-object">
+        <Camera className="miro-camera-icon" weight="duotone" />
+        {object.image && (
+          <button
+            type="button"
+            className="miro-camera-preview"
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenImage(object.image!)
+            }}
+            aria-label={`Open ${object.title}`}
+          >
+            <img src={object.image} alt={object.title} className="miro-camera-preview-image" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  if (object.kind === 'movie') {
+    return (
+      <div className="miro-tv-object">
+        <TelevisionSimple className="miro-tv-icon" weight="duotone" />
+        {object.image && (
+          <button
+            type="button"
+            className="miro-tv-poster"
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenImage(object.image!)
+            }}
+            aria-label={`Open ${object.title}`}
+          >
+            <img src={object.image} alt={object.title} className="miro-tv-poster-image" />
+            <span className="miro-tv-scanline" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="miro-artifact-object"
+      onClick={(event) => {
+        event.stopPropagation()
+        if (object.image) onOpenImage(object.image)
+      }}
+      aria-label={`Open ${object.title}`}
+    >
+      {object.image ? (
+        <img src={object.image} alt={object.title} className="miro-artifact-image" />
+      ) : (
+        <FilmStrip className="miro-artifact-fallback" weight="duotone" />
+      )}
+    </button>
+  )
+}
 
 export default function Recently() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [items, setItems] = useState<any[]>([])
-  const [stats, setStats] = useState({
-    photos: 0,
-    recentlyItems: 0,
-    coffees: 127,
-    miles: 342
-  })
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [items, setItems] = useState<RecentlyItem[]>([])
+  const [favoriteObjects, setFavoriteObjects] = useState<FavoriteObject[]>([])
+  const [boardLayout, setBoardLayout] = useState<BoardLayout>({})
 
   useEffect(() => {
-    // Load custom recently items from localStorage
-    const stored = localStorage.getItem('recentlyItems')
-    if (stored) {
-      setItems(JSON.parse(stored))
-    }
-    
-    // Load stats
-    const photos = JSON.parse(localStorage.getItem('customPhotos') || '[]')
-    const recently = JSON.parse(localStorage.getItem('recentlyItems') || '[]')
-    const customStats = JSON.parse(localStorage.getItem('customStats') || '{}')
-    
-    setStats({
-      photos: photos.length + 6,
-      recentlyItems: recently.length > 0 ? recently.length : 5,
-      miles: customStats.miles || 342,
-      coffees: customStats.coffees || 127
-    })
-  }, [])
-  
-  const defaultRecentlyItems = [
-    { 
-      category: 'Music', 
-      item: 'Rosalía - MOTOMAMI', 
-      emoji: '🎵',
-      description: 'This album is pure art - the way she blends flamenco with experimental pop is incredible. Every track feels like a different world.',
-      date: 'This week',
-      spotifyEmbed: 'https://open.spotify.com/embed/album/5G2f63n7IPVPPjfNIGih7Q',
-      link: 'https://open.spotify.com/album/5G2f63n7IPVPPjfNIGih7Q',
-      linkText: '▶ Open in Spotify'
-    },
-    { 
-      category: 'Listening', 
-      item: 'The Tim Ferriss Show & The Creative Act', 
-      emoji: '🎧',
-      description: 'Been diving deep into Tim\'s conversations with creatives. Also reading Rick Rubin\'s book on creativity - it\'s rewiring how I think about the creative process.',
-      date: 'Last few days',
-      image: 'https://via.placeholder.com/300x450/7c2d92/ffffff?text=The+Creative+Act',
-      podcastEmbed: 'https://open.spotify.com/embed/show/5qSUyCrk9KR69lEiXbjwXM',
-      links: [
-        { url: 'https://tim.blog/podcast/', text: '🎧 Tim Ferriss Show' },
-        { url: 'https://www.goodreads.com/book/show/60965426-the-creative-act', text: '📚 The Creative Act' }
-      ]
-    },
-    { 
-      category: 'Movie', 
-      item: 'Everything Everywhere All at Once', 
-      emoji: '🎬',
-      description: 'Watched this for the third time and I\'m still discovering new layers. It\'s chaos and beauty and humanity all wrapped into one perfect film.',
-      date: 'Last weekend',
-      image: 'https://via.placeholder.com/400x600/8b5cf6/ffffff?text=EEAAO+Poster',
-      link: 'https://www.imdb.com/title/tt6710474/',
-      linkText: '🎬 View on IMDB'
-    },
-    { 
-      category: 'Cooked', 
-      item: 'Homemade sourdough pizza', 
-      emoji: '🍕',
-      description: 'Finally nailed the dough after weeks of experimenting. There\'s something magical about creating something delicious from just flour, water, and time.',
-      date: 'Two days ago',
-      image: 'https://via.placeholder.com/500x400/f97316/ffffff?text=Sourdough+Pizza'
-    },
-    { 
-      category: 'Place', 
-      item: 'Golden Gate Park at sunrise', 
-      emoji: '🌅',
-      description: 'Discovered this quiet spot near the Japanese Tea Garden. The way the morning light filters through the trees is pure magic.',
-      date: 'This morning',
-      images: [
-        'https://via.placeholder.com/400x300/4ade80/ffffff?text=GG+Park+View+1',
-        'https://via.placeholder.com/400x300/10b981/ffffff?text=GG+Park+View+2',
-        'https://via.placeholder.com/400x300/059669/ffffff?text=GG+Park+View+3'
-      ]
-    }
-  ]
+    const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
+    const customObjects = parseArray<FavoriteObject>(localStorage.getItem('favoriteObjects'))
 
-  // Use custom items if available, otherwise use defaults
-  const recentlyItems = items.length > 0 ? items : defaultRecentlyItems
+    setItems(customRecently)
+    setFavoriteObjects(customObjects)
+    setBoardLayout(parseLayout(localStorage.getItem(BOARD_LAYOUT_KEY)))
+  }, [])
+
+  const recentlyItems = items.length > 0 ? items : DEFAULT_RECENTLY_ITEMS
+  const objectShelf = favoriteObjects.length > 0 ? favoriteObjects : DEFAULT_FAVORITE_OBJECTS
+
+  const musicItem = useMemo(() => (
+    recentlyItems.find((item) => {
+      const source = `${item.category} ${item.item}`.toLowerCase()
+      return Boolean(item.spotifyEmbed) || /music|song|album|listen/.test(source)
+    }) || null
+  ), [recentlyItems])
+
+  const movieItem = useMemo(() => (
+    recentlyItems.find((item) => {
+      const source = `${item.category} ${item.item}`.toLowerCase()
+      return /movie|watch|film|tv/.test(source)
+    }) || null
+  ), [recentlyItems])
+
+  const photoItem = useMemo(() => (
+    recentlyItems.find((item) => Boolean(item.image) || (Array.isArray(item.images) && item.images.length > 0)) || null
+  ), [recentlyItems])
+
+  const boardObjects = useMemo<BoardObject[]>(() => {
+    const list: BoardObject[] = [
+      {
+        id: 'record',
+        kind: 'record',
+        title: musicItem?.item || 'Now spinning',
+        subtitle: musicItem?.date || 'This week',
+        description: musicItem?.description || 'Music in rotation right now.',
+        link: getPrimaryLink(musicItem),
+      },
+      {
+        id: 'camera',
+        kind: 'camera',
+        title: photoItem?.item || 'Current photo obsession',
+        subtitle: photoItem?.date || 'This week',
+        description: photoItem?.description || 'Captured recently and still replaying in my head.',
+        image: getPrimaryImage(photoItem),
+        link: getPrimaryLink(photoItem),
+      },
+      {
+        id: 'movie',
+        kind: 'movie',
+        title: movieItem?.item || 'Current watch',
+        subtitle: movieItem?.date || 'Recent',
+        description: movieItem?.description || 'A movie scene I keep thinking about.',
+        image: getPrimaryImage(movieItem),
+        link: getPrimaryLink(movieItem),
+      },
+    ]
+
+    objectShelf.slice(0, 4).forEach((object, index) => {
+      list.push({
+        id: `object-${index}`,
+        kind: 'artifact',
+        title: object.name,
+        subtitle: `Since ${object.acquired}`,
+        description: object.note,
+        image: object.image,
+      })
+    })
+
+    return list
+  }, [movieItem, musicItem, objectShelf, photoItem])
+
+  const updateBoardRect = (object: BoardObject, index: number, partial: Partial<BoardRect>) => {
+    setBoardLayout((current) => {
+      const base = current[object.id] || getDefaultRect(object, index)
+      const next = {
+        ...current,
+        [object.id]: {
+          ...base,
+          ...partial,
+        },
+      }
+
+      try {
+        localStorage.setItem(BOARD_LAYOUT_KEY, JSON.stringify(next))
+      } catch {
+        // Ignore write failures and keep in-memory dragging behavior.
+      }
+
+      return next
+    })
+  }
 
   return (
-    <div className="flex items-start justify-start min-h-screen px-32 py-16 mobile-main-content bg-background">
-      <div className="max-w-4xl mx-auto">
-        <section>
-        <div className="space-y-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-serif italic leading-tight mb-4 mobile-hide-title">Recently</h1>
-            <p className="text-sm text-muted leading-relaxed mb-2">
-              A glimpse into what&apos;s been capturing my attention, inspiring me, and shaping my days.
-            </p>
-            <p className="text-xs text-muted italic">Last updated: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-          </div>
+    <div className="flex items-start justify-start min-h-screen px-20 py-12 mobile-main-content bg-background">
+      <div className="w-full max-w-[1700px] mx-auto">
+        <h1 className="sr-only">Recently</h1>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-            <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg notion-card">
-              <div className="text-2xl font-serif font-bold text-accent mb-1">{stats.photos}</div>
-              <div className="text-xs text-muted">Photos</div>
-            </div>
-            <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg notion-card">
-              <div className="text-2xl font-serif font-bold text-accent mb-1">{stats.recentlyItems}</div>
-              <div className="text-xs text-muted">Updates</div>
-            </div>
-            <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg notion-card">
-              <div className="text-2xl font-serif font-bold text-accent mb-1">{stats.miles}</div>
-              <div className="text-xs text-muted">Miles</div>
-            </div>
-            <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg notion-card">
-              <div className="text-2xl font-serif font-bold text-accent mb-1">{stats.coffees}</div>
-              <div className="text-xs text-muted">Coffees</div>
-            </div>
-          </div>
+        <section className="miro-board-shell page-load-seq page-load-seq-1">
+          <div className="miro-board-stage">
+            <div className="miro-board-canvas">
+              {boardObjects.map((object, index) => {
+                const rect = boardLayout[object.id] || getDefaultRect(object, index)
 
-          {/* Recently Items - Single Column */}
-          <div className="space-y-6 pt-4">
-            {recentlyItems.map((recent, index) => (
-              <div 
-                key={index} 
-                className="group p-4 bg-card border border-border rounded-lg notion-card"
-              >
-                <div className="flex items-start space-x-3 mb-3">
-                  <div className="flex-shrink-0">
-                    <span className="text-2xl">{recent.emoji}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-medium text-accent uppercase tracking-wide">
-                        {recent.category}
-                      </span>
-                      <span className="text-xs text-muted">• {recent.date}</span>
+                return (
+                  <Rnd
+                    key={object.id}
+                    bounds="parent"
+                    disableDragging={false}
+                    enableResizing={false}
+                    dragHandleClassName="miro-object-handle"
+                    size={{ width: rect.width, height: rect.height }}
+                    position={{ x: rect.x, y: rect.y }}
+                    className="miro-node-wrap"
+                    onDragStop={(_, data) => {
+                      updateBoardRect(object, index, { x: data.x, y: data.y })
+                    }}
+                  >
+                    <div className="miro-object-handle">
+                      <motion.div
+                        className={`miro-object miro-object-${object.kind}`}
+                        whileHover={{ y: -4, rotate: [0, -1.6, 1.6, 0] }}
+                        transition={{ duration: 0.36, ease: 'easeOut' }}
+                        onHoverStart={() => setHoveredId(object.id)}
+                        onHoverEnd={() => setHoveredId((current) => (current === object.id ? null : current))}
+                      >
+                        {renderObjectVisual(object, setSelectedImage)}
+                      </motion.div>
                     </div>
-                    <h3 className="text-base font-serif leading-tight mb-2">
-                      {recent.item}
-                    </h3>
-                    <p className="text-xs text-muted leading-relaxed">
-                      {recent.description}
-                    </p>
-                    
-                    {/* Spotify Embed */}
-                    {recent.spotifyEmbed && (
-                      <div className="mt-2 notion-card">
-                        <iframe 
-                          src={recent.spotifyEmbed}
-                          width="100%" 
-                          height="152" 
-                          frameBorder="0" 
-                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                          loading="lazy"
-                          className="rounded-lg"
-                        ></iframe>
-                      </div>
-                    )}
-                    
-                    {/* Podcast Embed */}
-                    {recent.podcastEmbed && (
-                      <div className="mt-2 notion-card">
-                        <iframe 
-                          src={recent.podcastEmbed}
-                          width="100%" 
-                          height="152" 
-                          frameBorder="0" 
-                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                          loading="lazy"
-                          className="rounded-lg"
-                        ></iframe>
-                      </div>
-                    )}
-                    
-                    {/* Single clickable image */}
-                    {recent.image && (
-                      <div className="mt-2">
-                        <div 
-                          className="bg-gradient-to-br from-muted/10 to-muted/30 rounded-lg overflow-hidden w-full max-w-xs cursor-pointer notion-card"
-                          onClick={() => setSelectedImage(recent.image!)}
-                        >
-                          <img 
-                            src={recent.image} 
-                            alt={recent.item}
-                            className="w-full h-auto"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Multiple clickable images for Place */}
-                    {recent.images && (
-                      <div className="mt-2 grid grid-cols-3 gap-2">
-                        {recent.images.map((img, imgIndex) => (
-                          <div 
-                            key={imgIndex} 
-                            className="bg-gradient-to-br from-muted/10 to-muted/30 rounded-lg overflow-hidden aspect-[4/3] cursor-pointer notion-card"
-                            onClick={() => setSelectedImage(img)}
-                          >
-                            <img 
-                              src={img} 
-                              alt={`${recent.item} ${imgIndex + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Multiple Links */}
-                    {recent.links && (
-                      <div className="mt-3 flex flex-wrap gap-3">
-                        {recent.links.map((linkItem, linkIndex) => (
-                          <a 
-                            key={linkIndex}
-                            href={linkItem.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="notion-link inline-flex items-center space-x-2 text-sm text-accent hover:text-accent-light"
-                          >
-                            <span>{linkItem.text}</span>
-                            <span>→</span>
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Single Link */}
-                    {recent.link && !recent.links && (
-                      <div className="mt-3">
-                        <a 
-                          href={recent.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="notion-link inline-flex items-center space-x-2 text-sm text-accent hover:text-accent-light"
-                        >
-                          <span>{recent.linkText}</span>
-                          <span>→</span>
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
 
-          {/* Footer note */}
-          <div className="pt-8 border-t border-border">
-            <p className="text-sm text-muted italic">
-              This page is a living document - I update it regularly with whatever&apos;s 
-              currently inspiring me or occupying my thoughts. Check back often!
-            </p>
+                    <div className={`miro-object-tooltip ${hoveredId === object.id ? 'is-visible' : ''}`}>
+                      <p className="miro-tooltip-title">{object.title}</p>
+                      <p className="miro-tooltip-copy">{object.description}</p>
+                      {object.link && (
+                        <a
+                          href={object.link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="miro-tooltip-link"
+                        >
+                          {object.link.text} ↗
+                        </a>
+                      )}
+                    </div>
+                  </Rnd>
+                )
+              })}
+            </div>
           </div>
-        </div>
         </section>
       </div>
-      
-      {/* Image Lightbox */}
+
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 cursor-pointer"
           onClick={() => setSelectedImage(null)}
         >
@@ -275,11 +458,11 @@ export default function Recently() {
           >
             ✕
           </button>
-          <img 
-            src={selectedImage} 
+          <img
+            src={selectedImage}
             alt="Full size"
             className="max-w-[90%] max-h-[90%] object-contain"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
           />
         </div>
       )}
