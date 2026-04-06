@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from 'react'
 
 type PhotoSort = 'theme' | 'color' | 'location' | 'date'
 
+const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
+
 const PHOTO_SORT_OPTIONS: Array<{ key: PhotoSort | 'all'; icon: string; label: string; href: string }> = [
   { key: 'all', icon: '◍', label: 'All Photos', href: '/photos' },
   { key: 'date', icon: '◴', label: 'Date', href: '/photos?sort=date' },
@@ -125,7 +127,7 @@ export default function Navigation() {
   const socialLinks = [
     { label: 'X', icon: 'X', href: 'https://x.com/yourusername' },
     { label: 'LinkedIn', icon: 'in', href: 'https://linkedin.com/in/yourusername' },
-    { label: 'Email', icon: '✉', href: 'mailto:your.email@example.com' },
+    { label: 'Email', icon: '@', href: 'mailto:your.email@example.com' },
   ]
 
   const desktopConnectLinks = socialLinks
@@ -177,8 +179,8 @@ export default function Navigation() {
     const newCount = clickCount + 1
     setClickCount(newCount)
     
-    if (newCount === 5) {
-      // Direct access to admin - no password needed
+    if (newCount === 3) {
+      // Hidden local admin entry.
       router.push('/admin')
       setClickCount(0)
     }
@@ -187,10 +189,14 @@ export default function Navigation() {
     setTimeout(() => setClickCount(0), 3000)
   }
 
+  const handleRecentlyShelfDice = () => {
+    window.dispatchEvent(new Event(RECENTLY_SHUFFLE_EVENT))
+  }
+
   return (
     <nav className="w-80 h-screen p-12 flex flex-col justify-start mobile-nav fixed left-0 top-0" style={{paddingTop: 'calc(20vh + 8px)'}}>
       <div className="space-y-8 ml-16 mobile-nav-content">
-        {/* Logo diamonds - click 5x for admin */}
+        {/* Logo diamonds - click 3x for admin */}
         <div className="flex gap-2 cursor-pointer" onClick={handleLogoClick}>
           <div 
             className="w-6 h-6 bg-accent shadow-inner rotate-45 transition-transform hover:scale-110"
@@ -297,6 +303,14 @@ export default function Navigation() {
                 <span className={`sidebar-connect-icon ${item.label === 'Email' ? 'sidebar-connect-icon-email' : ''}`}>{item.icon}</span>
               </a>
             ))}
+          </div>
+        )}
+
+        {pathname === '/recently' && (
+          <div className="sidebar-recently-dice-panel mobile-hide-photo">
+            <button type="button" className="sidebar-recently-dice-btn" onClick={handleRecentlyShelfDice} aria-label="Shuffle shelf" title="Shuffle shelf">
+              <img src="/pixel-objects/dice-cube.svg" alt="" aria-hidden="true" className="sidebar-recently-dice-art" />
+            </button>
           </div>
         )}
 

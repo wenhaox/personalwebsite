@@ -11,11 +11,15 @@ export default function RecentlyAdmin() {
   const [isEditing, setIsEditing] = useState(false)
 
   useEffect(() => {
-    // Check admin session
-    const session = localStorage.getItem('adminSession')
-    if (!session || Date.now() - parseInt(session) > 24 * 60 * 60 * 1000) {
-      router.push('/')
-      return
+    const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+
+    // Keep session lock for hosted builds, but skip it locally for easier editing.
+    if (!isLocalHost) {
+      const session = localStorage.getItem('adminSession')
+      if (!session || Date.now() - parseInt(session) > 24 * 60 * 60 * 1000) {
+        router.push('/')
+        return
+      }
     }
 
     // Load recently items from localStorage
@@ -53,6 +57,7 @@ export default function RecentlyAdmin() {
       emoji: '',
       description: '',
       date: '',
+      audioUrl: '',
       image: '',
       images: [],
       link: '',
@@ -202,6 +207,18 @@ export default function RecentlyAdmin() {
                 <h3 className="text-lg font-serif mb-4">Media & Links</h3>
                 
                 <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Audio URL (for record playback)</label>
+                    <input
+                      type="url"
+                      value={editingItem?.audioUrl || ''}
+                      onChange={(e) => setEditingItem({...editingItem, audioUrl: e.target.value})}
+                      placeholder="https://...mp3"
+                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                    <p className="text-xs text-muted mt-1">Optional. If set, the record object on Recently will play this URL.</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium mb-2">Spotify Embed URL</label>
                     <input

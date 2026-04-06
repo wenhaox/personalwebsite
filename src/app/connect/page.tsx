@@ -5,14 +5,14 @@ import GuestbookBook from '@/app/components/GuestbookBook'
 const SOCIAL_LINKS = [
   { label: 'X', icon: 'X', href: 'https://x.com/yourusername' },
   { label: 'LinkedIn', icon: 'in', href: 'https://linkedin.com/in/yourusername' },
-  { label: 'Email', icon: '✉', href: 'mailto:your.email@example.com' },
+  { label: 'Email', icon: '@', href: 'mailto:your.email@example.com' },
 ]
 
 export default function Connect() {
   return (
-    <div className="flex items-start justify-start min-h-screen px-32 py-16 mobile-main-content bg-background">
-      <div className="w-full">
-        <section className="space-y-5">
+    <div className="connect-page-root flex items-stretch justify-start min-h-[100dvh] overflow-y-auto px-32 py-10 mobile-main-content bg-background">
+      <div className="w-full flex flex-col">
+        <section className="space-y-5 flex flex-col flex-1 min-h-0">
           <h1 className="sr-only">Connect</h1>
 
           <div className="connect-icons-shell hidden max-sm:flex page-load-seq page-load-seq-1">
@@ -30,8 +30,8 @@ export default function Connect() {
             ))}
           </div>
 
-          <div className="connect-board-shell page-load-seq page-load-seq-2">
-            <GuestbookBook compact />
+          <div className="connect-board-shell page-load-seq page-load-seq-2 flex-1 min-h-0">
+            <GuestbookBook compact fullHeight showZoomTools={false} enableBoardZoom={false} />
           </div>
         </section>
       </div>

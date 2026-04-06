@@ -11,7 +11,7 @@ const themeInitScript = `(() => {
     const root = document.documentElement
     const stored = localStorage.getItem('theme-preference')
     const shouldUseDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    const bodyColor = shouldUseDark ? '#1a1a1a' : '#faf9f7'
+    const bodyColor = shouldUseDark ? '#1a1a1a' : '#f4f5ef'
     if (shouldUseDark) {
       root.classList.add('dark')
       root.style.colorScheme = 'dark'
@@ -37,11 +37,11 @@ const themeInitScript = `(() => {
     const root = document.documentElement
     root.classList.remove('dark')
     root.style.colorScheme = 'light'
-    root.style.backgroundColor = '#faf9f7'
+    root.style.backgroundColor = '#f4f5ef'
 
     const applyBodyFallback = () => {
       if (!document.body) return
-      document.body.style.backgroundColor = '#faf9f7'
+      document.body.style.backgroundColor = '#f4f5ef'
       document.body.style.colorScheme = 'light'
     }
 
@@ -67,8 +67,13 @@ const crimsonText = Crimson_Text({
 });
 
 export const metadata: Metadata = {
-  title: "Your Name - Personal Website",
-  description: "Personal website showcasing my work, thoughts, and photography",
+  title: "Peter Xu",
+  description: "Peter Xu personal website",
+  icons: {
+    icon: '/brandmark.svg?v=3',
+    shortcut: '/brandmark.svg?v=3',
+    apple: '/brandmark.svg?v=3',
+  },
 };
 
 export const viewport = {

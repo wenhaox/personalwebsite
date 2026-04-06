@@ -1,9 +1,6 @@
 'use client'
 
-import { Camera, Disc, FilmStrip, TelevisionSimple, VinylRecord } from '@phosphor-icons/react'
-import { motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
-import { Rnd } from 'react-rnd'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface RecentlyLink {
   url: string
@@ -16,6 +13,7 @@ interface RecentlyItem {
   emoji: string
   description: string
   date: string
+  audioUrl?: string
   spotifyEmbed?: string
   podcastEmbed?: string
   image?: string
@@ -25,24 +23,18 @@ interface RecentlyItem {
   links?: RecentlyLink[]
 }
 
-interface FavoriteObject {
-  name: string
-  image: string
-  note: string
-  finish: string
-  acquired: string
-}
-
 type BoardObjectKind = 'record' | 'camera' | 'movie' | 'artifact'
 
 interface BoardObject {
   id: string
   kind: BoardObjectKind
+  pixelArt: string
   title: string
   subtitle: string
   description: string
   image?: string
   link?: RecentlyLink
+  spotifyEmbed?: string
 }
 
 interface BoardRect {
@@ -52,58 +44,31 @@ interface BoardRect {
   height: number
 }
 
-type BoardLayout = Record<string, BoardRect>
+const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
 
-const BOARD_LAYOUT_KEY = 'recentlyMiroLayoutV2'
-
-const DEFAULT_LAYOUT: BoardLayout = {
-  record: { x: 74, y: 96, width: 340, height: 300 },
-  camera: { x: 468, y: 122, width: 300, height: 250 },
-  movie: { x: 830, y: 108, width: 350, height: 280 },
-  'object-0': { x: 90, y: 468, width: 210, height: 210 },
-  'object-1': { x: 336, y: 488, width: 210, height: 210 },
-  'object-2': { x: 590, y: 474, width: 210, height: 210 },
-  'object-3': { x: 862, y: 486, width: 210, height: 210 },
-}
-
-const DEFAULT_FAVORITE_OBJECTS: FavoriteObject[] = [
-  {
-    name: 'Leica M6',
-    image: 'https://picsum.photos/id/1062/900/620',
-    note: 'Still my favorite camera body for intentional frames and slower days.',
-    finish: 'Mechanical film camera',
-    acquired: '2019',
-  },
-  {
-    name: 'Traveler Notebook',
-    image: 'https://picsum.photos/id/180/900/620',
-    note: 'Daily scratchpad for ideas, places, and lists I keep revisiting.',
-    finish: 'Leather + refill inserts',
-    acquired: '2021',
-  },
-  {
-    name: 'Porcelain Dripper',
-    image: 'https://picsum.photos/id/433/900/620',
-    note: 'Makes my morning ritual feel slow and exact in the best way.',
-    finish: 'Hand-pour setup',
-    acquired: '2022',
-  },
-  {
-    name: 'Studio Headphones',
-    image: 'https://picsum.photos/id/903/900/620',
-    note: 'My focus cue for deep work and long editing sessions.',
-    finish: 'Closed-back monitor pair',
-    acquired: '2024',
-  },
+const SHELF_SLOT_RECTS: BoardRect[] = [
+  { x: 0.195, y: 0.166, width: 0.1, height: 0.102 },
+  { x: 0.449, y: 0.166, width: 0.1, height: 0.102 },
+  { x: 0.703, y: 0.166, width: 0.1, height: 0.102 },
+  { x: 0.195, y: 0.318, width: 0.1, height: 0.102 },
+  { x: 0.449, y: 0.318, width: 0.1, height: 0.102 },
+  { x: 0.703, y: 0.318, width: 0.1, height: 0.102 },
+  { x: 0.195, y: 0.47, width: 0.1, height: 0.102 },
+  { x: 0.449, y: 0.47, width: 0.1, height: 0.102 },
+  { x: 0.703, y: 0.47, width: 0.1, height: 0.102 },
+  { x: 0.195, y: 0.622, width: 0.1, height: 0.102 },
+  { x: 0.449, y: 0.622, width: 0.1, height: 0.102 },
+  { x: 0.703, y: 0.622, width: 0.1, height: 0.102 },
 ]
 
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Music',
     item: 'Rosalia - MOTOMAMI',
-    emoji: '🎵',
+    emoji: '🎧',
     description: 'The production still feels weird and alive every listen.',
     date: 'This week',
+    audioUrl: 'https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3',
     spotifyEmbed: 'https://open.spotify.com/embed/album/5G2f63n7IPVPPjfNIGih7Q',
     link: 'https://open.spotify.com/album/5G2f63n7IPVPPjfNIGih7Q',
     linkText: 'Open in Spotify',
@@ -130,6 +95,64 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
       'https://picsum.photos/id/1038/800/540',
     ],
   },
+  {
+    category: 'Reading',
+    item: 'The Creative Act',
+    emoji: '📚',
+    description: 'Short sections, slow pace, and surprisingly useful prompts.',
+    date: 'This week',
+    link: 'https://www.penguinrandomhouse.com/books/717356/the-creative-act-by-rick-rubin/',
+    linkText: 'Book page',
+  },
+  {
+    category: 'Coffee',
+    item: 'Kenya AB pour-over dial-in',
+    emoji: '☕',
+    description: 'Brighter cup at a finer grind and slightly cooler water.',
+    date: 'Today',
+  },
+  {
+    category: 'Field notes',
+    item: 'Seacliff tidepool sketch set',
+    emoji: '🧭',
+    description: 'Small notebook studies from a windy late-afternoon walk.',
+    date: 'Last weekend',
+  },
+  {
+    category: 'Build',
+    item: 'Photo reel interaction cleanup',
+    emoji: '🛠️',
+    description: 'Reducing jitter and making filtered rolls feel more stable.',
+    date: 'Tonight',
+  },
+  {
+    category: 'Audio',
+    item: 'Late-night cassette mix',
+    emoji: '📼',
+    description: 'A mellow tape loop for long editing sessions.',
+    date: 'Yesterday',
+  },
+  {
+    category: 'Archive',
+    item: 'Postcard scan batch',
+    emoji: '✉️',
+    description: 'Digitizing old travel cards and notes.',
+    date: 'This week',
+  },
+  {
+    category: 'Play',
+    item: 'Retro co-op night',
+    emoji: '🎮',
+    description: 'Quick arcade rounds after work.',
+    date: 'Friday',
+  },
+  {
+    category: 'Desk',
+    item: 'Hourglass focus sprint',
+    emoji: '⏳',
+    description: 'Short timed blocks helped with writing.',
+    date: 'Today',
+  },
 ]
 
 const parseArray = <T,>(value: string | null): T[] => {
@@ -143,15 +166,19 @@ const parseArray = <T,>(value: string | null): T[] => {
   }
 }
 
-const readLocalStorageObject = (value: string | null): Record<string, unknown> => {
-  if (!value) return {}
+const shuffleWithSeed = <T,>(list: T[], seed: number): T[] => {
+  const next = [...list]
+  let state = (seed >>> 0) || 1
 
-  try {
-    const parsed = JSON.parse(value)
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {}
-  } catch {
-    return {}
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    state = (state * 1664525 + 1013904223) >>> 0
+    const swapIndex = state % (index + 1)
+    const temp = next[index]
+    next[index] = next[swapIndex]
+    next[swapIndex] = temp
   }
+
+  return next
 }
 
 const getPrimaryImage = (item: RecentlyItem | null): string | undefined => {
@@ -178,132 +205,47 @@ const getPrimaryLink = (item: RecentlyItem | null): RecentlyLink | undefined => 
   return undefined
 }
 
-const getDefaultRect = (object: BoardObject, index: number): BoardRect => {
-  const known = DEFAULT_LAYOUT[object.id]
-  if (known) return known
-
-  return {
-    x: 120 + (index % 4) * 250,
-    y: 720 + Math.floor(index / 4) * 240,
-    width: 210,
-    height: 210,
-  }
-}
-
-const parseLayout = (value: string | null): BoardLayout => {
-  const parsed = readLocalStorageObject(value)
-  const layout: BoardLayout = {}
-
-  Object.entries(parsed).forEach(([key, rect]) => {
-    if (!rect || typeof rect !== 'object') return
-
-    const candidate = rect as Record<string, unknown>
-    const x = Number(candidate.x)
-    const y = Number(candidate.y)
-    const width = Number(candidate.width)
-    const height = Number(candidate.height)
-
-    if (![x, y, width, height].every((n) => Number.isFinite(n))) return
-    if (width <= 80 || height <= 80) return
-
-    layout[key] = { x, y, width, height }
-  })
-
-  return layout
-}
-
-function renderObjectVisual(object: BoardObject, onOpenImage: (url: string) => void) {
-  if (object.kind === 'record') {
-    return (
-      <div className="miro-record-object" aria-hidden="true">
-        <VinylRecord className="miro-record-vinyl" weight="duotone" />
-        <Disc className="miro-record-center" weight="fill" />
-        <span className="miro-record-arm" />
-        <span className="miro-record-arm-head" />
-      </div>
-    )
-  }
-
-  if (object.kind === 'camera') {
-    return (
-      <div className="miro-camera-object">
-        <Camera className="miro-camera-icon" weight="duotone" />
-        {object.image && (
-          <button
-            type="button"
-            className="miro-camera-preview"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenImage(object.image!)
-            }}
-            aria-label={`Open ${object.title}`}
-          >
-            <img src={object.image} alt={object.title} className="miro-camera-preview-image" />
-          </button>
-        )}
-      </div>
-    )
-  }
-
-  if (object.kind === 'movie') {
-    return (
-      <div className="miro-tv-object">
-        <TelevisionSimple className="miro-tv-icon" weight="duotone" />
-        {object.image && (
-          <button
-            type="button"
-            className="miro-tv-poster"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenImage(object.image!)
-            }}
-            aria-label={`Open ${object.title}`}
-          >
-            <img src={object.image} alt={object.title} className="miro-tv-poster-image" />
-            <span className="miro-tv-scanline" />
-          </button>
-        )}
-      </div>
-    )
-  }
-
-  return (
-    <button
-      type="button"
-      className="miro-artifact-object"
-      onClick={(event) => {
-        event.stopPropagation()
-        if (object.image) onOpenImage(object.image)
-      }}
-      aria-label={`Open ${object.title}`}
-    >
-      {object.image ? (
-        <img src={object.image} alt={object.title} className="miro-artifact-image" />
-      ) : (
-        <FilmStrip className="miro-artifact-fallback" weight="duotone" />
-      )}
-    </button>
-  )
-}
-
 export default function Recently() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const shuffleTimeoutRef = useRef<number | null>(null)
+  const tooltipCloseTimerRef = useRef<number | null>(null)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [isShuffling, setIsShuffling] = useState(false)
+  const [rollSeed, setRollSeed] = useState(1)
+  const [isReady, setIsReady] = useState(false)
   const [items, setItems] = useState<RecentlyItem[]>([])
-  const [favoriteObjects, setFavoriteObjects] = useState<FavoriteObject[]>([])
-  const [boardLayout, setBoardLayout] = useState<BoardLayout>({})
 
   useEffect(() => {
     const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
-    const customObjects = parseArray<FavoriteObject>(localStorage.getItem('favoriteObjects'))
-
     setItems(customRecently)
-    setFavoriteObjects(customObjects)
-    setBoardLayout(parseLayout(localStorage.getItem(BOARD_LAYOUT_KEY)))
+    setIsReady(true)
   }, [])
 
+  useEffect(() => (
+    () => {
+      if (shuffleTimeoutRef.current) {
+        window.clearTimeout(shuffleTimeoutRef.current)
+      }
+
+      if (tooltipCloseTimerRef.current) {
+        window.clearTimeout(tooltipCloseTimerRef.current)
+      }
+    }
+  ), [])
+
+  const cancelTooltipClose = useCallback(() => {
+    if (!tooltipCloseTimerRef.current) return
+    window.clearTimeout(tooltipCloseTimerRef.current)
+    tooltipCloseTimerRef.current = null
+  }, [])
+
+  const queueTooltipClose = useCallback((id: string) => {
+    cancelTooltipClose()
+    tooltipCloseTimerRef.current = window.setTimeout(() => {
+      setHoveredId((current) => (current === id ? null : current))
+    }, 150)
+  }, [cancelTooltipClose])
+
   const recentlyItems = items.length > 0 ? items : DEFAULT_RECENTLY_ITEMS
-  const objectShelf = favoriteObjects.length > 0 ? favoriteObjects : DEFAULT_FAVORITE_OBJECTS
 
   const musicItem = useMemo(() => (
     recentlyItems.find((item) => {
@@ -324,18 +266,45 @@ export default function Recently() {
   ), [recentlyItems])
 
   const boardObjects = useMemo<BoardObject[]>(() => {
+    const extraPixelArt = [
+      '/pixel-objects/cassette.svg',
+      '/pixel-objects/headphones.svg',
+      '/pixel-objects/arcade-token.svg',
+      '/pixel-objects/hourglass.svg',
+      '/pixel-objects/postcard.svg',
+      '/pixel-objects/gamepad.svg',
+      '/pixel-objects/compass.svg',
+      '/pixel-objects/coffee-mug.svg',
+      '/pixel-objects/backpack.svg',
+      '/pixel-objects/book-stack.svg',
+      '/pixel-objects/radio.svg',
+      '/pixel-objects/desk-lamp.svg',
+      '/pixel-objects/dice-cube.svg',
+    ]
+
+    const fallbackItem: RecentlyItem = {
+      category: 'Notes',
+      item: 'Desk fragment',
+      emoji: '✨',
+      description: 'A tiny piece from the week that still stuck around.',
+      date: 'recent',
+    }
+
     const list: BoardObject[] = [
       {
         id: 'record',
         kind: 'record',
+        pixelArt: '/pixel-objects/vinyl-record.svg',
         title: musicItem?.item || 'Now spinning',
         subtitle: musicItem?.date || 'This week',
         description: musicItem?.description || 'Music in rotation right now.',
+        spotifyEmbed: musicItem?.spotifyEmbed,
         link: getPrimaryLink(musicItem),
       },
       {
         id: 'camera',
         kind: 'camera',
+        pixelArt: '/pixel-objects/fujifilm-camera.svg',
         title: photoItem?.item || 'Current photo obsession',
         subtitle: photoItem?.date || 'This week',
         description: photoItem?.description || 'Captured recently and still replaying in my head.',
@@ -345,6 +314,7 @@ export default function Recently() {
       {
         id: 'movie',
         kind: 'movie',
+        pixelArt: '/pixel-objects/film-frame.svg',
         title: movieItem?.item || 'Current watch',
         subtitle: movieItem?.date || 'Recent',
         description: movieItem?.description || 'A movie scene I keep thinking about.',
@@ -353,119 +323,208 @@ export default function Recently() {
       },
     ]
 
-    objectShelf.slice(0, 4).forEach((object, index) => {
+    const secondaryItems = shuffleWithSeed(recentlyItems.filter((item) => (
+      item !== musicItem && item !== photoItem && item !== movieItem
+    )), rollSeed)
+
+    const targetCount = 12
+    const artifactCount = Math.max(targetCount - list.length, 0)
+    const artifactPool = secondaryItems.length > 0 ? secondaryItems : [fallbackItem]
+
+    Array.from({ length: artifactCount }, (_, index) => artifactPool[index % artifactPool.length]).forEach((item, index) => {
       list.push({
         id: `object-${index}`,
         kind: 'artifact',
-        title: object.name,
-        subtitle: `Since ${object.acquired}`,
-        description: object.note,
-        image: object.image,
+        pixelArt: extraPixelArt[index % extraPixelArt.length],
+        title: item.item,
+        subtitle: item.date || 'recent',
+        description: item.description || 'A smaller moment from the recent stack.',
+        image: getPrimaryImage(item),
+        link: getPrimaryLink(item),
       })
     })
 
     return list
-  }, [movieItem, musicItem, objectShelf, photoItem])
+  }, [movieItem, musicItem, photoItem, recentlyItems, rollSeed])
 
-  const updateBoardRect = (object: BoardObject, index: number, partial: Partial<BoardRect>) => {
-    setBoardLayout((current) => {
-      const base = current[object.id] || getDefaultRect(object, index)
-      const next = {
-        ...current,
-        [object.id]: {
-          ...base,
-          ...partial,
-        },
-      }
+  const slotLayout = useMemo(() => {
+    const shuffledSlots = shuffleWithSeed(SHELF_SLOT_RECTS, rollSeed)
+    const nextLayout: Record<string, BoardRect> = {}
 
-      try {
-        localStorage.setItem(BOARD_LAYOUT_KEY, JSON.stringify(next))
-      } catch {
-        // Ignore write failures and keep in-memory dragging behavior.
-      }
-
-      return next
+    boardObjects.forEach((object, index) => {
+      nextLayout[object.id] = shuffledSlots[index % shuffledSlots.length]
     })
-  }
+
+    return nextLayout
+  }, [boardObjects, rollSeed])
+
+  const handleRollShelf = useCallback(() => {
+    if (!isReady) return
+
+    cancelTooltipClose()
+    setHoveredId(null)
+    setIsShuffling(true)
+    setRollSeed((current) => current + 1)
+
+    if (shuffleTimeoutRef.current) {
+      window.clearTimeout(shuffleTimeoutRef.current)
+    }
+
+    shuffleTimeoutRef.current = window.setTimeout(() => {
+      setIsShuffling(false)
+    }, 720)
+  }, [cancelTooltipClose, isReady])
+
+  useEffect(() => {
+    const handleSidebarShuffle = () => {
+      handleRollShelf()
+    }
+
+    window.addEventListener(RECENTLY_SHUFFLE_EVENT, handleSidebarShuffle)
+    return () => window.removeEventListener(RECENTLY_SHUFFLE_EVENT, handleSidebarShuffle)
+  }, [handleRollShelf])
 
   return (
-    <div className="flex items-start justify-start min-h-screen px-20 py-12 mobile-main-content bg-background">
-      <div className="w-full max-w-[1700px] mx-auto">
-        <h1 className="sr-only">Recently</h1>
+    <div className={`recently-page-root bg-background ${isShuffling ? 'is-shuffling' : ''}`}>
+      <h1 className="sr-only">Recently</h1>
 
-        <section className="miro-board-shell page-load-seq page-load-seq-1">
-          <div className="miro-board-stage">
-            <div className="miro-board-canvas">
-              {boardObjects.map((object, index) => {
-                const rect = boardLayout[object.id] || getDefaultRect(object, index)
+      <section className="recently-board-shell page-load-seq page-load-seq-1">
+        <div className="recently-board-stage">
+          <div className="recently-board-canvas">
+            <div className="recently-pixel-shelf-layer" aria-hidden="true">
+              <span className="recently-pixel-shelf-post recently-pixel-shelf-post-left" />
+              <span className="recently-pixel-shelf-post recently-pixel-shelf-post-right" />
+              <span className="recently-pixel-shelf recently-pixel-shelf-top" />
+              <span className="recently-pixel-shelf recently-pixel-shelf-upper" />
+              <span className="recently-pixel-shelf recently-pixel-shelf-mid" />
+              <span className="recently-pixel-shelf recently-pixel-shelf-bottom" />
+            </div>
 
-                return (
-                  <Rnd
-                    key={object.id}
-                    bounds="parent"
-                    disableDragging={false}
-                    enableResizing={false}
-                    dragHandleClassName="miro-object-handle"
-                    size={{ width: rect.width, height: rect.height }}
-                    position={{ x: rect.x, y: rect.y }}
-                    className="miro-node-wrap"
-                    onDragStop={(_, data) => {
-                      updateBoardRect(object, index, { x: data.x, y: data.y })
+            {boardObjects.map((object, index) => {
+              const rect = slotLayout[object.id] || SHELF_SLOT_RECTS[index % SHELF_SLOT_RECTS.length]
+              const isRecord = object.kind === 'record'
+              const artPath = object.pixelArt
+              const isGamepad = artPath.endsWith('/gamepad.svg')
+              const isMovie = object.kind === 'movie' || artPath.endsWith('/film-frame.svg')
+              const isCamera = object.kind === 'camera' || artPath.endsWith('/fujifilm-camera.svg')
+              const isAudioThing = /cassette\.svg$|headphones\.svg$|radio\.svg$/.test(artPath)
+              const isArcadeOrDice = /arcade-token\.svg$|dice-cube\.svg$/.test(artPath)
+              const isTravelThing = /compass\.svg$|backpack\.svg$|postcard\.svg$/.test(artPath)
+              const isHovered = hoveredId === object.id
+              const motionClass = isRecord
+                ? 'is-record-spin is-record-disc'
+                : isGamepad
+                  ? 'is-rocking'
+                  : isMovie
+                    ? 'is-glide'
+                    : isCamera
+                      ? 'is-idle-wobble'
+                      : isAudioThing
+                        ? 'is-glide'
+                        : isArcadeOrDice || isTravelThing
+                          ? 'is-rocking'
+                          : 'is-idle-float'
+              const tooltipClassName = [
+                'recently-node-tooltip',
+                isHovered ? 'is-visible' : '',
+                rect.y < 0.24 ? 'is-top-edge' : '',
+                rect.x < 0.16 ? 'is-left-edge' : '',
+                rect.x + rect.width > 0.84 ? 'is-right-edge' : '',
+              ].filter(Boolean).join(' ')
+
+              return (
+                <article
+                  key={object.id}
+                  className={`recently-object-slot ${isShuffling ? 'is-shuffling' : ''} ${isReady ? 'is-ready' : ''}`}
+                  style={{
+                    left: `${rect.x * 100}%`,
+                    top: `${rect.y * 100}%`,
+                    width: `${rect.width * 100}%`,
+                    height: `${rect.height * 100}%`,
+                    zIndex: isHovered ? 260 : 80 + index,
+                  }}
+                >
+                  <div
+                    className="recently-node-shell"
+                    onMouseEnter={() => {
+                      cancelTooltipClose()
+                      setHoveredId(object.id)
+                    }}
+                    onMouseLeave={() => {
+                      queueTooltipClose(object.id)
+                    }}
+                    onTouchStart={() => {
+                      cancelTooltipClose()
+                      setHoveredId(object.id)
                     }}
                   >
-                    <div className="miro-object-handle">
-                      <motion.div
-                        className={`miro-object miro-object-${object.kind}`}
-                        whileHover={{ y: -4, rotate: [0, -1.6, 1.6, 0] }}
-                        transition={{ duration: 0.36, ease: 'easeOut' }}
-                        onHoverStart={() => setHoveredId(object.id)}
-                        onHoverEnd={() => setHoveredId((current) => (current === object.id ? null : current))}
-                      >
-                        {renderObjectVisual(object, setSelectedImage)}
-                      </motion.div>
+                    <div
+                      className={`recently-node recently-node-${object.kind} ${isHovered ? 'is-hovered' : ''} ${isRecord ? 'is-record-playing' : ''}`}
+                      aria-label={object.title}
+                      role="img"
+                    >
+                      <span className={`recently-node-pixel recently-node-pixel-${object.kind}`}>
+                        <span className="recently-node-pixel-sprite">
+                          <img
+                            src={object.pixelArt}
+                            alt=""
+                            aria-hidden="true"
+                            className={`recently-node-pixel-image ${motionClass}`}
+                          />
+                        </span>
+                      </span>
                     </div>
 
-                    <div className={`miro-object-tooltip ${hoveredId === object.id ? 'is-visible' : ''}`}>
-                      <p className="miro-tooltip-title">{object.title}</p>
-                      <p className="miro-tooltip-copy">{object.description}</p>
+                    <div
+                      className={tooltipClassName}
+                      onMouseEnter={() => {
+                        cancelTooltipClose()
+                        setHoveredId(object.id)
+                      }}
+                      onMouseLeave={() => {
+                        queueTooltipClose(object.id)
+                      }}
+                      onTouchStart={() => {
+                        cancelTooltipClose()
+                        setHoveredId(object.id)
+                      }}
+                    >
+                      <p className="recently-node-tooltip-title">{object.title}</p>
+                      <p className="recently-node-tooltip-subtitle">{object.subtitle}</p>
+                      <p className="recently-node-tooltip-copy">{object.description}</p>
+
+                      {object.spotifyEmbed && (
+                        <iframe
+                          src={object.spotifyEmbed}
+                          className="recently-node-tooltip-spotify"
+                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                          loading="lazy"
+                          title={`${object.title} Spotify player`}
+                        />
+                      )}
+
+                      {!object.spotifyEmbed && object.image && (
+                        <img src={object.image} alt={object.title} className="recently-node-tooltip-media" />
+                      )}
+
                       {object.link && (
                         <a
                           href={object.link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="miro-tooltip-link"
+                          className="recently-node-tooltip-link"
                         >
                           {object.link.text} ↗
                         </a>
                       )}
                     </div>
-                  </Rnd>
-                )
-              })}
-            </div>
+                  </div>
+                </article>
+              )
+            })}
           </div>
-        </section>
-      </div>
-
-      {selectedImage && (
-        <div
-          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 cursor-pointer"
-          onClick={() => setSelectedImage(null)}
-        >
-          <button
-            onClick={() => setSelectedImage(null)}
-            className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-accent/80 text-white rounded-full flex items-center justify-center transition-all z-10"
-          >
-            ✕
-          </button>
-          <img
-            src={selectedImage}
-            alt="Full size"
-            className="max-w-[90%] max-h-[90%] object-contain"
-            onClick={(event) => event.stopPropagation()}
-          />
         </div>
-      )}
+      </section>
     </div>
   )
 }

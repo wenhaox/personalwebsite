@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+const GUESTBOOK_API_ENDPOINT = '/api/guestbook'
+
 export default function AdminPanel() {
-  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'photos' | 'recently' | 'guestbook' | 'stats'>('photos')
+  const [isLocalHost, setIsLocalHost] = useState(false)
   
   // Photos state
   const [photos, setPhotos] = useState<any[]>([])
@@ -33,6 +34,7 @@ export default function AdminPanel() {
     emoji: '',
     description: '',
     date: '',
+    audioUrl: '',
     spotifyEmbed: '',
     podcastEmbed: '',
     image: '',
@@ -52,10 +54,14 @@ export default function AdminPanel() {
   const [guestbookEntries, setGuestbookEntries] = useState<any[]>([])
   
   useEffect(() => {
-    loadData()
+    if (typeof window !== 'undefined') {
+      setIsLocalHost(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    }
+
+    void loadData()
   }, [])
   
-  const loadData = () => {
+  const loadData = async () => {
     // Load photos
     const storedPhotos = localStorage.getItem('customPhotos')
     if (storedPhotos) setPhotos(JSON.parse(storedPhotos))
@@ -97,6 +103,40 @@ export default function AdminPanel() {
     // Load guestbook
     const storedGuestbook = localStorage.getItem('guestbookEntries')
     if (storedGuestbook) setGuestbookEntries(JSON.parse(storedGuestbook))
+
+    try {
+      const response = await fetch(GUESTBOOK_API_ENDPOINT, { cache: 'no-store' })
+      if (!response.ok) return
+
+      const payload = await response.json()
+      if (!payload || typeof payload !== 'object') return
+
+      const remoteEntries = Array.isArray((payload as { entries?: unknown[] }).entries)
+        ? ((payload as { entries: any[] }).entries)
+        : null
+
+      if (remoteEntries) {
+        setGuestbookEntries(remoteEntries)
+      }
+    } catch {
+      // Keep local guestbook data when API is unavailable.
+    }
+  }
+
+  const saveGuestbookRemote = async (entries: any[]) => {
+    try {
+      const response = await fetch(GUESTBOOK_API_ENDPOINT, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ entries }),
+      })
+
+      return response.ok
+    } catch {
+      return false
+    }
   }
   
   // Photo functions
@@ -108,10 +148,14 @@ export default function AdminPanel() {
     
     let updated
     if (photoForm.id) {
-      updated = photos.map(p => p.id === photoForm.id ? { ...photoForm } : p)
+      updated = photos.map((p) => (
+        p.id === photoForm.id
+          ? { ...p, ...photoForm }
+          : p
+      ))
       alert('Photo updated!')
     } else {
-      updated = [...photos, { ...photoForm, id: Date.now() }]
+      updated = [...photos, { ...photoForm, id: Date.now(), createdAt: new Date().toISOString() }]
       alert('Photo added!')
     }
     
@@ -170,6 +214,7 @@ export default function AdminPanel() {
       id: recentlyForm.id || Date.now(),
       images: recentlyForm.images ? recentlyForm.images.split(',').map(s => s.trim()) : undefined,
       links: recentlyForm.links ? JSON.parse(recentlyForm.links) : undefined,
+      audioUrl: recentlyForm.audioUrl || undefined,
       spotifyEmbed: recentlyForm.spotifyEmbed || undefined,
       podcastEmbed: recentlyForm.podcastEmbed || undefined,
       image: recentlyForm.image || undefined,
@@ -204,6 +249,7 @@ export default function AdminPanel() {
       emoji: item.emoji,
       description: item.description,
       date: item.date,
+      audioUrl: item.audioUrl || '',
       spotifyEmbed: item.spotifyEmbed || '',
       podcastEmbed: item.podcastEmbed || '',
       image: item.image || '',
@@ -222,6 +268,7 @@ export default function AdminPanel() {
       emoji: '',
       description: '',
       date: '',
+      audioUrl: '',
       spotifyEmbed: '',
       podcastEmbed: '',
       image: '',
@@ -245,6 +292,7 @@ export default function AdminPanel() {
     )
     setGuestbookEntries(updated)
     localStorage.setItem('guestbookEntries', JSON.stringify(updated))
+    void saveGuestbookRemote(updated)
   }
   
   const deleteEntry = (id: number) => {
@@ -252,6 +300,7 @@ export default function AdminPanel() {
     const updated = guestbookEntries.filter(e => e.id !== id)
     setGuestbookEntries(updated)
     localStorage.setItem('guestbookEntries', JSON.stringify(updated))
+    void saveGuestbookRemote(updated)
   }
   
   const pendingEntries = guestbookEntries.filter(e => !e.approved)
@@ -269,6 +318,18 @@ export default function AdminPanel() {
             Back to Site
           </Link>
         </div>
+
+        {isLocalHost && (
+          <div className="mb-6 rounded-lg border border-accent/25 bg-accent/10 px-4 py-3 text-sm text-foreground">
+            Local mode: this panel saves directly to your browser localStorage so you can quickly add photos and recently items.
+          </div>
+        )}
+
+        {!isLocalHost && (
+          <div className="mb-6 rounded-lg border border-border bg-card/70 px-4 py-3 text-sm text-muted">
+            Hosted mode: guestbook moderation syncs through the site API. Photos and Recently remain easy to edit locally while you iterate.
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-8 border-b border-border">
@@ -372,6 +433,26 @@ export default function AdminPanel() {
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
+                </select>
+
+                <input
+                  type="url"
+                  placeholder="Image URL (https://...)"
+                  value={photoForm.imageUrl}
+                  onChange={(e) => setPhotoForm({...photoForm, imageUrl: e.target.value})}
+                  className="px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+
+                <select
+                  value={photoForm.aspectRatio}
+                  onChange={(e) => setPhotoForm({...photoForm, aspectRatio: e.target.value})}
+                  className="px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                >
+                  <option value="aspect-[3/4]">Portrait (3:4)</option>
+                  <option value="aspect-[4/3]">Landscape (4:3)</option>
+                  <option value="aspect-[16/9]">Wide (16:9)</option>
+                  <option value="aspect-square">Square (1:1)</option>
+                  <option value="aspect-[2/3]">Tall (2:3)</option>
                 </select>
               </div>
               <textarea
@@ -558,7 +639,7 @@ export default function AdminPanel() {
                   {recentlyItems.map(item => (
                     <div key={item.id} className="flex items-center justify-between p-3 bg-background rounded-lg">
                       <div className="flex-1">
-                        <h3 className="font-medium">{item.emoji} {item.item}</h3>
+                        <h3 className="font-medium">{item.item}</h3>
                         <p className="text-sm text-muted">{item.category} • {item.date}</p>
                       </div>
                       <div className="flex gap-2">
@@ -595,19 +676,12 @@ export default function AdminPanel() {
                 )}
               </div>
               <div className="space-y-3">
-                <div className="grid md:grid-cols-3 gap-3">
+                <div className="grid md:grid-cols-2 gap-3">
                   <input
                     type="text"
                     placeholder="Category (e.g., Music)"
                     value={recentlyForm.category}
                     onChange={(e) => setRecentlyForm({...recentlyForm, category: e.target.value})}
-                    className="px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Emoji"
-                    value={recentlyForm.emoji}
-                    onChange={(e) => setRecentlyForm({...recentlyForm, emoji: e.target.value})}
                     className="px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                   <input
@@ -630,6 +704,13 @@ export default function AdminPanel() {
                   value={recentlyForm.description}
                   onChange={(e) => setRecentlyForm({...recentlyForm, description: e.target.value})}
                   rows={3}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+                <input
+                  type="url"
+                  placeholder="Audio URL for record playback (optional)"
+                  value={recentlyForm.audioUrl}
+                  onChange={(e) => setRecentlyForm({...recentlyForm, audioUrl: e.target.value})}
                   className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 />
                 <input

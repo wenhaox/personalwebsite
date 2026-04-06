@@ -1,5 +1,6 @@
 'use client'
 
+import { Moon, Sun } from '@phosphor-icons/react'
 import { useState, useEffect } from 'react'
 
 const THEME_KEY = 'theme-preference'
@@ -65,13 +66,15 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={() => setIsDark(!isDark)}
-      className="fixed bottom-8 right-8 md:bottom-8 md:right-8 p-3 bg-card border border-border rounded-xl shadow-lg transition-all duration-300 z-50 mobile-theme-toggle"
+      className="fixed bottom-8 left-8 md:bottom-8 md:left-8 p-3 rounded-full transition-all duration-300 z-50 mobile-theme-toggle theme-toggle-icon-only"
       aria-label="Toggle dark mode"
       style={{maxWidth: 'calc(100vw - 4rem)'}}
     >
-      <span className="text-xl">
-        {isDark ? '☀️' : '🌙'}
-      </span>
+      {isDark ? (
+        <Sun size={24} weight="duotone" aria-hidden="true" />
+      ) : (
+        <Moon size={24} weight="duotone" aria-hidden="true" />
+      )}
     </button>
   )
 }

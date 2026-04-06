@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
+const GUESTBOOK_API_ENDPOINT = '/api/guestbook'
 
 interface GuestbookEntry {
   id: number;
@@ -13,20 +14,52 @@ interface GuestbookEntry {
 }
 
 export default function AdminGuestbook() {
-  const router = useRouter()
   const [entries, setEntries] = useState<GuestbookEntry[]>([])
   const [pendingCount, setPendingCount] = useState(0)
   
   useEffect(() => {
-    loadEntries()
+    void loadEntries()
   }, [])
   
-  const loadEntries = () => {
+  const loadEntries = async () => {
     const stored = localStorage.getItem('guestbookEntries')
     if (stored) {
       const all = JSON.parse(stored)
       setEntries(all)
       setPendingCount(all.filter((e: GuestbookEntry) => !e.approved).length)
+    }
+
+    try {
+      const response = await fetch(GUESTBOOK_API_ENDPOINT, { cache: 'no-store' })
+      if (!response.ok) return
+
+      const payload = await response.json()
+      if (!payload || typeof payload !== 'object') return
+
+      const remoteEntries = Array.isArray((payload as { entries?: unknown[] }).entries)
+        ? ((payload as { entries: GuestbookEntry[] }).entries)
+        : null
+
+      if (!remoteEntries) return
+
+      setEntries(remoteEntries)
+      setPendingCount(remoteEntries.filter((entry) => !entry.approved).length)
+    } catch {
+      // Keep local entries when remote API is unavailable.
+    }
+  }
+
+  const saveRemoteEntries = async (nextEntries: GuestbookEntry[]) => {
+    try {
+      await fetch(GUESTBOOK_API_ENDPOINT, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ entries: nextEntries }),
+      })
+    } catch {
+      // Keep local updates even if remote sync fails.
     }
   }
   
@@ -36,7 +69,8 @@ export default function AdminGuestbook() {
     )
     setEntries(updated)
     localStorage.setItem('guestbookEntries', JSON.stringify(updated))
-    loadEntries()
+    void saveRemoteEntries(updated)
+    setPendingCount(updated.filter((entry) => !entry.approved).length)
   }
   
   const deleteEntry = (id: number) => {
@@ -45,7 +79,8 @@ export default function AdminGuestbook() {
     const updated = entries.filter(e => e.id !== id)
     setEntries(updated)
     localStorage.setItem('guestbookEntries', JSON.stringify(updated))
-    loadEntries()
+    void saveRemoteEntries(updated)
+    setPendingCount(updated.filter((entry) => !entry.approved).length)
   }
   
   const pendingEntries = entries.filter(e => !e.approved)
