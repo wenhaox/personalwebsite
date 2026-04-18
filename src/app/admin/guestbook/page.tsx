@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
+import AdminGate from '@/app/components/AdminGate'
+
 const GUESTBOOK_API_ENDPOINT = '/api/guestbook'
 
 interface GuestbookEntry {
@@ -87,8 +89,9 @@ export default function AdminGuestbook() {
   const approvedEntries = entries.filter(e => e.approved)
   
   return (
-    <div className="flex items-start justify-center min-h-screen px-32 py-16 mobile-main-content">
-      <div className="max-w-4xl w-full animate-fade-in-up">
+    <AdminGate>
+      <div className="flex items-start justify-center min-h-screen px-32 py-16 mobile-main-content">
+        <div className="max-w-4xl w-full animate-fade-in-up">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-serif italic">Guestbook Admin</h1>
@@ -175,8 +178,9 @@ export default function AdminGuestbook() {
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </AdminGate>
   )
 }
 

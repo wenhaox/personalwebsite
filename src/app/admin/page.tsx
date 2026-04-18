@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
+import AdminGate from '@/app/components/AdminGate'
+
 const GUESTBOOK_API_ENDPOINT = '/api/guestbook'
 
 export default function AdminPanel() {
@@ -307,8 +309,9 @@ export default function AdminPanel() {
   const approvedEntries = guestbookEntries.filter(e => e.approved)
 
   return (
-    <div className="flex items-start justify-center min-h-screen px-32 py-16 mobile-main-content">
-      <div className="max-w-6xl w-full">
+    <AdminGate>
+      <div className="flex items-start justify-center min-h-screen px-32 py-16 mobile-main-content">
+        <div className="max-w-6xl w-full">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-serif italic">Admin Panel</h1>
           <Link
@@ -834,7 +837,8 @@ export default function AdminPanel() {
             </button>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </AdminGate>
   )
 }

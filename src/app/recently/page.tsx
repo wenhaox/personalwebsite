@@ -208,11 +208,13 @@ const getPrimaryLink = (item: RecentlyItem | null): RecentlyLink | undefined => 
 export default function Recently() {
   const shuffleTimeoutRef = useRef<number | null>(null)
   const tooltipCloseTimerRef = useRef<number | null>(null)
+  const tooltipRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [isShuffling, setIsShuffling] = useState(false)
   const [rollSeed, setRollSeed] = useState(1)
   const [isReady, setIsReady] = useState(false)
   const [items, setItems] = useState<RecentlyItem[]>([])
+  const [tooltipEdgeMap, setTooltipEdgeMap] = useState<Record<string, { left: boolean; right: boolean; top: boolean }>>({})
 
   useEffect(() => {
     const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
@@ -244,6 +246,55 @@ export default function Recently() {
       setHoveredId((current) => (current === id ? null : current))
     }, 150)
   }, [cancelTooltipClose])
+
+  const updateTooltipEdgeMap = useCallback((id: string) => {
+    window.requestAnimationFrame(() => {
+      const tooltip = tooltipRefs.current[id]
+      if (!tooltip) return
+
+      const rect = tooltip.getBoundingClientRect()
+      const margin = 10
+      const nextEdgeState = {
+        left: rect.left < margin,
+        right: rect.right > (window.innerWidth - margin),
+        top: rect.top < margin,
+      }
+
+      setTooltipEdgeMap((current) => {
+        const existing = current[id]
+        if (
+          existing &&
+          existing.left === nextEdgeState.left &&
+          existing.right === nextEdgeState.right &&
+          existing.top === nextEdgeState.top
+        ) {
+          return current
+        }
+
+        return {
+          ...current,
+          [id]: nextEdgeState,
+        }
+      })
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!hoveredId) return
+
+    const syncHoveredTooltip = () => {
+      updateTooltipEdgeMap(hoveredId)
+    }
+
+    syncHoveredTooltip()
+    window.addEventListener('resize', syncHoveredTooltip)
+    window.addEventListener('scroll', syncHoveredTooltip, { passive: true })
+
+    return () => {
+      window.removeEventListener('resize', syncHoveredTooltip)
+      window.removeEventListener('scroll', syncHoveredTooltip)
+    }
+  }, [hoveredId, updateTooltipEdgeMap])
 
   const recentlyItems = items.length > 0 ? items : DEFAULT_RECENTLY_ITEMS
 
@@ -411,6 +462,10 @@ export default function Recently() {
               const isArcadeOrDice = /arcade-token\.svg$|dice-cube\.svg$/.test(artPath)
               const isTravelThing = /compass\.svg$|backpack\.svg$|postcard\.svg$/.test(artPath)
               const isHovered = hoveredId === object.id
+              const tooltipEdgeState = tooltipEdgeMap[object.id]
+              const isTopEdge = rect.y < 0.24 || Boolean(tooltipEdgeState?.top)
+              const isLeftEdge = rect.x < 0.16 || Boolean(tooltipEdgeState?.left)
+              const isRightEdge = rect.x + rect.width > 0.84 || Boolean(tooltipEdgeState?.right)
               const motionClass = isRecord
                 ? 'is-record-spin is-record-disc'
                 : isGamepad
@@ -427,9 +482,9 @@ export default function Recently() {
               const tooltipClassName = [
                 'recently-node-tooltip',
                 isHovered ? 'is-visible' : '',
-                rect.y < 0.24 ? 'is-top-edge' : '',
-                rect.x < 0.16 ? 'is-left-edge' : '',
-                rect.x + rect.width > 0.84 ? 'is-right-edge' : '',
+                isTopEdge ? 'is-top-edge' : '',
+                isLeftEdge ? 'is-left-edge' : '',
+                isRightEdge ? 'is-right-edge' : '',
               ].filter(Boolean).join(' ')
 
               return (
@@ -449,6 +504,7 @@ export default function Recently() {
                     onMouseEnter={() => {
                       cancelTooltipClose()
                       setHoveredId(object.id)
+                      updateTooltipEdgeMap(object.id)
                     }}
                     onMouseLeave={() => {
                       queueTooltipClose(object.id)
@@ -456,6 +512,7 @@ export default function Recently() {
                     onTouchStart={() => {
                       cancelTooltipClose()
                       setHoveredId(object.id)
+                      updateTooltipEdgeMap(object.id)
                     }}
                   >
                     <div
@@ -476,10 +533,14 @@ export default function Recently() {
                     </div>
 
                     <div
+                      ref={(node) => {
+                        tooltipRefs.current[object.id] = node
+                      }}
                       className={tooltipClassName}
                       onMouseEnter={() => {
                         cancelTooltipClose()
                         setHoveredId(object.id)
+                        updateTooltipEdgeMap(object.id)
                       }}
                       onMouseLeave={() => {
                         queueTooltipClose(object.id)
@@ -487,6 +548,7 @@ export default function Recently() {
                       onTouchStart={() => {
                         cancelTooltipClose()
                         setHoveredId(object.id)
+                        updateTooltipEdgeMap(object.id)
                       }}
                     >
                       <p className="recently-node-tooltip-title">{object.title}</p>

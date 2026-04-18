@@ -50,42 +50,6 @@ const DECORATIONS_KEY = 'guestboardDecorations'
 const EMOJI_PICKER = ['✨', '🌿', '🫶', '📷', '☕', '🌤️', '🎵', '🧠', '🪩', '💫', '🌼', '🍀']
 const GUESTBOOK_API_ENDPOINT = '/api/guestbook'
 
-const SAMPLE_NOTES: GuestbookNote[] = [
-  {
-    id: 91001,
-    name: 'Anonymous',
-    message: 'Love the visual direction here. Feels calm and intentional.',
-    date: 'Mar 24, 2026',
-    approved: true,
-    createdAt: '2026-03-24T15:10:00.000Z',
-    x: 26,
-    y: 22,
-    color: '#fff9d7',
-  },
-  {
-    id: 91002,
-    name: 'Anonymous',
-    message: 'The photo board interaction is fun. Drag plus reorder feels natural.',
-    date: 'Mar 26, 2026',
-    approved: true,
-    createdAt: '2026-03-26T11:25:00.000Z',
-    x: 254,
-    y: 44,
-    color: '#e7f4ff',
-  },
-  {
-    id: 91003,
-    name: 'Anonymous',
-    message: 'Really liked reading your notes and seeing the updates evolve.',
-    date: 'Mar 29, 2026',
-    approved: true,
-    createdAt: '2026-03-29T09:40:00.000Z',
-    x: 486,
-    y: 30,
-    color: '#e9fbe8',
-  },
-]
-
 const clamp = (value: number, min: number, max: number): number => (
   Math.min(Math.max(value, min), max)
 )
@@ -167,22 +131,39 @@ const isLikelyImageUrl = (value: string): boolean => (
   /^https?:\/\//i.test(value) || /^data:image\//i.test(value)
 )
 
+const getFallbackNotePosition = (index: number): { x: number; y: number } => {
+  const column = index % 4
+  const row = Math.floor(index / 4)
+  const laneOffset = row % 2 === 0 ? 0 : 28
+  const waveX = Math.round(Math.sin((index + 1) * 1.27) * 22)
+  const waveY = Math.round(Math.cos((index + 1) * 1.41) * 18)
+
+  return {
+    x: Math.max(0, 22 + (column * 205) + laneOffset + waveX),
+    y: Math.max(0, 18 + (row * 165) + waveY),
+  }
+}
+
 const normalizeNotesFromSource = (value: unknown): GuestbookNote[] => {
   if (!Array.isArray(value)) return []
 
   const normalized = value
     .filter((entry: Partial<GuestbookEntry>) => entry.approved !== false)
-    .map((entry: Partial<GuestbookEntry>, index: number) => ({
-      id: typeof entry.id === 'number' ? entry.id : Date.now() + index,
-      name: 'Anonymous',
-      message: (entry.message || '').trim() || 'A quiet note left on the board.',
-      date: toDisplayDate(entry),
-      approved: true,
-      createdAt: entry.createdAt,
-      x: typeof entry.x === 'number' ? entry.x : 20 + (index % 4) * 220,
-      y: typeof entry.y === 'number' ? entry.y : 18 + Math.floor(index / 4) * 176,
-      color: typeof entry.color === 'string' ? entry.color : STICKY_COLORS[index % STICKY_COLORS.length],
-    }))
+    .map((entry: Partial<GuestbookEntry>, index: number) => {
+      const fallback = getFallbackNotePosition(index)
+
+      return {
+        id: typeof entry.id === 'number' ? entry.id : Date.now() + index,
+        name: 'Anonymous',
+        message: (entry.message || '').trim() || 'A quiet note left on the board.',
+        date: toDisplayDate(entry),
+        approved: true,
+        createdAt: entry.createdAt,
+        x: typeof entry.x === 'number' ? entry.x : fallback.x,
+        y: typeof entry.y === 'number' ? entry.y : fallback.y,
+        color: typeof entry.color === 'string' ? entry.color : STICKY_COLORS[index % STICKY_COLORS.length],
+      }
+    })
 
   return normalized
 }
@@ -192,17 +173,21 @@ const normalizePendingEntriesFromSource = (value: unknown): GuestbookEntry[] => 
 
   return value
     .filter((entry: Partial<GuestbookEntry>) => entry.approved === false)
-    .map((entry: Partial<GuestbookEntry>, index: number) => ({
-      id: typeof entry.id === 'number' ? entry.id : Date.now() + index,
-      name: 'Anonymous',
-      message: (entry.message || '').trim() || 'Pending note.',
-      date: toDisplayDate(entry),
-      approved: false,
-      createdAt: entry.createdAt,
-      x: typeof entry.x === 'number' ? entry.x : 20 + (index % 4) * 220,
-      y: typeof entry.y === 'number' ? entry.y : 18 + Math.floor(index / 4) * 176,
-      color: typeof entry.color === 'string' ? entry.color : STICKY_COLORS[index % STICKY_COLORS.length],
-    }))
+    .map((entry: Partial<GuestbookEntry>, index: number) => {
+      const fallback = getFallbackNotePosition(index)
+
+      return {
+        id: typeof entry.id === 'number' ? entry.id : Date.now() + index,
+        name: 'Anonymous',
+        message: (entry.message || '').trim() || 'Pending note.',
+        date: toDisplayDate(entry),
+        approved: false,
+        createdAt: entry.createdAt,
+        x: typeof entry.x === 'number' ? entry.x : fallback.x,
+        y: typeof entry.y === 'number' ? entry.y : fallback.y,
+        color: typeof entry.color === 'string' ? entry.color : STICKY_COLORS[index % STICKY_COLORS.length],
+      }
+    })
 }
 
 const normalizeDecorationsFromSource = (value: unknown): BoardDecoration[] => {
@@ -322,7 +307,7 @@ export default function GuestbookBook({
       )
 
       if (!isCancelled) {
-        setNotes(localNotes.length > 0 ? localNotes : (localPendingEntries.length > 0 ? [] : SAMPLE_NOTES))
+        setNotes(localNotes)
         setPendingEntries(localPendingEntries)
         setDecorations(localDecorations)
       }
@@ -343,7 +328,7 @@ export default function GuestbookBook({
         } else if (remotePendingEntries.length > 0) {
           setNotes([])
         } else if (localNotes.length === 0 && remotePendingEntries.length === 0) {
-          setNotes(SAMPLE_NOTES)
+          setNotes([])
         }
 
         if (remotePendingEntries.length > 0 || localPendingEntries.length === 0) {

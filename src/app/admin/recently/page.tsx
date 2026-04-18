@@ -1,33 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+import AdminGate from '@/app/components/AdminGate'
+
 export default function RecentlyAdmin() {
-  const router = useRouter()
   const [recentlyItems, setRecentlyItems] = useState<any[]>([])
   const [editingItem, setEditingItem] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
 
   useEffect(() => {
-    const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-
-    // Keep session lock for hosted builds, but skip it locally for easier editing.
-    if (!isLocalHost) {
-      const session = localStorage.getItem('adminSession')
-      if (!session || Date.now() - parseInt(session) > 24 * 60 * 60 * 1000) {
-        router.push('/')
-        return
-      }
-    }
-
     // Load recently items from localStorage
     const stored = localStorage.getItem('recentlyItems')
     if (stored) {
       setRecentlyItems(JSON.parse(stored))
     }
-  }, [router])
+  }, [])
 
   const saveItem = () => {
     if (!editingItem) return
@@ -70,8 +59,9 @@ export default function RecentlyAdmin() {
   }
 
   return (
-    <div className="flex items-start justify-center min-h-screen px-32 py-16 mobile-main-content">
-      <div className="max-w-4xl w-full">
+    <AdminGate>
+      <div className="flex items-start justify-center min-h-screen px-32 py-16 mobile-main-content">
+        <div className="max-w-4xl w-full">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-serif italic mb-2">Recently Admin</h1>
@@ -84,12 +74,12 @@ export default function RecentlyAdmin() {
             >
               ← Back to Admin
             </Link>
-            <button
-              onClick={() => router.push('/')}
+            <Link
+              href="/"
               className="px-4 py-2 bg-muted/20 hover:bg-muted/30 rounded-lg transition-colors notion-button"
             >
               Back to Site
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -310,8 +300,9 @@ export default function RecentlyAdmin() {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </AdminGate>
   )
 }
 

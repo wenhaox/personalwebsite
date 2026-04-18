@@ -264,10 +264,10 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
   const [isMobileViewport, setIsMobileViewport] = useState(() => (
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
   ))
-  const hasAutoScrollLane = sourcePhotoCount > 2 && !isMobileViewport
+  const hasAutoScrollLane = sourcePhotoCount > 2
   const reelRef = useRef<HTMLDivElement | null>(null)
   const pauseUntilRef = useRef(0)
-  const [isLaneScrollable, setIsLaneScrollable] = useState(false)
+  const [isLaneScrollable, setIsLaneScrollable] = useState(sourcePhotoCount > 2)
   const dragStateRef = useRef({
     active: false,
     moved: false,
@@ -301,13 +301,13 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
   }, [])
 
   useEffect(() => {
-    if (sourcePhotoCount > 2 && !isMobileViewport) {
+    if (sourcePhotoCount > 2) {
       setIsLaneScrollable(true)
       return
     }
 
     setIsLaneScrollable(false)
-  }, [isMobileViewport, sourcePhotoCount])
+  }, [sourcePhotoCount])
 
   useEffect(() => {
     if (!isMobileViewport) return
@@ -633,7 +633,7 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
                       <img
                         src={getPhotoImage(photo, idKey)}
                         alt={photo.title}
-                        loading="lazy"
+                        loading="eager"
                         className={portraitSource ? 'photo-film-image-rotated' : ''}
                       />
                     </span>
@@ -660,6 +660,7 @@ function PhotographyClient() {
   const [filterTag, setFilterTag] = useState('')
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null)
   const [customPhotos, setCustomPhotos] = useState<PhotoItem[]>([])
+  const [isPhotoContentReady, setIsPhotoContentReady] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('customPhotos')
@@ -699,6 +700,64 @@ function PhotographyClient() {
   }, [selectedPhoto])
 
   const photos = useMemo(() => [...DEFAULT_PHOTOS, ...customPhotos], [customPhotos])
+
+  const allPhotoSources = useMemo(() => {
+    const sourceSet = new Set<string>()
+    photos.forEach((photo) => {
+      sourceSet.add(getPhotoImage(photo, toIdKey(photo.id)))
+    })
+    return Array.from(sourceSet)
+  }, [photos])
+
+  useEffect(() => {
+    let isCancelled = false
+    setIsPhotoContentReady(false)
+
+    if (allPhotoSources.length === 0) {
+      setIsPhotoContentReady(true)
+      return () => {
+        isCancelled = true
+      }
+    }
+
+    const preloadImages: HTMLImageElement[] = []
+    let completedCount = 0
+
+    const markResolved = () => {
+      completedCount += 1
+      if (completedCount !== allPhotoSources.length || isCancelled) return
+
+      window.setTimeout(() => {
+        if (!isCancelled) {
+          setIsPhotoContentReady(true)
+        }
+      }, 120)
+    }
+
+    const maxWaitTimeoutId = window.setTimeout(() => {
+      if (!isCancelled) {
+        setIsPhotoContentReady(true)
+      }
+    }, 2800)
+
+    allPhotoSources.forEach((source) => {
+      const image = new Image()
+      image.decoding = 'async'
+      image.onload = markResolved
+      image.onerror = markResolved
+      image.src = source
+      preloadImages.push(image)
+    })
+
+    return () => {
+      isCancelled = true
+      window.clearTimeout(maxWaitTimeoutId)
+      preloadImages.forEach((image) => {
+        image.onload = null
+        image.onerror = null
+      })
+    }
+  }, [allPhotoSources])
 
   const photoTimestampMap = useMemo(() => {
     const map = new Map<string, number>()
@@ -820,73 +879,44 @@ function PhotographyClient() {
         <h1 className="sr-only">Photos</h1>
 
         <div className="photo-vsco-toolbar photo-mobile-toolbar mb-4 page-load-seq page-load-seq-1">
-          <div className="photo-controls-row">
-            <button
-              type="button"
-              className={`photo-sort-button photo-control-pill px-3 py-1.5 rounded-full border text-xs transition-all ${
-                !sortBy
-                  ? 'bg-accent text-stone-100 border-accent filter-pill-active'
-                  : 'bg-background text-muted border-border hover:border-accent/40 hover:text-accent'
-              }`}
-              onClick={() => {
-                setSortBy(null)
-                setFilterTag('')
-              }}
-            >
-              <span className="photo-sort-button-icon photo-sort-button-icon-all">◍</span>
-              <span className="photo-sort-button-label">All Photos</span>
-            </button>
-
-            {SORT_OPTIONS.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                className={`photo-sort-button photo-control-pill px-3 py-1.5 rounded-full border text-xs transition-all ${
-                  sortBy === option.key
-                    ? 'bg-accent text-stone-100 border-accent filter-pill-active'
-                    : 'bg-background text-muted border-border hover:border-accent/40 hover:text-accent'
-                }`}
-                onClick={() => {
-                  setSortBy(option.key)
+          <div className="photo-controls-row photo-controls-row-dropdown">
+            <label className={`photo-select-shell photo-select-shell-sort ${sortBy ? 'is-active' : ''}`}>
+              <span className="photo-select-pill-icon" aria-hidden="true">◈</span>
+              <span className="photo-select-label">Sort</span>
+              <select
+                className="photo-select-input photo-select-input-sort"
+                value={sortBy || ''}
+                onChange={(event) => {
+                  const nextValue = event.target.value as SortBy | ''
+                  setSortBy(nextValue ? nextValue : null)
                   setFilterTag('')
                 }}
               >
-                <span className={`photo-sort-button-icon photo-sort-button-icon-${option.key}`}>{option.icon}</span>
-                <span className="photo-sort-button-label">{option.label}</span>
-              </button>
-            ))}
-          </div>
+                <option value="">All Photos</option>
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.key} value={option.key}>{option.label}</option>
+                ))}
+              </select>
+            </label>
 
-          {sortBy && filterOptions.length > 0 && (
-            <div className="photo-controls-row photo-filter-row">
-              <button
-                type="button"
-                className={`photo-control-pill px-2.5 py-1 rounded-full border text-[11px] transition-all ${
-                  !filterTag
-                    ? 'bg-accent text-stone-100 border-accent filter-pill-active'
-                    : 'bg-background text-muted border-border hover:border-accent/40 hover:text-accent'
-                }`}
-                onClick={() => setFilterTag('')}
+            <label className={`photo-select-shell photo-select-shell-filter ${(!sortBy || filterOptions.length === 0) ? 'is-disabled' : ''} ${filterTag ? 'is-active' : ''}`}>
+              <span className="photo-select-pill-icon" aria-hidden="true">◍</span>
+              <span className="photo-select-label">Filter</span>
+              <select
+                className="photo-select-input photo-select-input-filter"
+                value={filterTag}
+                disabled={!sortBy || filterOptions.length === 0}
+                onChange={(event) => {
+                  setFilterTag(event.target.value)
+                }}
               >
-                All {activeSort?.label}
-              </button>
-
-              {filterOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`photo-control-pill px-2.5 py-1 rounded-full border text-[11px] transition-all ${
-                    filterTag.toLowerCase() === option.value.toLowerCase()
-                      ? 'bg-accent text-stone-100 border-accent filter-pill-active'
-                      : 'bg-background text-muted border-border hover:border-accent/40 hover:text-accent'
-                  }`}
-                  onClick={() => setFilterTag(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          )}
+                <option value="">{sortBy ? `All ${activeSort?.label || 'Categories'}` : 'Pick sort first'}</option>
+                {sortBy && filterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
         <div className="mb-4 flex items-center justify-between gap-4 text-xs text-muted page-load-seq page-load-seq-2">
@@ -896,7 +926,22 @@ function PhotographyClient() {
           </span>
         </div>
 
-        {!sortBy ? (
+        {!isPhotoContentReady ? (
+          <div className="photo-loading-shell page-load-seq page-load-seq-3" aria-live="polite" aria-label="Loading photos">
+            <div className="photo-loading-head">
+              <span className="photo-loading-kicker">Developing contact sheet</span>
+              <span className="photo-loading-copy">Loading photo archive...</span>
+            </div>
+            <div className="photo-loading-reel" role="presentation">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <span
+                  key={`photo-loading-${index}`}
+                  className={`photo-loading-frame photo-loading-frame-${(index % 4) + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : !sortBy ? (
           <div className="photo-vsco-board page-load-seq page-load-seq-3">
             <div className="photo-vsco-masonry">
               {allPhotosSorted.map((photo) => {
@@ -912,7 +957,7 @@ function PhotographyClient() {
                       <img
                         src={getPhotoImage(photo, idKey)}
                         alt={photo.title}
-                        loading="lazy"
+                        loading="eager"
                       />
                       <span className="photo-meta-overlay">
                         <span className="photo-meta-overlay-title">{photo.title}</span>

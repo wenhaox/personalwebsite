@@ -33,26 +33,12 @@ export default function Home() {
 
         <div className="space-y-2 md:space-y-3 text-base leading-relaxed mobile-left-text about-seq-body">
           <p className="about-seq-line about-seq-line-1">
-            I&apos;m currently building something meaningful, focusing on creating
-            spaces and experiences that bring people together.
+            I&apos;m interested in the bring-up and integration of hardware systems - where robotics and consumer products meet intentional design.
           </p>
 
           <p className="about-seq-line about-seq-line-2">
-            I spend a lot of time <em className="italic underline decoration-accent">writing</em> - mostly about my building journey,
-            human agency, and ways to live better. I share shorter updates on{' '}
-            <a 
-              href="/recently"
-              className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
-            >
-              Recently
-            </a>
-            .
-          </p>
-
-          <p className="about-seq-line about-seq-line-3">
-            I also spend a lot of time moving - whether it&apos;s lifting, taking long
-            walks in nature, playing sports, or dancing. I post visual snapshots on{' '}
-            <a 
+            I spend a lot of time observing - capturing how people move through the world and the spaces they&apos;re in. I share these on{' '}
+            <a
               href="/photos"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
             >
@@ -61,23 +47,19 @@ export default function Home() {
             .
           </p>
 
-          <p className="about-seq-line about-seq-line-4">
-            I live for beautiful spaces, walkable cities, good writing,
-            nourishing food, reggaeton, coffee, potlucks, electric
-            conversations, the sun, and dancing!
+          <p className="about-seq-line about-seq-line-3">
+            I live for blue hour strolls, touring old architectural spaces, finding a local cafe in an unfamiliar neighborhood, triptychs, and crepe cakes. I have a deep appreciation for functional minimalism - a quiet, industrial ethos where objects are honest, purposeful, and built to last.
           </p>
 
-          <p className="about-seq-line about-seq-line-5">
-            I&apos;d describe most of my friends as social technologists. They&apos;re
-            thoughtful, curious, benevolent, charming, have a bias for action,
-            and they care about people. If that sounds like you, or if you
-            resonate with anything on my website, please{' '}
+          <p className="about-seq-line about-seq-line-4">
+            I&apos;m always down to meet people who are curious and like to just do things. Please{' '}
             <a 
               href="/connect"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
             >
               reach out
-            </a> :)
+            </a>
+            :)
           </p>
         </div>
 
