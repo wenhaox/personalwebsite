@@ -493,7 +493,7 @@ nav, .fixed.bottom-8 {
   .photos-page-root.mobile-main-content {
     padding-top: 0.85rem !important;
     justify-content: flex-start !important;
-    align-items: stretch !important;
+    align-items: flex-start !important;
   }
 
   .photos-page-root .photo-mobile-toolbar {
@@ -1353,13 +1353,16 @@ nav, .fixed.bottom-8 {
   }
 
   .photo-vsco-masonry {
-    column-count: 2;
-    column-width: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 0.6rem;
+    row-gap: 0.62rem;
+    align-items: start;
   }
 
   .photo-vsco-card {
-    margin-bottom: 0.62rem;
+    margin: 0;
+    break-inside: auto;
   }
 
   .photo-meta-overlay,

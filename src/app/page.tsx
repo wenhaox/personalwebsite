@@ -33,7 +33,7 @@ export default function Home() {
 
         <div className="space-y-2.5 md:space-y-3.5 text-base leading-7 about-seq-body about-flow-prose about-mobile-centered">
           <p className="about-seq-line about-seq-line-1">
-            I&apos;m interested in bring-up and integration for hardware systems, where robotics and consumer products meet design. A quiet ethos where objects are honest, purposeful, and built to last.
+            I&apos;m interested in bring-up and integration for hardware systems, where robotics and consumer products meet design. I value a quiet ethos where objects are honest, purposeful, and built to last.
           </p>
 
           <p className="about-seq-line about-seq-line-2">
