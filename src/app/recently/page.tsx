@@ -214,12 +214,32 @@ export default function Recently() {
   const [rollSeed, setRollSeed] = useState(1)
   const [isReady, setIsReady] = useState(false)
   const [items, setItems] = useState<RecentlyItem[]>([])
+  const [isMobileViewport, setIsMobileViewport] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
+  ))
   const [tooltipEdgeMap, setTooltipEdgeMap] = useState<Record<string, { left: boolean; right: boolean; top: boolean }>>({})
 
   useEffect(() => {
     const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
     setItems(customRecently)
     setIsReady(true)
+  }, [])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 900px)')
+    const syncViewportMode = () => {
+      setIsMobileViewport(mediaQuery.matches)
+    }
+
+    syncViewportMode()
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', syncViewportMode)
+      return () => mediaQuery.removeEventListener('change', syncViewportMode)
+    }
+
+    mediaQuery.addListener(syncViewportMode)
+    return () => mediaQuery.removeListener(syncViewportMode)
   }, [])
 
   useEffect(() => (
@@ -295,6 +315,34 @@ export default function Recently() {
       window.removeEventListener('scroll', syncHoveredTooltip)
     }
   }, [hoveredId, updateTooltipEdgeMap])
+
+  useEffect(() => {
+    if (!isMobileViewport || !hoveredId) return
+
+    const closeTooltipIfOutside = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target) return
+
+      if (target.closest('.recently-node-shell')) return
+      if (target.closest('.recently-node-tooltip')) return
+
+      setHoveredId(null)
+    }
+
+    const closeTooltipOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setHoveredId(null)
+      }
+    }
+
+    window.addEventListener('pointerdown', closeTooltipIfOutside)
+    window.addEventListener('keydown', closeTooltipOnEscape)
+
+    return () => {
+      window.removeEventListener('pointerdown', closeTooltipIfOutside)
+      window.removeEventListener('keydown', closeTooltipOnEscape)
+    }
+  }, [hoveredId, isMobileViewport])
 
   const recentlyItems = items.length > 0 ? items : DEFAULT_RECENTLY_ITEMS
 
@@ -511,8 +559,17 @@ export default function Recently() {
                     }}
                     onTouchStart={() => {
                       cancelTooltipClose()
-                      setHoveredId(object.id)
-                      updateTooltipEdgeMap(object.id)
+                      setHoveredId((current) => {
+                        const next = current === object.id ? null : object.id
+
+                        if (next) {
+                          window.requestAnimationFrame(() => {
+                            updateTooltipEdgeMap(object.id)
+                          })
+                        }
+
+                        return next
+                      })
                     }}
                   >
                     <div
@@ -545,12 +602,23 @@ export default function Recently() {
                       onMouseLeave={() => {
                         queueTooltipClose(object.id)
                       }}
-                      onTouchStart={() => {
-                        cancelTooltipClose()
-                        setHoveredId(object.id)
-                        updateTooltipEdgeMap(object.id)
-                      }}
                     >
+                      <button
+                        type="button"
+                        className="recently-node-tooltip-close"
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          setHoveredId(null)
+                        }}
+                        onTouchStart={(event) => {
+                          event.stopPropagation()
+                        }}
+                        aria-label={`Close details for ${object.title}`}
+                      >
+                        ✕
+                      </button>
+
                       <p className="recently-node-tooltip-title">{object.title}</p>
                       <p className="recently-node-tooltip-subtitle">{object.subtitle}</p>
                       <p className="recently-node-tooltip-copy">{object.description}</p>

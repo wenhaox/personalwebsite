@@ -81,6 +81,24 @@ export const viewport = {
   initialScale: 1,
 };
 
+const navigationFallback = (
+  <nav className="w-80 h-screen p-12 flex flex-col justify-start mobile-nav fixed left-0 top-0" style={{ paddingTop: 'calc(20vh + 8px)' }}>
+    <div className="space-y-8 ml-16 mobile-nav-content sidebar-nav-fallback" aria-hidden="true">
+      <div className="flex gap-2">
+        <div className="w-6 h-6 bg-accent shadow-inner rotate-45"></div>
+        <div className="w-6 h-6 bg-accent shadow-inner rotate-45"></div>
+      </div>
+
+      <div className="space-y-2 mobile-nav-links mobile-override-space">
+        <span className="sidebar-nav-fallback-link">About</span>
+        <span className="sidebar-nav-fallback-link">Photos</span>
+        <span className="sidebar-nav-fallback-link">Recently</span>
+        <span className="sidebar-nav-fallback-link">Connect</span>
+      </div>
+    </div>
+  </nav>
+)
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -92,7 +110,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body suppressHydrationWarning className={`${inter.variable} ${crimsonText.variable} antialiased`}>
-        <Suspense fallback={<nav className="w-80 h-screen mobile-nav fixed left-0 top-0" />}>
+        <Suspense fallback={navigationFallback}>
           <Navigation />
         </Suspense>
         <main className="ml-80 min-h-screen desktop-main-offset">

@@ -31,13 +31,13 @@ export default function Home() {
           <span className="about-seq-name">I&apos;m Your Name.</span>
         </h1>
 
-        <div className="space-y-2 md:space-y-3 text-base leading-relaxed mobile-left-text about-seq-body">
+        <div className="space-y-2.5 md:space-y-3.5 text-base leading-7 mobile-left-text about-seq-body about-flow-prose">
           <p className="about-seq-line about-seq-line-1">
-            I&apos;m interested in the bring-up and integration of hardware systems - where robotics and consumer products meet intentional design.
+            I&apos;m interested in bring-up and integration for hardware systems, where robotics and consumer products meet intentional design. I have a deep appreciation for functional minimalism - a quiet ethos where objects are honest, purposeful, and built to last.
           </p>
 
           <p className="about-seq-line about-seq-line-2">
-            I spend a lot of time observing - capturing how people move through the world and the spaces they&apos;re in. I share these on{' '}
+            A lot of my time goes into observing how people move through the world and how spaces shape that movement. I share those observations on{' '}
             <a
               href="/photos"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
@@ -48,11 +48,11 @@ export default function Home() {
           </p>
 
           <p className="about-seq-line about-seq-line-3">
-            I live for blue hour strolls, touring old architectural spaces, finding a local cafe in an unfamiliar neighborhood, triptychs, and crepe cakes. I have a deep appreciation for functional minimalism - a quiet, industrial ethos where objects are honest, purposeful, and built to last.
+            Some other things I enjoy are blue-hour strolls, touring old architectural spaces, finding a local cafe in an unfamiliar neighborhood, triptychs, and crepe cakes.
           </p>
 
           <p className="about-seq-line about-seq-line-4">
-            I&apos;m always down to meet people who are curious and like to just do things. Please{' '}
+            I&apos;m always down to meet people who are curious and like to do things. Please{' '}
             <a 
               href="/connect"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"

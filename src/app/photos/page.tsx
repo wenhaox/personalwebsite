@@ -264,7 +264,7 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
   const [isMobileViewport, setIsMobileViewport] = useState(() => (
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
   ))
-  const hasAutoScrollLane = sourcePhotoCount > 2
+  const hasAutoScrollLane = sourcePhotoCount > 2 && !isMobileViewport
   const reelRef = useRef<HTMLDivElement | null>(null)
   const pauseUntilRef = useRef(0)
   const [isLaneScrollable, setIsLaneScrollable] = useState(sourcePhotoCount > 2)
@@ -301,13 +301,13 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
   }, [])
 
   useEffect(() => {
-    if (sourcePhotoCount > 2) {
+    if (sourcePhotoCount > 2 && !isMobileViewport) {
       setIsLaneScrollable(true)
       return
     }
 
     setIsLaneScrollable(false)
-  }, [sourcePhotoCount])
+  }, [isMobileViewport, sourcePhotoCount])
 
   useEffect(() => {
     if (!isMobileViewport) return
@@ -929,14 +929,14 @@ function PhotographyClient() {
         {!isPhotoContentReady ? (
           <div className="photo-loading-shell page-load-seq page-load-seq-3" aria-live="polite" aria-label="Loading photos">
             <div className="photo-loading-head">
-              <span className="photo-loading-kicker">Developing contact sheet</span>
+              <span className="photo-loading-kicker">Curating Frames</span>
               <span className="photo-loading-copy">Loading photo archive...</span>
             </div>
-            <div className="photo-loading-reel" role="presentation">
+            <div className="photo-loading-masonry" role="presentation">
               {Array.from({ length: 8 }).map((_, index) => (
                 <span
                   key={`photo-loading-${index}`}
-                  className={`photo-loading-frame photo-loading-frame-${(index % 4) + 1}`}
+                  className={`photo-loading-card photo-loading-card-${(index % 4) + 1}`}
                 />
               ))}
             </div>
