@@ -492,6 +492,8 @@ nav, .fixed.bottom-8 {
 
   .photos-page-root.mobile-main-content {
     padding-top: 0.85rem !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
   }
 
   .photos-page-root .photo-mobile-toolbar {
@@ -526,6 +528,20 @@ nav, .fixed.bottom-8 {
   .mobile-home-content {
     padding-left: 10vw !important;
     padding-right: 10vw !important;
+  }
+
+  .mobile-home-content .about-home-stack {
+    text-align: center !important;
+  }
+
+  .mobile-home-content .about-home-title {
+    text-align: center !important;
+  }
+
+  .mobile-home-content .about-mobile-centered {
+    text-align: center !important;
+    margin-left: auto;
+    margin-right: auto;
   }
   
   /* Override desktop fixed padding on mobile */
@@ -4475,12 +4491,12 @@ button.sidebar-recently-dice-btn:hover .sidebar-recently-dice-art {
 }
 
 .about-seq-greeting {
-  animation-delay: 0.03s;
-  animation-duration: 0.58s;
+  animation-delay: 0.02s;
+  animation-duration: 0.56s;
 }
 
 .about-seq-name {
-  animation-delay: 0.2s;
+  animation-delay: 0.66s;
 }
 
 .about-seq-body {
@@ -4497,23 +4513,23 @@ button.sidebar-recently-dice-btn:hover .sidebar-recently-dice-art {
 }
 
 .about-seq-line-1 {
-  animation-delay: 0.36s;
+  animation-delay: 1s;
 }
 
 .about-seq-line-2 {
-  animation-delay: 0.48s;
+  animation-delay: 1.14s;
 }
 
 .about-seq-line-3 {
-  animation-delay: 0.6s;
+  animation-delay: 1.28s;
 }
 
 .about-seq-line-4 {
-  animation-delay: 0.72s;
+  animation-delay: 1.42s;
 }
 
 .about-seq-line-5 {
-  animation-delay: 0.84s;
+  animation-delay: 1.56s;
 }
 
 @media (max-width: 767px) {

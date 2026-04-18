@@ -25,15 +25,15 @@ export default function Home() {
 
   return (
     <div className="flex items-start justify-start min-h-screen mobile-main-content mobile-home-content desktop-home-padding bg-background">
-      <div className="max-w-xl space-y-4 md:space-y-5">
-        <h1 className="text-2xl md:text-3xl font-serif italic leading-tight text-left">
+      <div className="max-w-xl space-y-4 md:space-y-5 about-home-stack">
+        <h1 className="text-2xl md:text-3xl font-serif italic leading-tight text-left about-home-title">
           <span className="about-seq-greeting" suppressHydrationWarning>{greeting}!</span>{' '}
-          <span className="about-seq-name">I&apos;m Your Name.</span>
+          <span className="about-seq-name">I&apos;m Peter.</span>
         </h1>
 
-        <div className="space-y-2.5 md:space-y-3.5 text-base leading-7 mobile-left-text about-seq-body about-flow-prose">
+        <div className="space-y-2.5 md:space-y-3.5 text-base leading-7 about-seq-body about-flow-prose about-mobile-centered">
           <p className="about-seq-line about-seq-line-1">
-            I&apos;m interested in bring-up and integration for hardware systems, where robotics and consumer products meet intentional design. I have a deep appreciation for functional minimalism - a quiet ethos where objects are honest, purposeful, and built to last.
+            I&apos;m interested in bring-up and integration for hardware systems, where robotics and consumer products meet design. A quiet ethos where objects are honest, purposeful, and built to last.
           </p>
 
           <p className="about-seq-line about-seq-line-2">
@@ -48,7 +48,7 @@ export default function Home() {
           </p>
 
           <p className="about-seq-line about-seq-line-3">
-            Some other things I enjoy are blue-hour strolls, touring old architectural spaces, finding a local cafe in an unfamiliar neighborhood, triptychs, and crepe cakes.
+            Some other things I enjoy are blue-hour strolls, touring old architectural spaces, finding a local cafe in a new neighborhood, triptychs, and crepe cakes.
           </p>
 
           <p className="about-seq-line about-seq-line-4">
