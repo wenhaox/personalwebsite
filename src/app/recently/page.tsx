@@ -214,9 +214,7 @@ export default function Recently() {
   const [rollSeed, setRollSeed] = useState(1)
   const [isReady, setIsReady] = useState(false)
   const [items, setItems] = useState<RecentlyItem[]>([])
-  const [isMobileViewport, setIsMobileViewport] = useState(() => (
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches
-  ))
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
   const [tooltipEdgeMap, setTooltipEdgeMap] = useState<Record<string, { left: boolean; right: boolean; top: boolean }>>({})
 
   useEffect(() => {
@@ -503,30 +501,13 @@ export default function Recently() {
               const rect = slotLayout[object.id] || SHELF_SLOT_RECTS[index % SHELF_SLOT_RECTS.length]
               const isRecord = object.kind === 'record'
               const artPath = object.pixelArt
-              const isGamepad = artPath.endsWith('/gamepad.svg')
-              const isMovie = object.kind === 'movie' || artPath.endsWith('/film-frame.svg')
-              const isCamera = object.kind === 'camera' || artPath.endsWith('/fujifilm-camera.svg')
-              const isAudioThing = /cassette\.svg$|headphones\.svg$|radio\.svg$/.test(artPath)
-              const isArcadeOrDice = /arcade-token\.svg$|dice-cube\.svg$/.test(artPath)
-              const isTravelThing = /compass\.svg$|backpack\.svg$|postcard\.svg$/.test(artPath)
+              const isDice = artPath.endsWith('/dice-cube.svg')
               const isHovered = hoveredId === object.id
               const tooltipEdgeState = tooltipEdgeMap[object.id]
               const isTopEdge = rect.y < 0.24 || Boolean(tooltipEdgeState?.top)
               const isLeftEdge = rect.x < 0.16 || Boolean(tooltipEdgeState?.left)
               const isRightEdge = rect.x + rect.width > 0.84 || Boolean(tooltipEdgeState?.right)
-              const motionClass = isRecord
-                ? 'is-record-spin is-record-disc'
-                : isGamepad
-                  ? 'is-rocking'
-                  : isMovie
-                    ? 'is-glide'
-                    : isCamera
-                      ? 'is-idle-wobble'
-                      : isAudioThing
-                        ? 'is-glide'
-                        : isArcadeOrDice || isTravelThing
-                          ? 'is-rocking'
-                          : 'is-idle-float'
+              const motionClass = isRecord ? 'is-record-disc' : ''
               const tooltipClassName = [
                 'recently-node-tooltip',
                 isHovered ? 'is-visible' : '',
@@ -583,7 +564,7 @@ export default function Recently() {
                             src={object.pixelArt}
                             alt=""
                             aria-hidden="true"
-                            className={`recently-node-pixel-image ${motionClass}`}
+                            className={`recently-node-pixel-image ${isDice ? 'is-smooth-art' : ''} ${motionClass}`}
                           />
                         </span>
                       </span>
@@ -619,10 +600,6 @@ export default function Recently() {
                         ✕
                       </button>
 
-                      <p className="recently-node-tooltip-title">{object.title}</p>
-                      <p className="recently-node-tooltip-subtitle">{object.subtitle}</p>
-                      <p className="recently-node-tooltip-copy">{object.description}</p>
-
                       {object.spotifyEmbed && (
                         <iframe
                           src={object.spotifyEmbed}
@@ -637,16 +614,22 @@ export default function Recently() {
                         <img src={object.image} alt={object.title} className="recently-node-tooltip-media" />
                       )}
 
-                      {object.link && (
-                        <a
-                          href={object.link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="recently-node-tooltip-link"
-                        >
-                          {object.link.text} ↗
-                        </a>
-                      )}
+                      <div className="recently-node-tooltip-body">
+                        <p className="recently-node-tooltip-title">{object.title}</p>
+                        <p className="recently-node-tooltip-subtitle">{object.subtitle}</p>
+                        <p className="recently-node-tooltip-copy">{object.description}</p>
+
+                        {object.link && (
+                          <a
+                            href={object.link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="recently-node-tooltip-link"
+                          >
+                            {object.link.text} ↗
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </article>

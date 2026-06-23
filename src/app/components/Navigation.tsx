@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 
 type PhotoSort = 'theme' | 'color' | 'location' | 'date'
 
@@ -16,98 +16,6 @@ const PHOTO_SORT_OPTIONS: Array<{ key: PhotoSort | 'all'; icon: string; label: s
   { key: 'theme', icon: '◈', label: 'Theme', href: '/photos?sort=theme' },
 ]
 
-interface SidebarPhotoSeed {
-  theme: string
-  color: string
-  location: string
-  createdAt?: string
-}
-
-interface SidebarFilterItem {
-  icon: string
-  label: string
-  value: string
-}
-
-const PHOTO_DATA_SEED: SidebarPhotoSeed[] = [
-  { theme: 'street', color: 'blue', location: 'San Francisco, CA', createdAt: '2026-03-29T08:00:00.000Z' },
-  { theme: 'scenery', color: 'golden', location: 'Marin County, CA', createdAt: '2026-03-26T18:00:00.000Z' },
-  { theme: 'person', color: 'warm', location: 'Studio', createdAt: '2026-03-22T13:00:00.000Z' },
-  { theme: 'details', color: 'monochrome', location: 'Downtown', createdAt: '2026-03-19T14:00:00.000Z' },
-  { theme: 'scenery', color: 'green', location: 'Muir Woods, CA', createdAt: '2026-03-15T09:00:00.000Z' },
-  { theme: 'street', color: 'blue', location: 'Urban', createdAt: '2026-03-11T10:30:00.000Z' },
-]
-
-const toTitleLabel = (value: string): string => (
-  value
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(' ')
-)
-
-const getDateBucket = (createdAt?: string): string | null => {
-  if (!createdAt) return null
-  const parsed = new Date(createdAt).getTime()
-  if (Number.isNaN(parsed)) return null
-
-  const date = new Date(parsed)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  return `${year}-${month}`
-}
-
-const getDateBucketLabel = (bucket: string): string => {
-  const [year, month] = bucket.split('-')
-  const yearNum = Number(year)
-  const monthNum = Number(month)
-
-  if (!Number.isInteger(yearNum) || !Number.isInteger(monthNum) || monthNum < 1 || monthNum > 12) {
-    return bucket
-  }
-
-  return new Date(yearNum, monthNum - 1, 1).toLocaleDateString('en-US', {
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-const buildPhotoQuickFilters = (photos: SidebarPhotoSeed[]): Record<PhotoSort, SidebarFilterItem[]> => {
-  const themeMap = new Map<string, string>()
-  const colorMap = new Map<string, string>()
-  const locationMap = new Map<string, string>()
-  const dateMap = new Map<string, string>()
-
-  photos.forEach((photo) => {
-    const themeValue = photo.theme.trim().toLowerCase()
-    if (themeValue) themeMap.set(themeValue, toTitleLabel(themeValue))
-
-    const colorValue = photo.color.trim().toLowerCase()
-    if (colorValue) colorMap.set(colorValue, toTitleLabel(colorValue))
-
-    const locationValue = photo.location.split(',')[0].trim()
-    if (locationValue) locationMap.set(locationValue, locationValue)
-
-    const bucket = getDateBucket(photo.createdAt)
-    if (bucket) dateMap.set(bucket, getDateBucketLabel(bucket))
-  })
-
-  const toItems = (map: Map<string, string>, icon: string, sortByLabel = true): SidebarFilterItem[] => {
-    const entries = Array.from(map.entries()).map(([value, label]) => ({ icon, label, value }))
-    if (sortByLabel) {
-      return entries.sort((a, b) => a.label.localeCompare(b.label))
-    }
-    return entries.sort((a, b) => b.value.localeCompare(a.value))
-  }
-
-  return {
-    theme: toItems(themeMap, '●'),
-    color: toItems(colorMap, '●'),
-    location: toItems(locationMap, '●'),
-    date: toItems(dateMap, '◷', false),
-  }
-}
-
 const getSidebarIconClassName = (icon: string): string => {
   if (icon === '◍' || icon === '◌') return 'sidebar-context-icon sidebar-context-icon-all'
   if (icon === '⌖') return 'sidebar-context-icon sidebar-context-icon-location'
@@ -120,9 +28,6 @@ export default function Navigation() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [clickCount, setClickCount] = useState(0)
-  const [photoQuickFilters, setPhotoQuickFilters] = useState<Record<PhotoSort, SidebarFilterItem[]>>(
-    () => buildPhotoQuickFilters(PHOTO_DATA_SEED)
-  )
 
   const socialLinks = [
     { label: 'X', icon: 'X', href: 'https://x.com/yourusername' },
@@ -133,40 +38,17 @@ export default function Navigation() {
   const desktopConnectLinks = socialLinks
 
   const sortParam = searchParams.get('sort')
-  const tagParam = searchParams.get('tag')?.trim() || ''
+  const orderParam = searchParams.get('order')
   const selectedSort: PhotoSort | null = sortParam && ['date', 'color', 'location', 'theme'].includes(sortParam)
     ? (sortParam as PhotoSort)
     : null
-  const selectedTagLower = tagParam.toLowerCase()
-
-  const selectedSortLabel = selectedSort
-    ? PHOTO_SORT_OPTIONS.find((option) => option.key === selectedSort)?.label || 'Sort'
-    : ''
-  const selectedSortFilters = useMemo(
-    () => (selectedSort ? photoQuickFilters[selectedSort].slice(0, 8) : []),
-    [photoQuickFilters, selectedSort]
-  )
-
-  useEffect(() => {
-    const stored = localStorage.getItem('customPhotos')
-    if (!stored) return
-
-    try {
-      const parsed = JSON.parse(stored)
-      if (!Array.isArray(parsed)) return
-
-      const customPhotos: SidebarPhotoSeed[] = parsed.map((photo) => ({
-        theme: typeof photo.theme === 'string' ? photo.theme : 'moments',
-        color: typeof photo.color === 'string' ? photo.color : 'neutral',
-        location: typeof photo.location === 'string' ? photo.location : 'Unknown',
-        createdAt: typeof photo.createdAt === 'string' ? photo.createdAt : undefined,
-      }))
-
-      setPhotoQuickFilters(buildPhotoQuickFilters([...PHOTO_DATA_SEED, ...customPhotos]))
-    } catch {
-      setPhotoQuickFilters(buildPhotoQuickFilters(PHOTO_DATA_SEED))
-    }
-  }, [])
+  const orderChoices = selectedSort === 'date'
+    ? [{ value: 'newest', label: 'Newest' }, { value: 'oldest', label: 'Oldest' }, { value: 'most', label: 'Most photos' }]
+    : [{ value: 'az', label: 'A–Z' }, { value: 'za', label: 'Z–A' }, { value: 'most', label: 'Most photos' }]
+  const defaultOrder = selectedSort === 'date' ? 'newest' : 'az'
+  const selectedOrder = orderChoices.some((option) => option.value === orderParam)
+    ? (orderParam as string)
+    : defaultOrder
 
   const navItems = [
     { name: 'About', href: '/' },
@@ -231,7 +113,7 @@ export default function Navigation() {
 
         {pathname === '/photos' && (
           <div className="sidebar-photos-panel mobile-hide-photo">
-            <div className="sidebar-context-title">Browse Photos</div>
+            <div className="sidebar-context-title">Sort by</div>
             <div className="sidebar-context-links">
               {PHOTO_SORT_OPTIONS.map((item) => {
                 const isActive = item.key === 'all'
@@ -251,41 +133,27 @@ export default function Navigation() {
               })}
             </div>
 
-            <div className="sidebar-context-title">Quick Filters</div>
-            <div className="sidebar-context-links">
-              {!selectedSort && (
-                <div className="sidebar-context-text">
-                  Choose a sort to reveal matching quick filters.
-                </div>
-              )}
-
-              {selectedSort && (
-                <>
-                  <Link
-                    href={`/photos?sort=${selectedSort}`}
-                    className={`sidebar-context-link sidebar-photo-pill ${!selectedTagLower ? 'sidebar-photo-pill-active' : ''}`}
-                  >
-                    <span className={getSidebarIconClassName('◌')}>◌</span>
-                    <span>All {selectedSortLabel}</span>
-                  </Link>
-
-                  {selectedSortFilters.map((item) => {
-                    const isActive = selectedTagLower === item.value.toLowerCase()
-
-                    return (
-                      <Link
-                        key={`${selectedSort}-${item.value}`}
-                        href={`/photos?sort=${selectedSort}&tag=${encodeURIComponent(item.value)}`}
-                        className={`sidebar-context-link sidebar-photo-pill ${isActive ? 'sidebar-photo-pill-active' : ''}`}
-                      >
-                        <span className={getSidebarIconClassName(item.icon)}>{item.icon}</span>
-                        <span>{item.label}</span>
-                      </Link>
-                    )
-                  })}
-                </>
-              )}
-            </div>
+            <div className="sidebar-context-title">Order</div>
+            {!selectedSort ? (
+              <div className="sidebar-context-text">
+                Pick a sort to set the order.
+              </div>
+            ) : (
+              <label className="photo-select-shell photo-filter-pill photo-filter-pill-sidebar is-active">
+                <span className="photo-select-label">Order</span>
+                <select
+                  className="photo-select-input photo-select-input-filter"
+                  value={selectedOrder}
+                  onChange={(event) => {
+                    router.push(`/photos?sort=${selectedSort}&order=${event.target.value}`)
+                  }}
+                >
+                  {orderChoices.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
         )}
 

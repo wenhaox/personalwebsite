@@ -4,11 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 type SortBy = 'theme' | 'color' | 'location' | 'date'
-
-interface FilterOption {
-  value: string
-  label: string
-}
+type OrderBy = 'newest' | 'oldest' | 'az' | 'za' | 'most'
 
 interface PhotoItem {
   id: number | string
@@ -35,6 +31,26 @@ const SORT_OPTIONS: Array<{ key: SortBy; icon: string; label: string }> = [
   { key: 'location', icon: '⌖', label: 'Location' },
   { key: 'date', icon: '◴', label: 'Date' },
 ]
+
+const TIME_ORDER_OPTIONS: Array<{ key: OrderBy; label: string }> = [
+  { key: 'newest', label: 'Newest' },
+  { key: 'oldest', label: 'Oldest' },
+  { key: 'most', label: 'Most photos' },
+]
+
+const ALPHA_ORDER_OPTIONS: Array<{ key: OrderBy; label: string }> = [
+  { key: 'az', label: 'A–Z' },
+  { key: 'za', label: 'Z–A' },
+  { key: 'most', label: 'Most photos' },
+]
+
+const getOrderOptions = (sortBy: SortBy | null): Array<{ key: OrderBy; label: string }> => (
+  sortBy === 'date' ? TIME_ORDER_OPTIONS : ALPHA_ORDER_OPTIONS
+)
+
+const getDefaultOrder = (sortBy: SortBy | null): OrderBy => (
+  sortBy === 'date' ? 'newest' : 'az'
+)
 
 const DEFAULT_PHOTOS: PhotoItem[] = [
   {
@@ -197,6 +213,23 @@ const getPhotoImage = (photo: PhotoItem, idKey: string): string => (
   photo.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(`photo-${idKey}`)}/1200/1600`
 )
 
+const getPhotoThumb = (photo: PhotoItem, idKey: string): string => {
+  const url = getPhotoImage(photo, idKey)
+  const match = url.match(/^(.*?)\/(\d+)\/(\d+)(\?.*)?$/)
+  if (!match) return url
+
+  const base = match[1]
+  const width = Number(match[2])
+  const height = Number(match[3])
+  const query = match[4] || ''
+  const targetW = 640
+
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= targetW) return url
+
+  const targetH = Math.max(1, Math.round((height * targetW) / width))
+  return `${base}/${targetW}/${targetH}${query}`
+}
+
 const getDateBucket = (timestamp: number): string => {
   const date = new Date(timestamp)
   const year = date.getFullYear()
@@ -214,9 +247,9 @@ const getDateBucketLabel = (bucket: string): string => {
   }
 
   return new Date(yearNum, monthNum - 1, 1).toLocaleDateString('en-US', {
-    month: 'short',
+    month: 'long',
     year: 'numeric',
-  }).toLowerCase()
+  })
 }
 
 const getClusterValue = (photo: PhotoItem, sortBy: SortBy, timestampMap: Map<string, number>): string => {
@@ -261,9 +294,7 @@ interface FilmReelClusterProps {
 function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClusterProps) {
   const sourcePhotos = cluster.photos
   const sourcePhotoCount = sourcePhotos.length
-  const [isMobileViewport, setIsMobileViewport] = useState(() => (
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
-  ))
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
   const hasAutoScrollLane = sourcePhotoCount > 2 && !isMobileViewport
   const reelRef = useRef<HTMLDivElement | null>(null)
   const pauseUntilRef = useRef(0)
@@ -602,7 +633,7 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
     <section className="photo-vsco-cluster-section">
       <div className="photo-vsco-cluster-section-head">
         <div className="photo-reel-meta" role="group" aria-label={`Photo roll ${cluster.label}`}>
-          <span className="photo-reel-title">{cluster.label.toLowerCase()}</span>
+          <span className="photo-reel-title">{cluster.label}</span>
         </div>
       </div>
 
@@ -631,9 +662,10 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
                       className={`photo-film-image-shell photo-film-image-shell-landscape ${portraitSource ? 'is-portrait-source' : ''}`}
                     >
                       <img
-                        src={getPhotoImage(photo, idKey)}
+                        src={getPhotoThumb(photo, idKey)}
                         alt={photo.title}
                         loading="eager"
+                        decoding="async"
                         className={portraitSource ? 'photo-film-image-rotated' : ''}
                       />
                     </span>
@@ -658,6 +690,7 @@ function PhotographyClient() {
 
   const [sortBy, setSortBy] = useState<SortBy | null>(null)
   const [filterTag, setFilterTag] = useState('')
+  const [orderBy, setOrderBy] = useState<OrderBy>('newest')
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null)
   const [customPhotos, setCustomPhotos] = useState<PhotoItem[]>([])
   const [isPhotoContentReady, setIsPhotoContentReady] = useState(false)
@@ -679,10 +712,17 @@ function PhotographyClient() {
   useEffect(() => {
     const sortParam = searchParams.get('sort')
     const tagParam = searchParams.get('tag')
+    const orderParam = searchParams.get('order')
     const validSort = SORT_OPTIONS.some((option) => option.key === sortParam)
+    const nextSort = validSort ? (sortParam as SortBy) : null
+    const allowedOrders = getOrderOptions(nextSort).map((option) => option.key)
+    const nextOrder = allowedOrders.includes(orderParam as OrderBy)
+      ? (orderParam as OrderBy)
+      : getDefaultOrder(nextSort)
 
-    setSortBy(validSort ? (sortParam as SortBy) : null)
+    setSortBy(nextSort)
     setFilterTag(validSort && tagParam ? tagParam.trim() : '')
+    setOrderBy(nextOrder)
     setSelectedPhoto(null)
   }, [searchParams])
 
@@ -704,7 +744,7 @@ function PhotographyClient() {
   const allPhotoSources = useMemo(() => {
     const sourceSet = new Set<string>()
     photos.forEach((photo) => {
-      sourceSet.add(getPhotoImage(photo, toIdKey(photo.id)))
+      sourceSet.add(getPhotoThumb(photo, toIdKey(photo.id)))
     })
     return Array.from(sourceSet)
   }, [photos])
@@ -727,18 +767,16 @@ function PhotographyClient() {
       completedCount += 1
       if (completedCount !== allPhotoSources.length || isCancelled) return
 
-      window.setTimeout(() => {
-        if (!isCancelled) {
-          setIsPhotoContentReady(true)
-        }
-      }, 120)
+      if (!isCancelled) {
+        setIsPhotoContentReady(true)
+      }
     }
 
     const maxWaitTimeoutId = window.setTimeout(() => {
       if (!isCancelled) {
         setIsPhotoContentReady(true)
       }
-    }, 2800)
+    }, 1400)
 
     allPhotoSources.forEach((source) => {
       const image = new Image()
@@ -787,35 +825,6 @@ function PhotographyClient() {
     })
   ), [photoTimestampMap, photos])
 
-  const filterOptions = useMemo<FilterOption[]>(() => {
-    if (!sortBy) return []
-
-    const optionMap = new Map<string, string>()
-    const optionCountMap = new Map<string, number>()
-    photos.forEach((photo) => {
-      const value = getClusterValue(photo, sortBy, photoTimestampMap)
-      optionMap.set(value, getClusterLabel(sortBy, value))
-      optionCountMap.set(value, (optionCountMap.get(value) || 0) + 1)
-    })
-
-    const entries = Array.from(optionMap.entries()).map(([value, label]) => ({ value, label }))
-
-    if (sortBy === 'date') {
-      return entries.sort((a, b) => b.value.localeCompare(a.value))
-    }
-
-    return entries.sort((a, b) => {
-      const countDiff = (optionCountMap.get(b.value) || 0) - (optionCountMap.get(a.value) || 0)
-      if (countDiff !== 0) return countDiff
-      return a.label.localeCompare(b.label)
-    })
-  }, [photoTimestampMap, photos, sortBy])
-
-  const filterLabelMap = useMemo(
-    () => new Map(filterOptions.map((option) => [option.value.toLowerCase(), option.label])),
-    [filterOptions]
-  )
-
   const filteredByTag = useMemo(() => {
     if (!sortBy || !filterTag) return photos
 
@@ -850,99 +859,96 @@ function PhotographyClient() {
 
     const values = Array.from(grouped.values())
 
-    if (sortBy === 'date') {
-      values.sort((a, b) => b.value.localeCompare(a.value))
-    } else {
+    const clusterTime = (cluster: PhotoCluster) => cluster.photos.reduce(
+      (max, photo) => Math.max(max, photoTimestampMap.get(toIdKey(photo.id)) || 0),
+      0
+    )
+
+    if (orderBy === 'az') {
+      values.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' }))
+    } else if (orderBy === 'za') {
+      values.sort((a, b) => b.label.localeCompare(a.label, undefined, { numeric: true, sensitivity: 'base' }))
+    } else if (orderBy === 'most') {
       values.sort((a, b) => {
         const countDiff = b.photos.length - a.photos.length
         if (countDiff !== 0) return countDiff
-        return a.label.localeCompare(b.label)
+        return clusterTime(b) - clusterTime(a)
       })
+    } else if (orderBy === 'oldest') {
+      values.sort((a, b) => clusterTime(a) - clusterTime(b))
+    } else {
+      values.sort((a, b) => clusterTime(b) - clusterTime(a))
     }
 
     values.forEach((cluster) => {
       cluster.photos.sort((a, b) => {
         const timeA = photoTimestampMap.get(toIdKey(a.id)) || 0
         const timeB = photoTimestampMap.get(toIdKey(b.id)) || 0
-        return timeB - timeA
+        return orderBy === 'oldest' ? timeA - timeB : timeB - timeA
       })
     })
 
     return values
-  }, [filteredByTag, photoTimestampMap, sortBy])
+  }, [filteredByTag, orderBy, photoTimestampMap, sortBy])
 
-  const activeSort = SORT_OPTIONS.find((option) => option.key === sortBy)
-  const activeFilterLabel = filterTag ? (filterLabelMap.get(filterTag.toLowerCase()) || filterTag) : ''
   return (
     <div className="photos-page-root flex items-start justify-start min-h-screen px-20 py-16 mobile-main-content bg-background">
       <div className="w-full max-w-[1700px] mx-auto">
         <h1 className="sr-only">Photos</h1>
 
-        <div className="photo-vsco-toolbar photo-mobile-toolbar mb-4 page-load-seq page-load-seq-1">
-          <div className="photo-controls-row photo-controls-row-dropdown">
-            <label className={`photo-select-shell photo-select-shell-sort ${sortBy ? 'is-active' : ''}`}>
-              <span className="photo-select-pill-icon" aria-hidden="true">◈</span>
-              <span className="photo-select-label">Sort</span>
-              <select
-                className="photo-select-input photo-select-input-sort"
-                value={sortBy || ''}
-                onChange={(event) => {
-                  const nextValue = event.target.value as SortBy | ''
-                  setSortBy(nextValue ? nextValue : null)
+        <div className="photo-mobile-toolbar photo-inline-sorter mb-4 page-load-seq page-load-seq-1">
+          <div className="photo-sort-pills">
+            <button
+              type="button"
+              className={`photo-sort-pill ${!sortBy ? 'is-active' : ''}`}
+              onClick={() => {
+                setSortBy(null)
+                setFilterTag('')
+                setOrderBy(getDefaultOrder(null))
+              }}
+            >
+              All Photos
+            </button>
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={`photo-sort-pill ${sortBy === option.key ? 'is-active' : ''}`}
+                onClick={() => {
+                  setSortBy(option.key)
                   setFilterTag('')
+                  setOrderBy(getDefaultOrder(option.key))
                 }}
               >
-                <option value="">All Photos</option>
-                {SORT_OPTIONS.map((option) => (
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {sortBy && (
+            <label className="photo-select-shell photo-filter-pill is-active">
+              <span className="photo-select-label">Order</span>
+              <select
+                className="photo-select-input photo-select-input-filter"
+                value={orderBy}
+                onChange={(event) => {
+                  setOrderBy(event.target.value as OrderBy)
+                }}
+              >
+                {getOrderOptions(sortBy).map((option) => (
                   <option key={option.key} value={option.key}>{option.label}</option>
                 ))}
               </select>
             </label>
-
-            <label className={`photo-select-shell photo-select-shell-filter ${(!sortBy || filterOptions.length === 0) ? 'is-disabled' : ''} ${filterTag ? 'is-active' : ''}`}>
-              <span className="photo-select-pill-icon" aria-hidden="true">◍</span>
-              <span className="photo-select-label">Filter</span>
-              <select
-                className="photo-select-input photo-select-input-filter"
-                value={filterTag}
-                disabled={!sortBy || filterOptions.length === 0}
-                onChange={(event) => {
-                  setFilterTag(event.target.value)
-                }}
-              >
-                <option value="">{sortBy ? `All ${activeSort?.label || 'Categories'}` : 'Pick sort first'}</option>
-                {sortBy && filterOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <div className="mb-4 flex items-center justify-between gap-4 text-xs text-muted page-load-seq page-load-seq-2">
-          <span className="truncate">
-            {!sortBy ? 'All Photos' : `${activeSort?.icon || ''} ${activeSort?.label || ''}`}
-            {activeFilterLabel ? ` · ${activeFilterLabel}` : ''}
-          </span>
+          )}
         </div>
 
         {!isPhotoContentReady ? (
-          <div className="photo-loading-shell page-load-seq page-load-seq-3" aria-live="polite" aria-label="Loading photos">
-            <div className="photo-loading-head">
-              <span className="photo-loading-kicker">Curating Frames</span>
-              <span className="photo-loading-copy">Loading photo archive...</span>
-            </div>
-            <div className="photo-loading-masonry" role="presentation">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <span
-                  key={`photo-loading-${index}`}
-                  className={`photo-loading-card photo-loading-card-${(index % 4) + 1}`}
-                />
-              ))}
-            </div>
+          <div className="photo-loading-spinner-wrap" aria-live="polite" aria-label="Loading photos">
+            <span className="photo-loading-spinner" aria-hidden="true" />
           </div>
         ) : !sortBy ? (
-          <div className="photo-vsco-board page-load-seq page-load-seq-3">
+          <div className="photo-vsco-board photo-fade-in">
             <div className="photo-vsco-masonry">
               {allPhotosSorted.map((photo) => {
                 const idKey = toIdKey(photo.id)
@@ -955,9 +961,10 @@ function PhotographyClient() {
                   >
                     <div className="photo-vsco-media">
                       <img
-                        src={getPhotoImage(photo, idKey)}
+                        src={getPhotoThumb(photo, idKey)}
                         alt={photo.title}
-                        loading="eager"
+                        loading="lazy"
+                        decoding="async"
                       />
                       <span className="photo-meta-overlay">
                         <span className="photo-meta-overlay-title">{photo.title}</span>
@@ -971,7 +978,7 @@ function PhotographyClient() {
             </div>
           </div>
         ) : (
-          <div className="photo-vsco-cluster-stack page-load-seq page-load-seq-3">
+          <div className="photo-vsco-cluster-stack photo-fade-in">
             {clusters.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-title">No photos in this filter</div>

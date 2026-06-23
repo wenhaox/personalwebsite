@@ -10,7 +10,7 @@ const getGreetingByHour = (hour: number): string => {
 }
 
 export default function Home() {
-  const [greeting, setGreeting] = useState(() => getGreetingByHour(new Date().getHours()))
+  const [greeting, setGreeting] = useState<string | null>(null)
 
   useEffect(() => {
     const updateGreeting = () => {
@@ -27,17 +27,21 @@ export default function Home() {
     <div className="flex items-start justify-start min-h-screen mobile-main-content mobile-home-content desktop-home-padding bg-background">
       <div className="max-w-xl space-y-4 md:space-y-5 about-home-stack">
         <h1 className="text-2xl md:text-3xl font-serif italic leading-tight text-left about-home-title">
-          <span className="about-seq-greeting" suppressHydrationWarning>{greeting}!</span>{' '}
+          {greeting ? (
+            <>
+              <span className="about-seq-greeting">{greeting}!</span>{' '}
+            </>
+          ) : null}
           <span className="about-seq-name">I&apos;m Peter.</span>
         </h1>
 
         <div className="space-y-2.5 md:space-y-3.5 text-base leading-7 about-seq-body about-flow-prose about-mobile-centered">
           <p className="about-seq-line about-seq-line-1">
-            I&apos;m interested in bring-up and integration for hardware systems, where robotics and consumer products meet design. I value a quiet ethos where objects are honest, purposeful, and built to last.
+            I&apos;m interested in bring-up and integration for robotics and consumer hardware. I care about good design and making things that are purposeful and built to last.
           </p>
 
           <p className="about-seq-line about-seq-line-2">
-            A lot of my time goes into observing how people move through the world and how spaces shape that movement. I share those observations on{' '}
+            I photograph how people interact with physical spaces — more on{' '}
             <a
               href="/photos"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
@@ -48,18 +52,18 @@ export default function Home() {
           </p>
 
           <p className="about-seq-line about-seq-line-3">
-            Some other things I enjoy are blue-hour strolls, touring old architectural spaces, finding a local cafe in a new neighborhood, triptychs, and crepe cakes.
+            Some other things I enjoy are finding a local cafe in a new neighborhood, basketball, touring old architectural spaces, getting outside around blue hour, and hopefully leatherworking soon!
           </p>
 
           <p className="about-seq-line about-seq-line-4">
-            I&apos;m always down to meet people who are curious and like to do things. Please{' '}
+            I&apos;m always down to meet curious people. Please{' '}
             <a 
               href="/connect"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
             >
               reach out
             </a>
-            :)
+            !
           </p>
         </div>
 
