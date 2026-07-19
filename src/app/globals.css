@@ -1562,6 +1562,21 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
   width: 100%;
 }
 
+.photo-all-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  width: 100%;
+}
+
+.photo-favorites-column {
+  width: 100%;
+}
+
+.photo-favorites-column .photo-vsco-cluster-section {
+  margin-bottom: 0;
+}
+
 .photos-page-root {
   min-height: 100dvh;
   width: 100%;

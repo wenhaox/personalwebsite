@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import RecentlyFunControls from './RecentlyFunControls'
 
-type PhotoSort = 'theme' | 'color' | 'location' | 'date'
+type PhotoSort = 'theme' | 'color' | 'location' | 'date' | 'favorites'
 
 const PHOTO_SORT_OPTIONS: Array<{ key: PhotoSort | 'all'; icon: string; label: string; href: string }> = [
   { key: 'all', icon: '◍', label: 'All Photos', href: '/photos' },
+  { key: 'favorites', icon: '★', label: 'Favorites', href: '/photos?sort=favorites' },
   { key: 'date', icon: '◴', label: 'Date', href: '/photos?sort=date' },
   { key: 'color', icon: '◉', label: 'Color', href: '/photos?sort=color' },
   { key: 'location', icon: '⌖', label: 'Location', href: '/photos?sort=location' },
@@ -27,7 +28,7 @@ export default function Navigation() {
 
   const sortParam = searchParams.get('sort')
   const orderParam = searchParams.get('order')
-  const selectedSort: PhotoSort | null = sortParam && ['date', 'color', 'location', 'theme'].includes(sortParam)
+  const selectedSort: PhotoSort | null = sortParam && ['date', 'color', 'location', 'theme', 'favorites'].includes(sortParam)
     ? (sortParam as PhotoSort)
     : null
   const orderChoices = selectedSort === 'date'
@@ -91,7 +92,9 @@ export default function Navigation() {
                     : selectedSort === item.key
                   const href = item.key === 'all'
                     ? '/photos'
-                    : `/photos?sort=${item.key}&order=${item.key === 'date' ? 'newest' : 'az'}`
+                    : item.key === 'favorites'
+                      ? '/photos?sort=favorites'
+                      : `/photos?sort=${item.key}&order=${item.key === 'date' ? 'newest' : 'az'}`
                   const label = item.label === 'All Photos' ? 'All' : item.label
 
                   return (
@@ -108,7 +111,7 @@ export default function Navigation() {
                 })}
               </div>
 
-              {selectedSort && (
+              {selectedSort && selectedSort !== 'favorites' && (
                 <label className="photo-order-field">
                   <select
                     className="photo-order-select"

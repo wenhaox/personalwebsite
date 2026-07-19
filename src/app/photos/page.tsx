@@ -10,7 +10,7 @@ import 'react-photo-album/masonry.css'
 import { SITE_PHOTOS } from '@/data/site-photos'
 import type { PhotoItem } from '@/lib/photo-types'
 
-type SortBy = 'theme' | 'color' | 'location' | 'date'
+type SortBy = 'theme' | 'color' | 'location' | 'date' | 'favorites'
 type OrderBy = 'newest' | 'oldest' | 'az' | 'za' | 'most'
 
 export type { PhotoItem }
@@ -23,6 +23,7 @@ interface PhotoCluster {
 }
 
 const SORT_OPTIONS: Array<{ key: SortBy; icon: string; label: string }> = [
+  { key: 'favorites', icon: '★', label: 'Favorites' },
   { key: 'theme', icon: '◈', label: 'Theme' },
   { key: 'color', icon: '◉', label: 'Color' },
   { key: 'location', icon: '⌖', label: 'Location' },
@@ -59,16 +60,25 @@ const PALETTE_LABELS: Record<string, string> = {
   green: 'green tones',
 }
 
+const THEME_LABELS: Record<string, string> = {
+  people: 'people',
+  landscape: 'landscape',
+  street: 'street',
+  interior: 'interior',
+  detail: 'detail',
+}
+
 const normalizePhoto = (photo: Partial<PhotoItem>, index: number): PhotoItem => ({
   id: photo.id ?? `custom-${index}`,
   title: photo.title?.trim() || 'Untitled Moment',
   location: photo.location?.trim() || 'Unknown location',
   aspectRatio: photo.aspectRatio || 'aspect-[4/3]',
   color: photo.color?.trim() || 'neutral',
-  theme: photo.theme?.trim() || 'moments',
+  theme: photo.theme?.trim() || 'detail',
   description: photo.description?.trim() || 'A quiet frame from daily life.',
   createdAt: typeof photo.createdAt === 'string' ? photo.createdAt : undefined,
   imageUrl: typeof photo.imageUrl === 'string' ? photo.imageUrl : undefined,
+  favorite: Boolean(photo.favorite),
 })
 
 const toIdKey = (id: number | string): string => String(id)
@@ -171,21 +181,25 @@ const getDateBucketLabel = (bucket: string): string => {
 }
 
 const getClusterValue = (photo: PhotoItem, sortBy: SortBy, timestampMap: Map<string, number>): string => {
+  if (sortBy === 'favorites') return 'favorites'
+
   if (sortBy === 'date') {
     const timestamp = timestampMap.get(toIdKey(photo.id)) || Date.now()
     return getDateBucket(timestamp)
   }
 
   if (sortBy === 'location') {
-    return photo.location.split(',')[0].trim() || 'Unknown'
+    return photo.location.trim() || 'Unknown'
   }
 
   return photo[sortBy]
 }
 
 const getClusterLabel = (sortBy: SortBy, value: string): string => {
+  if (sortBy === 'favorites') return 'Favorites'
   if (sortBy === 'date') return getDateBucketLabel(value)
   if (sortBy === 'color') return PALETTE_LABELS[value.toLowerCase()] || value
+  if (sortBy === 'theme') return THEME_LABELS[value.toLowerCase()] || value
   return value
 }
 
@@ -527,6 +541,22 @@ function PhotographyClient() {
 
   const photos = useMemo(() => [...DEFAULT_PHOTOS, ...customPhotos], [customPhotos])
 
+  const favoritePhotos = useMemo(
+    () => photos.filter((photo) => photo.favorite),
+    [photos]
+  )
+
+  const favoritesCluster = useMemo<PhotoCluster>(() => ({
+    key: 'favorites',
+    value: 'favorites',
+    label: 'Favorites',
+    photos: [...favoritePhotos].sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return timeB - timeA
+    }),
+  }), [favoritePhotos])
+
   const photoTimestampMap = useMemo(() => {
     const map = new Map<string, number>()
 
@@ -558,6 +588,10 @@ function PhotographyClient() {
 
   const clusters = useMemo<PhotoCluster[]>(() => {
     if (!sortBy) return []
+
+    if (sortBy === 'favorites') {
+      return favoritesCluster.photos.length > 0 ? [favoritesCluster] : []
+    }
 
     const activeSort = sortBy
     const activeOrder = orderBy
@@ -614,7 +648,7 @@ function PhotographyClient() {
     })
 
     return values
-  }, [filteredByTag, orderBy, photoTimestampMap, sortBy])
+  }, [favoritesCluster, filteredByTag, orderBy, photoTimestampMap, sortBy])
 
   const collagePhotos = useMemo(() => (
     [...photos]
@@ -700,7 +734,7 @@ function PhotographyClient() {
               </button>
             ))}
 
-            {sortBy && (
+            {sortBy && sortBy !== 'favorites' && (
               <label className="photo-mobile-order">
                 <select
                   className="photo-mobile-order-select"
@@ -723,7 +757,17 @@ function PhotographyClient() {
 
         <div className="photos-page-content">
         {!sortBy ? (
-          <div className="photo-collage-shell">
+          <div className="photo-all-layout">
+            {favoritesCluster.photos.length > 0 && (
+              <div className="photo-favorites-column">
+                <FilmReelCluster
+                  cluster={favoritesCluster}
+                  clusterIndex={0}
+                  onSelectPhoto={openPhoto}
+                />
+              </div>
+            )}
+            <div className="photo-collage-shell">
             <MasonryPhotoAlbum
               photos={collagePhotos}
               spacing={8}
@@ -764,6 +808,7 @@ function PhotographyClient() {
                 },
               }}
             />
+            </div>
           </div>
         ) : (
           <div className="photo-vsco-cluster-stack">

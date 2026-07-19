@@ -8,4 +8,5 @@ export interface PhotoItem {
   description: string
   createdAt?: string
   imageUrl?: string
+  favorite?: boolean
 }
