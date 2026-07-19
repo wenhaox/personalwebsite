@@ -1,7 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <path d="M32 8c-1.2 0-2.2.9-2.2 2.1V14h4.4v-3.9C34.2 8.9 33.2 8 32 8Z" fill="#C4A35A"/>
-  <path d="M20 22.5c0-4.8 5.4-8.5 12-8.5s12 3.7 12 8.5V26H20v-3.5Z" fill="#E8DFD0"/>
-  <path d="M18.5 26h27c1.4 0 2.5 1.2 2.5 2.6v2.2c0 8.6-6.3 15.7-14.8 16.9l-.7 6.8h-1l-.7-6.8C22.3 46.5 16 39.4 16 30.8v-2.2c0-1.4 1.1-2.6 2.5-2.6Z" fill="#D9CFBE"/>
-  <path d="M22 28h20v2.5c0 6.4-4.4 11.8-10 12.8-5.6-1-10-6.4-10-12.8V28Z" fill="#FFF6D8"/>
-  <ellipse cx="32" cy="34" rx="7" ry="8" fill="#FFE7A8" opacity=".85"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- perfectly centered lightbulb -->
+  <path
+    d="M32 8c-8.8 0-16 7.2-16 16 0 5.6 2.9 9.7 6.5 13.4.7.7 1.5 1.8 1.5 2.9V43c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-2.7c0-1.1.8-2.2 1.5-2.9C45.1 33.7 48 29.6 48 24c0-8.8-7.2-16-16-16Z"
+    fill="#FFE7A0"
+    stroke="#3A342C"
+    stroke-width="2"
+    stroke-linejoin="round"
+  />
+  <rect x="24" y="45" width="16" height="5" rx="1.5" fill="#EFEAE2" stroke="#3A342C" stroke-width="2"/>
+  <path d="M26 52h12" stroke="#3A342C" stroke-width="2" stroke-linecap="round"/>
+  <path d="M28 55h8" stroke="#3A342C" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="32" cy="20" r="3.2" fill="#FFFDF5"/>
 </svg>

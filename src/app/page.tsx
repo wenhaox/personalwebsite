@@ -39,11 +39,11 @@ export default function Home() {
 
         <div className="space-y-2.5 md:space-y-3.5 text-base leading-7 about-seq-body about-flow-prose about-mobile-centered">
           <p className="about-seq-line about-seq-line-1">
-            I&apos;m interested in bring-up, integration, and testing for robotics and consumer hardware. I also care about good design, and making things that are purposeful and built to last.
+            I&apos;m interested in bring-up, integration, and testing for robotics and consumer hardware. I hope to work on things that feel intuitive and practical, and are built to last.
           </p>
 
           <p className="about-seq-line about-seq-line-2">
-            A lot of my time goes into observing how people move through the world, more on{' '}
+            A lot of my time also goes into observing how people move through the world, more on{' '}
             <a
               href="/photos"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
@@ -54,7 +54,7 @@ export default function Home() {
           </p>
 
           <p className="about-seq-line about-seq-line-3">
-            Some other things I enjoy are getting outside around blue hour, touring spaces, finding a cafe in a new neighborhood, basketball, and sci-fi mysteries.
+            Some other things I enjoy are getting outside around blue hour, touring spaces, finding a good drink in a new neighborhood, basketball, sci-fi mysteries, and snacking on jelly and popcorn.
           </p>
 
           <p className="about-seq-line about-seq-line-4">

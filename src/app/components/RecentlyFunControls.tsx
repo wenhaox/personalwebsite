@@ -29,8 +29,8 @@ export default function RecentlyFunControls({
           pulse(event.currentTarget, 750)
           window.dispatchEvent(new Event(RECENTLY_SHUFFLE_EVENT))
         }}
-        aria-label="Shuffle shelf"
-        title="Shuffle shelf"
+        aria-label="Shuffle items"
+        title="Shuffle items"
       >
         <img src="/pixel-objects/dice-cube.svg" alt="" aria-hidden="true" className="sidebar-recently-dice-art" />
       </button>
@@ -43,8 +43,8 @@ export default function RecentlyFunControls({
             pulse(event.currentTarget, 520)
             window.dispatchEvent(new Event(RECENTLY_LAMP_EVENT))
           }}
-          aria-label="Toggle desk lamp"
-          title="Toggle lamp"
+          aria-label="Toggle light"
+          title="Toggle light"
         >
           <img src="/pixel-objects/desk-lamp.svg" alt="" aria-hidden="true" className="sidebar-recently-dice-art" />
         </button>
@@ -55,7 +55,7 @@ export default function RecentlyFunControls({
             pulse(event.currentTarget, 700)
             window.dispatchEvent(new Event(RECENTLY_WATER_EVENT))
           }}
-          aria-label="Water the plant"
+          aria-label="Water plant"
           title="Water plant"
         >
           <img src="/pixel-objects/watering-can.svg" alt="" aria-hidden="true" className="sidebar-recently-dice-art" />

@@ -2,7 +2,6 @@
 
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { DeskSurfaceSlot } from '../components/RecentlyIsometricDesk'
 import RecentlyFunControls from '../components/RecentlyFunControls'
 
 const RecentlyDeskBoard = dynamic(() => import('../components/RecentlyDeskBoard'), {
@@ -47,15 +46,15 @@ interface BoardObject {
 
 const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
 
-// Balanced across the desk; clear of lamp (back-left) and bonsai (back-right).
+// Fixed 7-slot grid with hard gaps so icons never sit on top of each other.
 const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
-  { x: 0.20, z: 0.30, scale: 0.92 },
-  { x: 0.50, z: 0.26, scale: 0.92 },
-  { x: 0.78, z: 0.30, scale: 0.92 },
-  { x: 0.28, z: 0.56, scale: 0.92 },
-  { x: 0.72, z: 0.56, scale: 0.92 },
-  { x: 0.28, z: 0.88, scale: 0.92 },
-  { x: 0.72, z: 0.88, scale: 0.92 },
+  { x: 0.06, z: 0.22, scale: 0.82 },
+  { x: 0.50, z: 0.18, scale: 0.82 },
+  { x: 0.94, z: 0.22, scale: 0.82 },
+  { x: 0.16, z: 0.58, scale: 0.82 },
+  { x: 0.84, z: 0.58, scale: 0.82 },
+  { x: 0.16, z: 0.96, scale: 0.82 },
+  { x: 0.84, z: 0.96, scale: 0.82 },
 ]
 
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
@@ -200,8 +199,9 @@ const getObjectPresentation = (pixelArt: string, kind: string): ObjectPresentati
   }
 
   switch (pixelArt) {
+    case '/pixel-objects/vinyl-player.svg':
     case '/pixel-objects/vinyl-record.svg':
-      return { ...base, motionClass: 'is-record-disc', pixelExtraClass: 'has-vinyl-spin', spriteExtraClass: 'is-vinyl-stage' }
+      return { ...base, motionClass: 'is-turntable', pixelExtraClass: 'has-turntable', spriteExtraClass: 'is-turntable-stage', isSmoothArt: false }
     case '/pixel-objects/film-frame.svg':
       return { ...base, motionClass: 'is-film-flicker' }
     case '/pixel-objects/fujifilm-camera.svg':
@@ -336,7 +336,7 @@ export default function Recently() {
       {
         id: 'record',
         kind: 'record',
-        pixelArt: '/pixel-objects/vinyl-record.svg',
+        pixelArt: '/pixel-objects/vinyl-player.svg',
         title: musicItem?.item || 'Now spinning',
         subtitle: musicItem?.date || 'This week',
         description: musicItem?.description || 'Music in rotation right now.',
@@ -389,16 +389,10 @@ export default function Recently() {
     return list
   }, [movieItem, musicItem, photoItem, recentlyItems, rollSeed])
 
-  const slotLayout = useMemo(() => {
-    const shuffledSlots = shuffleWithSeed(DESK_SLOT_RECTS, rollSeed)
-    const nextLayout: Record<string, DeskSurfaceSlot> = {}
-
-    boardObjects.forEach((object, index) => {
-      nextLayout[object.id] = shuffledSlots[index % shuffledSlots.length]
-    })
-
-    return nextLayout
-  }, [boardObjects, rollSeed])
+  const shuffledSlots = useMemo(
+    () => shuffleWithSeed(DESK_SLOT_RECTS, rollSeed),
+    [rollSeed]
+  )
 
   const handleRollShelf = useCallback(() => {
     if (!isReady || isShuffling) return
@@ -433,8 +427,8 @@ export default function Recently() {
           <div className="recently-board-canvas">
             <RecentlyDeskBoard
               objects={boardObjects}
-              slotLayout={slotLayout}
-              fallbackSlots={DESK_SLOT_RECTS}
+              fallbackSlots={shuffledSlots}
+              layoutSeed={rollSeed}
               isReady={isReady}
               isShuffling={isShuffling}
               getPresentation={getObjectPresentation}

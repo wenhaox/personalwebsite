@@ -2,17 +2,24 @@
 
 import { Environment, Html } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Suspense, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  Suspense,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import * as THREE from 'three'
+import { DESK_UV, worldXZToSlot, type DeskSurfaceSlot } from '@/lib/recently-desk-layout'
+
+export type { DeskSurfaceSlot }
 
 const RECENTLY_LAMP_EVENT = 'recently:toggle-lamp'
 const RECENTLY_WATER_EVENT = 'recently:water-plant'
-
-export interface DeskSurfaceSlot {
-  x: number
-  z: number
-  scale?: number
-}
 
 type ThemePalette = {
   deskTop: string
@@ -57,12 +64,58 @@ const DARK_THEME: ThemePalette = {
 }
 
 const DESK = {
-  width: 22,
-  depth: 12,
-  thickness: 0.42,
-  height: 2.55,
+  width: DESK_UV.width,
+  depth: DESK_UV.depth,
+  thickness: DESK_UV.thickness,
+  height: DESK_UV.height,
   leg: 0.34,
-  z: 0.2,
+  z: DESK_UV.z,
+}
+
+type DeskInteractionApi = {
+  projectPointerToSlot: (clientX: number, clientY: number, scale?: number) => DeskSurfaceSlot | null
+}
+
+const DeskInteractionContext = createContext<DeskInteractionApi | null>(null)
+const DeskViewScaleContext = createContext(1)
+
+export function useDeskInteraction() {
+  return useContext(DeskInteractionContext)
+}
+
+export function useDeskViewScale() {
+  return useContext(DeskViewScaleContext)
+}
+
+function DeskInteractionProvider({ children }: { children: ReactNode }) {
+  const { camera, gl } = useThree()
+  const plane = useMemo(() => {
+    const y = DESK.height + DESK.thickness * 0.5
+    return new THREE.Plane(new THREE.Vector3(0, 1, 0), -y)
+  }, [])
+  const raycaster = useMemo(() => new THREE.Raycaster(), [])
+  const ndc = useMemo(() => new THREE.Vector2(), [])
+  const hit = useMemo(() => new THREE.Vector3(), [])
+
+  const projectPointerToSlot = useCallback((clientX: number, clientY: number, scale = 1) => {
+    const rect = gl.domElement.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) return null
+    ndc.set(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    )
+    raycaster.setFromCamera(ndc, camera)
+    if (!raycaster.ray.intersectPlane(plane, hit)) return null
+    return worldXZToSlot(hit.x, hit.z, scale)
+  }, [camera, gl, hit, ndc, plane, raycaster])
+
+  const api = useMemo(() => ({ projectPointerToSlot }), [projectPointerToSlot])
+
+  return (
+    <DeskInteractionContext.Provider value={api}>
+      {children}
+    </DeskInteractionContext.Provider>
+  )
 }
 
 function useIsDarkMode() {
@@ -123,42 +176,52 @@ function HandmadeDesk({ palette }: { palette: ThemePalette }) {
   )
 }
 
-function InteractiveLamp({
-  palette,
-  isOn,
+function PixelDeskSprite({
+  position,
+  src,
+  altClass,
+  sizeRem = 4.2,
+  zIndex = 70,
+  children,
 }: {
-  palette: ThemePalette
-  isOn: boolean
+  position: [number, number, number]
+  src: string
+  altClass?: string
+  sizeRem?: number
+  zIndex?: number
+  children?: ReactNode
 }) {
-  const shadeRef = useRef<THREE.Mesh>(null)
-  const bulbRef = useRef<THREE.Mesh>(null)
+  const viewScale = useDeskViewScale()
+  return (
+    <group position={position}>
+      <Html
+        center={false}
+        zIndexRange={[zIndex, 0]}
+        wrapperClass="recently-html-anchor"
+        style={{
+          width: `${sizeRem * viewScale}rem`,
+          pointerEvents: 'none',
+          transform: 'translate3d(-50%, -100%, 0)',
+        }}
+      >
+        <div className={`recently-pixel-prop ${altClass ?? ''}`.trim()}>
+          <img src={src} alt="" aria-hidden="true" className="recently-pixel-prop-art" />
+          {children}
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+function InteractiveLamp({ isOn }: { isOn: boolean }) {
   const glow = useRef(isOn ? 1 : 0)
   const lightRef = useRef<THREE.PointLight>(null)
   const fillRef = useRef<THREE.PointLight>(null)
-  const shadeOff = useMemo(() => new THREE.Color(palette.shadeOff), [palette.shadeOff])
-  const shadeOn = useMemo(() => new THREE.Color(palette.shadeOn), [palette.shadeOn])
-  const emissiveOff = useMemo(() => new THREE.Color('#1a1814'), [])
+  const viewScale = useDeskViewScale()
 
   useFrame((_, delta) => {
-    const target = isOn ? 1 : 0
-    // Slow warm-up / cool-down
-    glow.current = THREE.MathUtils.damp(glow.current, target, 1.15, delta)
+    glow.current = THREE.MathUtils.damp(glow.current, isOn ? 1 : 0, 1.15, delta)
     const g = glow.current
-
-    const shadeMat = shadeRef.current?.material as THREE.MeshStandardMaterial | undefined
-    if (shadeMat) {
-      shadeMat.color.lerpColors(shadeOff, shadeOn, g)
-      shadeMat.emissive.lerpColors(emissiveOff, shadeOn, g)
-      shadeMat.emissiveIntensity = 0.08 + g * 0.95
-      shadeMat.opacity = 0.78 + g * 0.16
-    }
-
-    const bulbMat = bulbRef.current?.material as THREE.MeshStandardMaterial | undefined
-    if (bulbMat) {
-      bulbMat.emissiveIntensity = g * 2.4
-      bulbMat.color.setRGB(1, 0.92 - (1 - g) * 0.25, 0.72 - (1 - g) * 0.35)
-    }
-
     if (lightRef.current) {
       lightRef.current.intensity = g * 2.6
       lightRef.current.distance = 10 + g * 5
@@ -168,46 +231,34 @@ function InteractiveLamp({
     }
   })
 
-  // Sit clearly on the back-left corner of the desk top
   const surfaceY = DESK.height + DESK.thickness * 0.5 + 0.02
   const x = -DESK.width * 0.5 + 1.55
   const z = DESK.z - DESK.depth * 0.5 + 1.45
 
   return (
     <group position={[x, surfaceY, z]}>
-      <mesh position={[0, 0.06, 0]}>
-        <cylinderGeometry args={[0.28, 0.36, 0.12, 20]} />
-        <meshStandardMaterial color={palette.lampBase} roughness={0.45} metalness={0.35} />
-      </mesh>
-      <mesh position={[0, 0.72, 0]}>
-        <cylinderGeometry args={[0.045, 0.045, 1.2, 12]} />
-        <meshStandardMaterial color={palette.lampStem} metalness={0.55} roughness={0.35} />
-      </mesh>
-      <mesh ref={bulbRef} position={[0, 1.28, 0]}>
-        <sphereGeometry args={[0.14, 18, 18]} />
-        <meshStandardMaterial
-          color="#ffe7b0"
-          emissive="#ffe7b0"
-          emissiveIntensity={isOn ? 2.2 : 0}
-          roughness={0.25}
-        />
-      </mesh>
-      <mesh ref={shadeRef} position={[0, 1.48, 0]} rotation={[Math.PI, 0, 0]}>
-        <coneGeometry args={[0.58, 0.58, 24, 1, true]} />
-        <meshStandardMaterial
-          color={isOn ? palette.shadeOn : palette.shadeOff}
-          emissive={isOn ? palette.shadeOn : '#1a1814'}
-          emissiveIntensity={isOn ? 0.9 : 0.08}
-          roughness={0.42}
-          metalness={0.04}
-          transparent
-          opacity={0.88}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <Html
+        center={false}
+        zIndexRange={[70, 0]}
+        wrapperClass="recently-html-anchor"
+        style={{
+          width: `${3.6 * viewScale}rem`,
+          pointerEvents: 'none',
+          transform: 'translate3d(-50%, -100%, 0)',
+        }}
+      >
+        <div className={`recently-pixel-prop recently-pixel-lamp ${isOn ? 'is-on' : 'is-off'}`}>
+          <img
+            src="/pixel-objects/desk-corner-lamp.svg"
+            alt=""
+            aria-hidden="true"
+            className="recently-pixel-prop-art"
+          />
+        </div>
+      </Html>
       <pointLight
         ref={lightRef}
-        position={[0, 1.15, 0]}
+        position={[0, 1.15, 0.2]}
         intensity={isOn ? 2.6 : 0}
         distance={14}
         decay={2}
@@ -225,239 +276,26 @@ function InteractiveLamp({
   )
 }
 
-function WaterDrop({
-  delay,
-  active,
-  origin,
-}: {
-  delay: number
-  active: boolean
-  origin: [number, number, number]
-}) {
-  const ref = useRef<THREE.Mesh>(null)
-  const life = useRef(-delay)
-
-  useFrame((_, delta) => {
-    if (!ref.current) return
-    if (!active) {
-      life.current = -delay
-      ref.current.visible = false
-      return
-    }
-
-    life.current += delta
-    if (life.current < 0) {
-      ref.current.visible = false
-      return
-    }
-
-    const cycle = 0.72
-    const t = (life.current % cycle) / cycle
-    ref.current.visible = t < 0.9
-    const fall = t * t
-    ref.current.position.set(
-      origin[0] + Math.sin((delay + t) * 6.2) * 0.04,
-      origin[1] - fall * 2.4,
-      origin[2] + Math.cos((delay + t) * 4.8) * 0.03
-    )
-    ref.current.scale.set(0.7 + t * 0.2, 0.95 + t * 1.05, 0.7 + t * 0.2)
-    const mat = ref.current.material as THREE.MeshStandardMaterial
-    mat.opacity = 0.95 * (1 - t * 0.7)
-  })
-
-  return (
-    <mesh ref={ref} visible={false}>
-      <sphereGeometry args={[0.07, 12, 12]} />
-      <meshStandardMaterial color="#8EC5FF" transparent opacity={0.95} roughness={0.12} metalness={0.05} />
-    </mesh>
-  )
-}
-
-function InteractivePlant({
-  palette,
-  watering,
-}: {
-  palette: ThemePalette
-  watering: boolean
-}) {
-  const foliage = useRef<THREE.Group>(null)
-  const canRef = useRef<THREE.Group>(null)
-  const spoutRef = useRef<THREE.Group>(null)
-  const spoutLocal = useRef(new THREE.Vector3())
-  const soilRef = useRef<THREE.Mesh>(null)
-  const sway = useRef(0.12)
-  const grow = useRef(1)
-  const visit = useRef(0)
-  const wet = useRef(0)
-  const drySoil = useMemo(() => new THREE.Color(palette.soil), [palette.soil])
-  const wetSoil = useMemo(() => new THREE.Color('#2a211c'), [])
-  const dryLeaf = useMemo(() => new THREE.Color(palette.plant), [palette.plant])
-  const freshLeaf = useMemo(() => new THREE.Color('#4f8a55'), [])
-  const [dripping, setDripping] = useState(false)
-
-  useEffect(() => {
-    if (!watering) {
-      setDripping(false)
-      return
-    }
-    const timer = window.setTimeout(() => setDripping(true), 480)
-    return () => window.clearTimeout(timer)
-  }, [watering])
-
-  useFrame((state, delta) => {
-    // Can flies in, pours, then eases out when watering ends
-    visit.current = THREE.MathUtils.damp(visit.current, watering ? 1 : 0, 2.4, delta)
-    wet.current = THREE.MathUtils.damp(wet.current, watering ? 1 : 0, 1.4, delta)
-    sway.current = THREE.MathUtils.damp(sway.current, watering ? 0.85 : 0.14, 3.2, delta)
-    grow.current = THREE.MathUtils.damp(grow.current, watering ? 1.08 : 1, 2.6, delta)
-
-    const v = visit.current
-    const arrive = THREE.MathUtils.smoothstep(v, 0.02, 0.42)
-    const pour = THREE.MathUtils.smoothstep(v, 0.32, 0.72)
-
-    if (canRef.current) {
-      canRef.current.visible = v > 0.02
-      // Fly in from above, settle over the bonsai canopy, tip spout down onto foliage
-      const x = 1.6 * (1 - arrive) + 0.18 * arrive
-      const y = 3.9 * (1 - arrive) + (2.85 + Math.sin(pour * Math.PI) * 0.06) * arrive
-      const z = 0.9 * (1 - arrive) + 0.05 * arrive
-      canRef.current.position.set(x, y, z)
-      canRef.current.rotation.set(
-        0.2 + pour * 0.15,
-        0.35,
-        -0.2 - pour * 0.95
-      )
-      canRef.current.scale.setScalar(0.9 + arrive * 0.15)
-    }
-
-    if (spoutRef.current && canRef.current) {
-      spoutLocal.current.set(0.64, -0.04, 0)
-      canRef.current.localToWorld(spoutLocal.current)
-      spoutRef.current.parent?.worldToLocal(spoutLocal.current)
-      spoutRef.current.position.copy(spoutLocal.current)
-    }
-
-    if (foliage.current) {
-      foliage.current.rotation.z = Math.sin(state.clock.elapsedTime * 1.35) * 0.045 * sway.current
-      foliage.current.rotation.x = Math.cos(state.clock.elapsedTime * 1.1) * 0.02 * sway.current
-      foliage.current.scale.setScalar(grow.current)
-      foliage.current.traverse((child) => {
-        if (!(child as THREE.Mesh).isMesh) return
-        const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial
-        if (mat?.color) mat.color.lerpColors(dryLeaf, freshLeaf, wet.current * 0.55)
-      })
-    }
-
-    if (soilRef.current) {
-      const mat = soilRef.current.material as THREE.MeshStandardMaterial
-      mat.color.lerpColors(drySoil, wetSoil, wet.current)
-    }
-  })
-
-  // Sit clearly on the back-right corner of the desk top
+function InteractivePlant({ watering }: { watering: boolean }) {
   const surfaceY = DESK.height + DESK.thickness * 0.5 + 0.02
   const x = DESK.width * 0.5 - 1.55
   const z = DESK.z - DESK.depth * 0.5 + 1.45
-  const trunk = useMemo(() => new THREE.Color('#6b4f38'), [])
-  const trunkDark = useMemo(() => new THREE.Color('#4f3a2a'), [])
-  const potRim = useMemo(() => new THREE.Color('#8a6b55'), [palette.pot])
-  const moss = useMemo(() => new THREE.Color('#5a7a4a'), [])
 
   return (
-    <group position={[x, surfaceY, z]} scale={0.92}>
-      {/* Shallow bonsai pot */}
-      <mesh position={[0, 0.16, 0]}>
-        <cylinderGeometry args={[0.72, 0.58, 0.32, 24]} />
-        <meshStandardMaterial color={palette.pot} roughness={0.78} />
-      </mesh>
-      <mesh position={[0, 0.30, 0]}>
-        <torusGeometry args={[0.68, 0.045, 10, 28]} />
-        <meshStandardMaterial color={potRim} roughness={0.7} />
-      </mesh>
-      <mesh ref={soilRef} position={[0, 0.34, 0]}>
-        <cylinderGeometry args={[0.62, 0.62, 0.1, 22]} />
-        <meshStandardMaterial color={palette.soil} roughness={0.95} />
-      </mesh>
-      {/* Moss + pebble accents */}
-      <mesh position={[-0.28, 0.4, 0.18]} scale={[1, 0.35, 0.85]}>
-        <sphereGeometry args={[0.16, 12, 12]} />
-        <meshStandardMaterial color={moss} roughness={0.9} />
-      </mesh>
-      <mesh position={[0.32, 0.39, -0.12]} rotation={[0.4, 0.2, 0.1]}>
-        <sphereGeometry args={[0.09, 10, 10]} />
-        <meshStandardMaterial color="#9a9086" roughness={0.85} />
-      </mesh>
-
-      {/* Curved trunk */}
-      <group position={[0.02, 0.38, 0]}>
-        <mesh position={[0, 0.28, 0]} rotation={[0.12, 0.15, 0.28]}>
-          <cylinderGeometry args={[0.09, 0.13, 0.58, 10]} />
-          <meshStandardMaterial color={trunk} roughness={0.88} />
-        </mesh>
-        <mesh position={[-0.12, 0.72, 0.04]} rotation={[-0.15, 0.1, -0.55]}>
-          <cylinderGeometry args={[0.065, 0.095, 0.48, 10]} />
-          <meshStandardMaterial color={trunk} roughness={0.88} />
-        </mesh>
-        <mesh position={[0.08, 1.05, -0.02]} rotation={[0.2, -0.2, 0.35]}>
-          <cylinderGeometry args={[0.045, 0.07, 0.42, 10]} />
-          <meshStandardMaterial color={trunkDark} roughness={0.9} />
-        </mesh>
-        <mesh position={[-0.28, 0.92, 0.08]} rotation={[0.1, 0.3, -1.05]}>
-          <cylinderGeometry args={[0.03, 0.05, 0.32, 8]} />
-          <meshStandardMaterial color={trunkDark} roughness={0.9} />
-        </mesh>
-      </group>
-
-      {/* Layered bonsai canopy pads */}
-      <group ref={foliage} position={[0, 1.05, 0]}>
-        <mesh position={[0.06, 0.55, 0]} scale={[1.15, 0.48, 0.95]}>
-          <sphereGeometry args={[0.55, 18, 14]} />
-          <meshStandardMaterial color={palette.plant} roughness={0.78} />
-        </mesh>
-        <mesh position={[-0.38, 0.32, 0.12]} scale={[0.85, 0.4, 0.75]}>
-          <sphereGeometry args={[0.38, 14, 12]} />
-          <meshStandardMaterial color={palette.plant} roughness={0.78} />
-        </mesh>
-        <mesh position={[0.42, 0.28, -0.1]} scale={[0.75, 0.36, 0.7]}>
-          <sphereGeometry args={[0.32, 14, 12]} />
-          <meshStandardMaterial color={palette.plant} roughness={0.78} />
-        </mesh>
-        <mesh position={[-0.05, 0.88, -0.05]} scale={[0.7, 0.34, 0.65]}>
-          <sphereGeometry args={[0.28, 14, 12]} />
-          <meshStandardMaterial color={palette.plant} roughness={0.78} />
-        </mesh>
-        <mesh position={[0.22, 0.7, 0.18]} scale={[0.55, 0.3, 0.5]}>
-          <sphereGeometry args={[0.22, 12, 10]} />
-          <meshStandardMaterial color={palette.plant} roughness={0.78} />
-        </mesh>
-      </group>
-
-      <group ref={canRef} visible={false}>
-        <mesh>
-          <cylinderGeometry args={[0.3, 0.34, 0.46, 14]} />
-          <meshStandardMaterial color="#6B8F71" roughness={0.55} metalness={0.15} />
-        </mesh>
-        <mesh position={[0.42, 0.04, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.055, 0.1, 0.48, 10]} />
-          <meshStandardMaterial color="#5A7A60" roughness={0.5} metalness={0.2} />
-        </mesh>
-        <mesh position={[-0.24, 0.14, 0]} rotation={[0, 0, 0.4]}>
-          <torusGeometry args={[0.17, 0.038, 8, 16, Math.PI]} />
-          <meshStandardMaterial color="#5A7A60" roughness={0.5} metalness={0.2} />
-        </mesh>
-      </group>
-
-      {/* Drips track the spout and fall straight down onto the bonsai */}
-      <group ref={spoutRef}>
-        <WaterDrop delay={0} active={dripping} origin={[0, 0, 0]} />
-        <WaterDrop delay={0.1} active={dripping} origin={[0.03, 0, 0.02]} />
-        <WaterDrop delay={0.2} active={dripping} origin={[-0.02, 0, -0.02]} />
-        <WaterDrop delay={0.32} active={dripping} origin={[0.05, 0, 0.01]} />
-        <WaterDrop delay={0.44} active={dripping} origin={[0.01, 0, -0.03]} />
-        <WaterDrop delay={0.56} active={dripping} origin={[-0.03, 0, 0.03]} />
-        <WaterDrop delay={0.68} active={dripping} origin={[0.04, 0, -0.01]} />
-      </group>
-    </group>
+    <PixelDeskSprite
+      position={[x, surfaceY, z]}
+      src="/pixel-objects/desk-bonsai.svg"
+      altClass={`recently-pixel-bonsai ${watering ? 'is-watering' : ''}`}
+      sizeRem={3.6}
+      zIndex={70}
+    >
+      <span className={`recently-pixel-bucket ${watering ? 'is-pouring' : ''}`} aria-hidden="true">
+        <img src="/pixel-objects/desk-water-bucket.svg" alt="" className="recently-pixel-bucket-art" />
+      </span>
+      <span className={`recently-pixel-drips ${watering ? 'is-active' : ''}`} aria-hidden="true">
+        <i /><i /><i /><i />
+      </span>
+    </PixelDeskSprite>
   )
 }
 
@@ -473,16 +311,20 @@ function DeskScene({
   return (
     <group>
       <HandmadeDesk palette={palette} />
-      <InteractiveLamp palette={palette} isOn={lampOn} />
-      <InteractivePlant palette={palette} watering={watering} />
+      <InteractiveLamp isOn={lampOn} />
+      <InteractivePlant watering={watering} />
     </group>
   )
 }
 
 export function deskSlotToWorld(slot: DeskSurfaceSlot): [number, number, number] {
-  // Symmetric span left/right; inset enough for lamp / bonsai corners.
-  const x = (slot.x - 0.5) * (DESK.width - 4.8)
-  const z = (slot.z - 0.5) * (DESK.depth - 3.0) + DESK.z + 0.2
+  const marginX = DESK_UV.marginX
+  const marginZBack = DESK_UV.marginZBack
+  const marginZFront = DESK_UV.marginZFront
+  const usableW = DESK.width - marginX * 2
+  const usableD = DESK.depth - marginZBack - marginZFront
+  const x = (slot.x - 0.5) * usableW
+  const z = DESK.z - DESK.depth * 0.5 + marginZBack + slot.z * usableD
   const y = DESK.height + DESK.thickness * 0.5 + 0.04
   return [x, y, z]
 }
@@ -491,34 +333,68 @@ function AnimatedHtmlAnchor({
   slot,
   children,
   zIndex,
+  elevate,
+  snap,
+  follow,
+  stackKey,
 }: {
   slot: DeskSurfaceSlot
   children: ReactNode
   zIndex?: number
+  elevate?: boolean
+  snap?: boolean
+  follow?: boolean
+  stackKey?: string
 }) {
   const group = useRef<THREE.Group>(null)
-  const target = useRef(new THREE.Vector3(...deskSlotToWorld(slot)))
-  const current = useRef(new THREE.Vector3(...deskSlotToWorld(slot)))
+  const world = deskSlotToWorld(slot)
+  const target = useRef(new THREE.Vector3(...world))
+  const current = useRef(new THREE.Vector3(...world))
+  const wrapperClass = elevate
+    ? `recently-html-anchor recently-html-elevated${stackKey ? ` recently-html-${stackKey}` : ''}`
+    : `recently-html-anchor${stackKey ? ` recently-html-${stackKey}` : ''}`
 
+  // Keep 3D + DOM transform in sync immediately when snapping (load).
   useEffect(() => {
-    target.current.set(...deskSlotToWorld(slot))
-  }, [slot.x, slot.z, slot.scale])
+    const next = deskSlotToWorld(slot)
+    target.current.set(...next)
+    if (snap && !follow) {
+      current.current.set(...next)
+      if (group.current) group.current.position.set(...next)
+    }
+  }, [slot.x, slot.z, slot.scale, snap, follow])
 
   useFrame((_, delta) => {
     if (!group.current) return
-    current.current.lerp(target.current, Math.min(1, delta * 7))
-    group.current.position.copy(current.current)
+
+    if (snap && !follow) {
+      current.current.copy(target.current)
+      group.current.position.copy(current.current)
+    } else {
+      // Fast ease while dragging, slightly softer for shuffle.
+      const rate = follow ? 28 : 10
+      current.current.lerp(target.current, Math.min(1, delta * rate))
+      group.current.position.copy(current.current)
+    }
+
+    // drei Html overwrites z-index from camera depth — force elevated hosts on top.
+    if (elevate && stackKey) {
+      const el = document.querySelector(`.recently-html-${CSS.escape(stackKey)}`) as HTMLElement | null
+      if (el) el.style.setProperty('z-index', '2147483000', 'important')
+    }
   })
 
   const scale = slot.scale ?? 1
+  const viewScale = useDeskViewScale()
 
   return (
     <group ref={group} position={current.current.toArray() as [number, number, number]}>
       <Html
         center={false}
-        zIndexRange={[zIndex ?? 120, 0]}
+        zIndexRange={elevate ? [2147483000, 2147482000] : [zIndex ?? 120, 0]}
+        wrapperClass={wrapperClass}
         style={{
-          width: `${4.8 * scale}rem`,
+          width: `${4.8 * scale * viewScale}rem`,
           pointerEvents: 'auto',
           transform: 'translate3d(-50%, -100%, 0)',
         }}
@@ -535,13 +411,28 @@ export function RecentlyDeskObjectAnchor({
   slot,
   children,
   zIndex,
+  elevate,
+  snap,
+  follow,
+  stackKey,
 }: {
   slot: DeskSurfaceSlot
   children: ReactNode
   zIndex?: number
+  elevate?: boolean
+  snap?: boolean
+  follow?: boolean
+  stackKey?: string
 }) {
   return (
-    <AnimatedHtmlAnchor slot={slot} zIndex={zIndex}>
+    <AnimatedHtmlAnchor
+      slot={slot}
+      zIndex={zIndex}
+      elevate={elevate}
+      snap={snap}
+      follow={follow}
+      stackKey={stackKey}
+    >
       {children}
     </AnimatedHtmlAnchor>
   )
@@ -613,28 +504,43 @@ function DeskCanvasContents({ children, isDark }: { children: ReactNode; isDark:
   )
 }
 
-function AdaptiveDeskCamera() {
+function AdaptiveDeskCamera({
+  onViewScale,
+}: {
+  onViewScale: (scale: number) => void
+}) {
   const { camera, size } = useThree()
 
   useEffect(() => {
     const cam = camera as THREE.OrthographicCamera
     const narrow = size.width < 720
     const short = size.height < 520
+    const tiny = size.width < 390 || size.height < 460
 
-    cam.zoom = narrow ? (short ? 14 : 17) : 30
-    cam.position.set(narrow ? 13.5 : 15, narrow ? 13.2 : 12.5, narrow ? 15.5 : 16)
-    cam.lookAt(0, narrow ? 2.55 : 2.4, narrow ? 0.35 : 0.6)
+    // Fit the full desk in frame; pull back a bit on the smallest windows.
+    const zoom = narrow ? (tiny ? 17.5 : short ? 19.5 : 23.5) : 30
+    cam.zoom = zoom
+    cam.position.set(narrow ? 12.8 : 15, narrow ? 12.6 : 12.5, narrow ? 14.8 : 16)
+    cam.lookAt(0, narrow ? 2.35 : 2.4, narrow ? 0.15 : 0.6)
     cam.updateProjectionMatrix()
-  }, [camera, size.width, size.height])
+
+    // Keep HTML icons proportional to the desk zoom (desktop baseline = 30).
+    const scale = narrow ? (zoom / 30) * 1.35 : 1
+    onViewScale(scale)
+  }, [camera, onViewScale, size.height, size.width])
 
   return null
 }
 
 export default function RecentlyIsometricDesk({ children }: { children: ReactNode }) {
   const isDark = useIsDarkMode()
+  const [viewScale, setViewScale] = useState(1)
 
   return (
-    <div className="recently-iso-canvas">
+    <div
+      className="recently-iso-canvas"
+      style={{ ['--desk-icon-scale' as string]: String(viewScale) }}
+    >
       <Canvas
         orthographic
         dpr={[1, 1.75]}
@@ -644,9 +550,13 @@ export default function RecentlyIsometricDesk({ children }: { children: ReactNod
           gl.setClearColor(0x000000, 0)
         }}
       >
-        <AdaptiveDeskCamera />
+        <AdaptiveDeskCamera onViewScale={setViewScale} />
         <Suspense fallback={null}>
-          <DeskCanvasContents isDark={isDark}>{children}</DeskCanvasContents>
+          <DeskViewScaleContext.Provider value={viewScale}>
+            <DeskInteractionProvider>
+              <DeskCanvasContents isDark={isDark}>{children}</DeskCanvasContents>
+            </DeskInteractionProvider>
+          </DeskViewScaleContext.Provider>
         </Suspense>
       </Canvas>
     </div>
