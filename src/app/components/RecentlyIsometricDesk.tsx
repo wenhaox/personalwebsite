@@ -8,6 +8,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -515,21 +516,91 @@ function AdaptiveDeskCamera({
 }) {
   const { camera, size } = useThree()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const cam = camera as THREE.OrthographicCamera
-    const narrow = size.width < 720
-    const short = size.height < 520
-    const tiny = size.width < 420 || size.height < 500
+    const mobileLayout = typeof window !== 'undefined'
+      && window.matchMedia('(max-width: 1024px)').matches
+    const phone = mobileLayout && size.width < 560
 
-    // Pull back so the full desk stays in frame on phones.
-    const zoom = narrow ? (tiny ? 14.2 : short ? 16.5 : 20) : 30
+    // Fixed isometric angle — framing is handled by zoom + pan below.
+    cam.position.set(15, 12.5, 16)
+    const focus = new THREE.Vector3(0, DESK.height, DESK.z)
+    cam.lookAt(focus)
+    cam.updateMatrixWorld(true)
+
+    // Fit bounds: full desk + corner props (so nothing clips).
+    const halfW = DESK.width * 0.5 + 0.35
+    const halfD = DESK.depth * 0.5 + 0.35
+    const minY = 0
+    const maxY = DESK.height + DESK.thickness + 3.2
+    const corners = [
+      new THREE.Vector3(-halfW, minY, DESK.z - halfD),
+      new THREE.Vector3(halfW, minY, DESK.z - halfD),
+      new THREE.Vector3(-halfW, minY, DESK.z + halfD),
+      new THREE.Vector3(halfW, minY, DESK.z + halfD),
+      new THREE.Vector3(-halfW, maxY, DESK.z - halfD),
+      new THREE.Vector3(halfW, maxY, DESK.z - halfD),
+      new THREE.Vector3(-halfW, maxY, DESK.z + halfD),
+      new THREE.Vector3(halfW, maxY, DESK.z + halfD),
+    ]
+
+    const view = new THREE.Matrix4().copy(cam.matrixWorldInverse)
+    let minX = Number.POSITIVE_INFINITY
+    let maxX = Number.NEGATIVE_INFINITY
+    let minCamY = Number.POSITIVE_INFINITY
+    let maxCamY = Number.NEGATIVE_INFINITY
+    const scratch = new THREE.Vector3()
+    for (const corner of corners) {
+      scratch.copy(corner).applyMatrix4(view)
+      minX = Math.min(minX, scratch.x)
+      maxX = Math.max(maxX, scratch.x)
+      minCamY = Math.min(minCamY, scratch.y)
+      maxCamY = Math.max(maxCamY, scratch.y)
+    }
+
+    const contentW = Math.max(0.001, maxX - minX)
+    const contentH = Math.max(0.001, maxCamY - minCamY)
+
+    // phone = narrow mobile, tablet = wide mobile (≤1024 but not phone), else desktop.
+    const tablet = mobileLayout && !phone
+
+    // Phone stays tight; tablet was oversized — more margin + reserved popup band.
+    const edgePad = phone ? 0.06 : tablet ? 0.13 : 0.11
+    const bottomReserve = tablet ? 0.26 : 0
+    const fitW = size.width * (1 - edgePad * 2)
+    const fitH = size.height * (1 - edgePad * 2 - bottomReserve)
+    const zoom = Math.min(fitW / contentW, fitH / contentH)
     cam.zoom = zoom
-    cam.position.set(narrow ? 13.2 : 15, narrow ? 13.2 : 12.5, narrow ? 15.2 : 16)
-    cam.lookAt(0, narrow ? 2.1 : 2.4, narrow ? 0.05 : 0.6)
-    cam.updateProjectionMatrix()
 
-    // Keep HTML icons proportional to the desk zoom (desktop baseline = 30).
-    const scale = narrow ? (zoom / 30) * 1.12 : 1
+    const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0).normalize()
+    const up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1).normalize()
+
+    // Anchor on the tabletop center (not the tall AABB). That keeps the desk
+    // from drifting down/up when the window aspect ratio changes.
+    const anchor = new THREE.Vector3(0, DESK.height, DESK.z).applyMatrix4(view)
+    const centerPan = new THREE.Vector3()
+      .addScaledVector(right, anchor.x)
+      .addScaledVector(up, anchor.y)
+    cam.position.add(centerPan)
+    focus.add(centerPan)
+
+    // Phone: keep proven lift. Tablet: shift into the upper band above popup space.
+    const liftPx = phone
+      ? size.height * 0.2
+      : tablet
+        ? size.height * bottomReserve * 0.5
+        : 0
+    if (liftPx > 0) {
+      const liftPan = up.clone().multiplyScalar(-liftPx / zoom)
+      cam.position.add(liftPan)
+      focus.add(liftPan)
+    }
+
+    cam.lookAt(focus)
+    cam.updateProjectionMatrix()
+    cam.updateMatrixWorld(true)
+
+    const scale = Math.min(1.28, Math.max(0.8, (zoom / 30) * (mobileLayout ? 1.12 : 1)))
     onViewScale(scale)
   }, [camera, onViewScale, size.height, size.width])
 

@@ -3016,6 +3016,7 @@ body.is-desk-dragging .recently-node-tooltip {
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
 }
 
 .recently-node-shell:active {
@@ -3075,6 +3076,7 @@ body.is-desk-dragging .recently-node-tooltip {
   image-rendering: pixelated;
   background: transparent;
   overflow: visible;
+  pointer-events: none;
 }
 
 .recently-node-pixel::before {
@@ -3205,6 +3207,7 @@ body.is-desk-dragging .recently-node-tooltip {
   display: grid;
   place-items: center;
   image-rendering: auto;
+  pointer-events: none;
   filter:
     drop-shadow(3px 5px 0 rgba(48, 34, 18, 0.22))
     drop-shadow(0 10px 12px rgba(48, 34, 18, 0.18))
@@ -3810,7 +3813,7 @@ body.is-desk-dragging .recently-node-tooltip {
   padding: 0;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.1s ease;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.1);
   z-index: 50;
 }
@@ -3819,37 +3822,85 @@ body.is-desk-dragging .recently-node-tooltip {
   position: fixed;
   bottom: auto;
   right: auto;
-  width: min(18rem, calc(100vw - 1rem));
-  max-height: min(70dvh, 20rem);
+  width: min(18.5rem, calc(100vw - 1.5rem));
+  max-height: min(70dvh, 22rem);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2147483646;
+  transform: none;
+  transition: opacity 0.1s ease;
+}
+
+.recently-node-tooltip-portal.is-visible {
   opacity: 1;
   pointer-events: auto;
-  z-index: 2147483646;
-  transform: translate(-50%, -100%);
+  transition: opacity 0.2s ease;
 }
 
-.recently-node-tooltip-portal.is-portal-below {
-  transform: translate(-50%, 0);
+.recently-node-tooltip-portal.is-visible.is-pinned {
+  pointer-events: auto;
 }
 
-.recently-node-tooltip-portal.is-portal-left {
-  transform: translate(0, -100%);
+/* Desktop: bottom-left of main section (outside the desk). */
+.recently-node-tooltip-portal.is-dock-desktop {
+  top: auto;
+  right: auto;
+  left: calc(20rem + 4.85rem);
+  bottom: 3.85rem;
+  transform: none;
+  width: min(18.5rem, 22rem);
 }
 
-.recently-node-tooltip-portal.is-portal-left.is-portal-below {
-  transform: translate(0, 0);
+/* Mobile: sit just above the dice / lamp / water controls. */
+.recently-node-tooltip-portal.is-dock-mobile {
+  left: 50%;
+  right: auto;
+  top: auto;
+  transform: translateX(-50%);
+  width: min(21rem, calc(100vw - 1.25rem));
+  max-height: var(--recently-mobile-popup-max-h, min(58dvh, 24rem));
 }
 
-.recently-node-tooltip-portal.is-portal-right {
-  transform: translate(-100%, -100%);
+.recently-popup-dock {
+  display: none;
 }
 
+.recently-node-tooltip-portal.is-portal-below,
+.recently-node-tooltip-portal.is-portal-left,
+.recently-node-tooltip-portal.is-portal-left.is-portal-below,
+.recently-node-tooltip-portal.is-portal-right,
 .recently-node-tooltip-portal.is-portal-right.is-portal-below {
-  transform: translate(-100%, 0);
+  /* legacy align helpers kept inert */
+  transform: none;
 }
 
 .recently-node-tooltip-close {
   display: none;
+}
+
+.recently-node-tooltip-portal.is-pinned .recently-node-tooltip-close {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 2;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-card) 82%, #0f172a);
+  color: var(--color-muted-foreground);
+  font-size: 0.75rem;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+.recently-node-tooltip-portal.is-pinned .recently-node-tooltip-close:hover {
+  color: var(--color-foreground);
 }
 
 .dark .recently-node-tooltip {
@@ -3905,7 +3956,10 @@ body.is-desk-dragging .recently-node-tooltip {
 .recently-node-tooltip-media {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 8rem;
+  aspect-ratio: 16 / 10;
   object-fit: cover;
   border: 0;
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
@@ -3914,14 +3968,16 @@ body.is-desk-dragging .recently-node-tooltip {
 .recently-node-tooltip-spotify {
   display: block;
   width: 100%;
-  height: 152px;
+  flex: 0 0 auto;
+  height: 140px;
   border: 0;
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
 }
 
 .recently-node-tooltip-body {
-  padding: 0.6rem 0.72rem 0.7rem;
-  overflow: hidden;
+  flex: 0 0 auto;
+  padding: 0.7rem 0.8rem 1.25rem;
+  overflow: visible;
   min-width: 0;
 }
 
@@ -3953,15 +4009,17 @@ body.is-desk-dragging .recently-node-tooltip {
   color: color-mix(in oklab, var(--color-foreground) 82%, var(--color-muted));
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   overflow: hidden;
 }
 
 .recently-node-tooltip-link {
-  margin-top: 0.55rem;
+  margin-top: 0.7rem;
   display: inline-flex;
+  padding: 0.12rem 0 0.2rem;
   font-size: 0.66rem;
   font-weight: 500;
+  line-height: 1.3;
   color: var(--color-accent);
 }
 
@@ -4436,25 +4494,29 @@ body.is-desk-dragging .recently-node-tooltip {
 /* Match sidebar collapse (≤1024): show page fun controls so bulb/dice/water never vanish. */
 @media (max-width: 1024px) {
   .recently-page-root {
+    height: 100dvh;
     min-height: 100dvh;
-    padding: 0.35rem 0 5.5rem;
+    max-height: 100dvh;
+    padding: 0.2rem 0 5.5rem;
     box-sizing: border-box;
+    overflow: hidden;
   }
 
   .recently-board-shell {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     width: 100%;
     min-height: 0;
     height: auto;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .recently-board-stage {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     width: 100%;
-    height: min(68dvh, 36rem);
-    min-height: 18rem;
+    height: auto;
+    min-height: 0;
   }
 
   .recently-board-canvas {
@@ -4470,19 +4532,27 @@ body.is-desk-dragging .recently-node-tooltip {
     font-size: 0.56rem;
   }
 
+  /* No permanent spacer — popup overlays the desk above the fun bar. */
+  .recently-popup-dock {
+    display: none;
+    height: 0;
+    min-height: 0;
+  }
+
   .recently-mobile-fun-bar {
     display: flex;
+    flex: 0 0 auto;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     gap: 1.5rem;
     width: 100%;
-    margin: 1.35rem 0 0;
-    padding: 0.4rem 1rem 1.6rem;
+    margin: 0;
+    padding: 0.45rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
   }
 
   .recently-mobile-fun-bar.sidebar-recently-dice-panel {
-    margin-top: 1.35rem;
+    margin-top: 0;
   }
 
   .recently-mobile-fun-bar .sidebar-recently-fun-stack {
@@ -4500,8 +4570,8 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-iso-object .recently-node-pixel {
-    width: calc(2.95rem * var(--desk-icon-scale, 1));
-    height: calc(2.95rem * var(--desk-icon-scale, 1));
+    width: calc(3.55rem * var(--desk-icon-scale, 1));
+    height: calc(3.55rem * var(--desk-icon-scale, 1));
   }
 
   .recently-board-decor-item {
@@ -4510,18 +4580,14 @@ body.is-desk-dragging .recently-node-tooltip {
 }
 
 @media (max-width: 767px) {
-  .recently-board-stage {
-    height: min(66dvh, 32rem);
-  }
-
   .recently-mobile-fun-bar {
     gap: 1.85rem;
-    margin: 1.85rem 0 0;
-    padding: 0.5rem 1rem 2.1rem;
+    margin: 0;
+    padding: 0.4rem 1rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .recently-mobile-fun-bar.sidebar-recently-dice-panel {
-    margin-top: 1.85rem;
+    margin-top: 0;
   }
 
   .recently-mobile-fun-bar .sidebar-recently-fun-stack {
@@ -4539,8 +4605,8 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-iso-object .recently-node-pixel {
-    width: calc(3.2rem * var(--desk-icon-scale, 1));
-    height: calc(3.2rem * var(--desk-icon-scale, 1));
+    width: calc(3.9rem * var(--desk-icon-scale, 1));
+    height: calc(3.9rem * var(--desk-icon-scale, 1));
   }
 }
 
@@ -4581,42 +4647,32 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-node-tooltip-portal {
-    width: min(17.5rem, calc(100vw - 1rem));
-    max-height: min(68dvh, 19.5rem);
+    width: min(21rem, calc(100vw - 1.25rem));
+    max-height: var(--recently-mobile-popup-max-h, min(58dvh, 24rem));
     overflow: hidden;
-    padding-top: 1.95rem;
+    padding-top: 0;
   }
 
   .recently-node-tooltip-spotify {
-    height: 108px;
-    flex: 0 0 auto;
+    height: 100px;
+    flex: 0 1 auto;
   }
 
   .recently-node-tooltip-media {
-    max-height: 7.5rem;
+    max-height: 6.5rem;
     aspect-ratio: 16 / 10;
   }
 
+  .recently-node-tooltip-body {
+    padding: 0.65rem 0.75rem 1.3rem;
+  }
+
   .recently-node-tooltip-copy {
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
   }
 
   .recently-node-tooltip-close {
-    position: absolute;
-    top: 0.42rem;
-    right: 0.42rem;
-    width: 1.55rem;
-    height: 1.55rem;
-    border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--color-border) 80%, #cbd5e1);
-    background: color-mix(in oklab, var(--color-background) 94%, #ffffff);
-    color: var(--color-muted);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.72rem;
-    line-height: 1;
-    z-index: 2;
+    display: none;
   }
 
   .miro-board-canvas {
@@ -5851,6 +5907,28 @@ body.is-desk-dragging .recently-node-tooltip {
   font-size: 0.92rem;
 }
 
+.approve-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
+.approve-section + .approve-section {
+  margin-top: 1.15rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+}
+
+.approve-section-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
 .approve-input {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--color-muted) 35%, transparent);
@@ -5908,6 +5986,33 @@ body.is-desk-dragging .recently-node-tooltip {
 .approve-item {
   border-top: 1px solid color-mix(in srgb, var(--color-muted) 28%, transparent);
   padding-top: 0.85rem;
+}
+
+.approve-decoration-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.approve-decoration-photo {
+  width: 3.25rem;
+  height: 3.25rem;
+  object-fit: cover;
+  border-radius: 0.45rem;
+  flex: 0 0 auto;
+  background: color-mix(in oklab, var(--color-muted) 16%, transparent);
+}
+
+.approve-decoration-emoji {
+  width: 3.25rem;
+  height: 3.25rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 1.85rem;
+  line-height: 1;
+  border-radius: 0.45rem;
+  background: color-mix(in oklab, var(--color-muted) 12%, transparent);
 }
 
 .approve-message {

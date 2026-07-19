@@ -14,6 +14,16 @@ const getApprovePassword = () => (
   || ''
 )
 
+type ModerateAction = 'list' | 'approve' | 'reject' | 'delete-decoration'
+
+const resolveAction = (value: unknown): ModerateAction | null => {
+  if (value === 'list') return 'list'
+  if (value === 'approve') return 'approve'
+  if (value === 'reject' || value === 'delete') return 'reject'
+  if (value === 'delete-decoration') return 'delete-decoration'
+  return null
+}
+
 export async function POST(request: NextRequest) {
   const expected = getApprovePassword()
   if (!expected) {
@@ -28,20 +38,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid payload.' }, { status: 400 })
   }
 
-  const action = body.action === 'reject'
-    ? 'reject'
-    : body.action === 'approve'
-      ? 'approve'
-      : body.action === 'list'
-        ? 'list'
-        : null
+  const action = resolveAction(body.action)
 
   if (body.password !== expected) {
     return NextResponse.json({ error: 'Wrong password.' }, { status: 401 })
   }
 
   if (!action) {
-    return NextResponse.json({ error: 'Need action (list|approve|reject).' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Need action (list|approve|reject|delete|delete-decoration).' },
+      { status: 400 }
+    )
   }
 
   const { store } = await readStore()
@@ -56,24 +63,33 @@ export async function POST(request: NextRequest) {
   }
 
   const entries = store.entries.filter(isObject)
+  const decorations = store.decorations.filter(isObject)
 
-  if (action === 'reject') {
-    const nextEntries = entries.filter((entry) => entry.id !== id)
+  if (action === 'delete-decoration') {
     const nextStore = {
       ...store,
-      entries: nextEntries,
+      decorations: decorations.filter((item) => item.id !== id),
       updatedAt: new Date().toISOString(),
     }
     await writeStore(nextStore)
     return NextResponse.json(nextStore, { headers: { 'Cache-Control': 'no-store' } })
   }
 
-  const nextEntries = entries.map((entry) => (
-    entry.id === id ? { ...entry, approved: true } : entry
-  ))
+  if (action === 'reject') {
+    const nextStore = {
+      ...store,
+      entries: entries.filter((entry) => entry.id !== id),
+      updatedAt: new Date().toISOString(),
+    }
+    await writeStore(nextStore)
+    return NextResponse.json(nextStore, { headers: { 'Cache-Control': 'no-store' } })
+  }
+
   const nextStore = {
     ...store,
-    entries: nextEntries,
+    entries: entries.map((entry) => (
+      entry.id === id ? { ...entry, approved: true } : entry
+    )),
     updatedAt: new Date().toISOString(),
   }
   await writeStore(nextStore)

@@ -16,6 +16,10 @@ import {
   saveDeskLayout,
 } from '@/lib/recently-desk-layout'
 
+const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
+const RECENTLY_LAMP_EVENT = 'recently:toggle-lamp'
+const RECENTLY_WATER_EVENT = 'recently:water-plant'
+
 export interface DeskBoardObject {
   id: string
   kind: string
@@ -47,10 +51,10 @@ interface RecentlyDeskBoardProps {
 }
 
 type TooltipPlacement = {
+  variant: 'desktop' | 'mobile'
   left: number
   top: number
-  placeAbove: boolean
-  align: 'center' | 'left' | 'right'
+  bottom?: number
 }
 
 export default function RecentlyDeskBoard(props: RecentlyDeskBoardProps) {
@@ -93,6 +97,7 @@ function DeskObjectsLayer({
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [pressEpoch, setPressEpoch] = useState(0)
   const [tooltipPlacement, setTooltipPlacement] = useState<TooltipPlacement | null>(null)
+  const [tooltipPinned, setTooltipPinned] = useState(false)
   const shellRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const dragMovedRef = useRef(false)
   const pressIdRef = useRef<string | null>(null)
@@ -101,10 +106,151 @@ function DeskObjectsLayer({
   const layoutRef = useRef(slotLayout)
   const seedAppliedRef = useRef<number | null>(null)
   const hydratedRef = useRef(false)
+  const hoveredIdRef = useRef<string | null>(null)
+  const tooltipPinnedRef = useRef(false)
+  const shufflingRef = useRef(false)
+  const openTimeoutRef = useRef<number | null>(null)
+  const closeTimeoutRef = useRef<number | null>(null)
+  const exitTimeoutRef = useRef<number | null>(null)
+  const [tooltipVisible, setTooltipVisible] = useState(false)
+
+  const HOVER_CLOSE_MS = 140
+  const EXIT_ANIM_MS = 110
 
   useEffect(() => {
     layoutRef.current = slotLayout
   }, [slotLayout])
+
+  useEffect(() => {
+    hoveredIdRef.current = hoveredId
+  }, [hoveredId])
+
+  useEffect(() => {
+    tooltipPinnedRef.current = tooltipPinned
+  }, [tooltipPinned])
+
+  useEffect(() => {
+    shufflingRef.current = isShuffling
+  }, [isShuffling])
+
+  const clearOpenTimeout = useCallback(() => {
+    if (openTimeoutRef.current) {
+      window.clearTimeout(openTimeoutRef.current)
+      openTimeoutRef.current = null
+    }
+  }, [])
+
+  const clearCloseTimeout = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+  }, [])
+
+  const clearExitTimeout = useCallback(() => {
+    if (exitTimeoutRef.current) {
+      window.clearTimeout(exitTimeoutRef.current)
+      exitTimeoutRef.current = null
+    }
+  }, [])
+
+  const showTooltip = useCallback((objectId: string) => {
+    if (shufflingRef.current) return
+    clearOpenTimeout()
+    clearCloseTimeout()
+    clearExitTimeout()
+    setHoveredId(objectId)
+    setTooltipPinned(true)
+    window.requestAnimationFrame(() => setTooltipVisible(true))
+  }, [clearCloseTimeout, clearExitTimeout, clearOpenTimeout])
+
+  const hideTooltipFast = useCallback(() => {
+    clearOpenTimeout()
+    clearCloseTimeout()
+    clearExitTimeout()
+    setTooltipVisible(false)
+    setTooltipPinned(false)
+    exitTimeoutRef.current = window.setTimeout(() => {
+      setHoveredId(null)
+      exitTimeoutRef.current = null
+    }, EXIT_ANIM_MS)
+  }, [EXIT_ANIM_MS, clearCloseTimeout, clearExitTimeout, clearOpenTimeout])
+
+  const hideTooltipImmediate = useCallback(() => {
+    clearOpenTimeout()
+    clearCloseTimeout()
+    clearExitTimeout()
+    setTooltipVisible(false)
+    setTooltipPinned(false)
+    setHoveredId(null)
+    setTooltipPlacement(null)
+  }, [clearCloseTimeout, clearExitTimeout, clearOpenTimeout])
+
+  // Dice / lamp / water should always dismiss the details card.
+  useEffect(() => {
+    const clear = () => hideTooltipImmediate()
+    window.addEventListener(RECENTLY_SHUFFLE_EVENT, clear)
+    window.addEventListener(RECENTLY_LAMP_EVENT, clear)
+    window.addEventListener(RECENTLY_WATER_EVENT, clear)
+    return () => {
+      window.removeEventListener(RECENTLY_SHUFFLE_EVENT, clear)
+      window.removeEventListener(RECENTLY_LAMP_EVENT, clear)
+      window.removeEventListener(RECENTLY_WATER_EVENT, clear)
+    }
+  }, [hideTooltipImmediate])
+
+  // Dice shuffle remounts layout — kill the card instantly so it can't flicker/rebuild.
+  useEffect(() => {
+    if (!isShuffling) return
+    hideTooltipImmediate()
+  }, [hideTooltipImmediate, isShuffling])
+
+  const queueTooltipClose = useCallback(() => {
+    // Open cards stay until click / Esc / close — no hover-dismiss race.
+    if (tooltipPinnedRef.current) return
+    clearOpenTimeout()
+    clearCloseTimeout()
+    closeTimeoutRef.current = window.setTimeout(() => {
+      hideTooltipFast()
+      closeTimeoutRef.current = null
+    }, HOVER_CLOSE_MS)
+  }, [HOVER_CLOSE_MS, clearCloseTimeout, clearOpenTimeout, hideTooltipFast])
+
+  const cancelTooltipClose = useCallback(() => {
+    clearCloseTimeout()
+    clearExitTimeout()
+    if (hoveredIdRef.current) setTooltipVisible(true)
+  }, [clearCloseTimeout, clearExitTimeout])
+
+  const isPointerOverOpenUi = useCallback((clientX: number, clientY: number, objectId: string) => {
+    const shell = shellRefs.current[objectId]
+    if (shell) {
+      const rect = shell.getBoundingClientRect()
+      if (
+        clientX >= rect.left
+        && clientX <= rect.right
+        && clientY >= rect.top
+        && clientY <= rect.bottom
+      ) {
+        return true
+      }
+    }
+
+    const tooltip = document.querySelector('.recently-node-tooltip-portal') as HTMLElement | null
+    if (tooltip) {
+      const rect = tooltip.getBoundingClientRect()
+      if (
+        clientX >= rect.left
+        && clientX <= rect.right
+        && clientY >= rect.top
+        && clientY <= rect.bottom
+      ) {
+        return true
+      }
+    }
+
+    return false
+  }, [])
 
   useEffect(() => {
     if (!hydratedRef.current) {
@@ -130,48 +276,60 @@ function DeskObjectsLayer({
     }
   }, [defaultLayout, fallbackSlots, layoutSeed, objectIds])
 
-  const updateTooltipPlacement = useCallback((objectId: string) => {
-    const shell = shellRefs.current[objectId]
-    if (!shell) return
+  const updateTooltipPlacement = useCallback((objectId?: string) => {
+    const mobile = window.matchMedia('(max-width: 1024px)').matches
 
-    const rect = shell.getBoundingClientRect()
-    const gap = 10
-    const margin = 8
-    const maxWidth = Math.min(288, window.innerWidth - margin * 2)
-    const estimatedHeight = Math.min(window.innerHeight - margin * 2, 280)
-    const spaceAbove = rect.top - margin
-    const spaceBelow = window.innerHeight - rect.bottom - margin
-    const placeAbove = spaceAbove >= spaceBelow && spaceAbove >= Math.min(estimatedHeight, 160)
-
-    const centerX = rect.left + rect.width / 2
-    let left = centerX
-    let align: TooltipPlacement['align'] = 'center'
-
-    if (centerX - maxWidth / 2 < margin) {
-      left = margin
-      align = 'left'
-    } else if (centerX + maxWidth / 2 > window.innerWidth - margin) {
-      left = window.innerWidth - margin
-      align = 'right'
+    if (!mobile) {
+      document.documentElement.style.removeProperty('--recently-mobile-popup-max-h')
+      setTooltipPlacement({
+        variant: 'desktop',
+        left: 0,
+        top: 0,
+      })
+      return
     }
 
-    let top = placeAbove ? rect.top - gap : rect.bottom + gap
-    if (placeAbove) {
-      top = Math.min(window.innerHeight - margin, Math.max(estimatedHeight + margin, top))
-    } else {
-      top = Math.max(margin, Math.min(top, window.innerHeight - estimatedHeight - margin))
+    const dock = document.querySelector('.recently-popup-dock') as HTMLElement | null
+    const funBar = document.querySelector('.recently-mobile-fun-bar') as HTMLElement | null
+    const stage = document.querySelector('.recently-board-stage') as HTMLElement | null
+    const gap = 12
+
+    const placeAboveFunBar = (funTop: number, ceiling: number) => {
+      const bottom = Math.max(gap, window.innerHeight - funTop + gap)
+      // Tall overlay over the desk; fun bar stays visible underneath.
+      const maxHeight = Math.max(200, Math.min(560, funTop - ceiling - gap * 2))
+      document.documentElement.style.setProperty('--recently-mobile-popup-max-h', `${maxHeight}px`)
+      setTooltipPlacement({
+        variant: 'mobile',
+        left: window.innerWidth / 2,
+        top: 0,
+        bottom,
+      })
     }
 
+    if (funBar) {
+      const funTop = funBar.getBoundingClientRect().top
+      const stageTop = stage?.getBoundingClientRect().top
+      const dockTop = dock && dock.offsetParent !== null
+        ? dock.getBoundingClientRect().top
+        : null
+      const ceiling = dockTop
+        ?? (typeof stageTop === 'number' ? stageTop + 10 : Math.max(56, funTop - 340))
+      placeAboveFunBar(funTop, ceiling)
+      return
+    }
+
+    document.documentElement.style.setProperty('--recently-mobile-popup-max-h', '22rem')
     setTooltipPlacement({
-      left,
-      top,
-      placeAbove,
-      align,
+      variant: 'mobile',
+      left: window.innerWidth / 2,
+      top: 0,
+      bottom: 9.5 * 16,
     })
   }, [])
 
   useLayoutEffect(() => {
-    if (!hoveredId || draggingId) {
+    if (!hoveredId || draggingId || isShuffling) {
       setTooltipPlacement(null)
       return
     }
@@ -180,36 +338,69 @@ function DeskObjectsLayer({
     const onReposition = () => updateTooltipPlacement(hoveredId)
     window.addEventListener('resize', onReposition)
     window.addEventListener('scroll', onReposition, true)
-    const frame = window.setInterval(onReposition, 120)
     return () => {
       window.removeEventListener('resize', onReposition)
       window.removeEventListener('scroll', onReposition, true)
-      window.clearInterval(frame)
     }
-  }, [hoveredId, draggingId, updateTooltipPlacement, slotLayout])
+  }, [hoveredId, draggingId, isShuffling, updateTooltipPlacement])
 
   useEffect(() => {
-    if (!hoveredId || draggingId) return
+    if (!hoveredId || draggingId || isShuffling) {
+      clearCloseTimeout()
+      return
+    }
 
-    const closeTooltipIfOutside = (event: PointerEvent) => {
+    const onPointerMove = (event: PointerEvent) => {
+      // Click-opened cards stay put — moving across icons shouldn't dismiss them.
+      if (tooltipPinnedRef.current) return
+      if (event.pointerType && event.pointerType !== 'mouse') return
+      const openId = hoveredIdRef.current
+      if (!openId) return
+      if (isPointerOverOpenUi(event.clientX, event.clientY, openId)) {
+        cancelTooltipClose()
+        return
+      }
+      queueTooltipClose()
+    }
+
+    const onPointerDownOutside = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null
       if (!target) return
       if (target.closest('.recently-node-tooltip')) return
       if (target.closest('.recently-node-shell')) return
-      setHoveredId(null)
+      // Fun controls (and anything else outside the icon) clear the card.
+      hideTooltipImmediate()
     }
 
     const closeTooltipOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setHoveredId(null)
+      if (event.key === 'Escape') hideTooltipFast()
     }
 
-    window.addEventListener('pointerdown', closeTooltipIfOutside)
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerdown', onPointerDownOutside)
     window.addEventListener('keydown', closeTooltipOnEscape)
     return () => {
-      window.removeEventListener('pointerdown', closeTooltipIfOutside)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerdown', onPointerDownOutside)
       window.removeEventListener('keydown', closeTooltipOnEscape)
     }
-  }, [hoveredId, draggingId])
+  }, [
+    cancelTooltipClose,
+    clearCloseTimeout,
+    draggingId,
+    hideTooltipFast,
+    hideTooltipImmediate,
+    hoveredId,
+    isPointerOverOpenUi,
+    isShuffling,
+    queueTooltipClose,
+  ])
+
+  useEffect(() => () => {
+    clearOpenTimeout()
+    clearCloseTimeout()
+    clearExitTimeout()
+  }, [clearCloseTimeout, clearExitTimeout, clearOpenTimeout])
 
   useEffect(() => {
     if (!pressEpoch) return
@@ -225,7 +416,8 @@ function DeskObjectsLayer({
 
       if (!dragMovedRef.current) {
         dragMovedRef.current = true
-        setHoveredId(null)
+        clearOpenTimeout()
+        hideTooltipFast()
         setTooltipPlacement(null)
         setDraggingId(activeId)
         document.body.classList.add('is-desk-dragging')
@@ -246,7 +438,7 @@ function DeskObjectsLayer({
       setSlotLayout(clampLayoutSlot(draft, activeId))
     }
 
-    const onUp = () => {
+    const onUp = (event: PointerEvent) => {
       const id = activeId
       const didMove = dragMovedRef.current
 
@@ -255,9 +447,21 @@ function DeskObjectsLayer({
         setSlotLayout(settled)
         layoutRef.current = settled
         saveDeskLayout(settled)
-        setHoveredId(null)
+        hideTooltipFast()
+      } else if (event.pointerType && event.pointerType !== 'mouse') {
+        // Touch: tap opens details.
+        if (hoveredIdRef.current === id && tooltipPinnedRef.current) {
+          hideTooltipFast()
+        } else {
+          showTooltip(id)
+        }
       } else {
-        setHoveredId((current) => (current === id ? null : id))
+        // Desktop: click opens (no hover popup — keeps icon hopping free).
+        if (hoveredIdRef.current === id && tooltipPinnedRef.current) {
+          hideTooltipFast()
+        } else {
+          showTooltip(id)
+        }
       }
 
       pressIdRef.current = null
@@ -276,7 +480,7 @@ function DeskObjectsLayer({
       window.removeEventListener('pointerup', onUp)
       window.removeEventListener('pointercancel', onUp)
     }
-  }, [desk, pressEpoch])
+  }, [clearOpenTimeout, desk, hideTooltipFast, pressEpoch, showTooltip])
 
   const beginPress = useCallback((objectId: string, event: React.PointerEvent) => {
     if (event.button !== 0) return
@@ -307,7 +511,7 @@ function DeskObjectsLayer({
     : null
 
   useEffect(() => {
-    if (!hoveredObject || !tooltipPlacement || typeof document === 'undefined') {
+    if (!hoveredObject || !tooltipPlacement || isShuffling || typeof document === 'undefined') {
       setPortalTooltip(null)
       return
     }
@@ -316,14 +520,23 @@ function DeskObjectsLayer({
       createPortal(
         <div
           className={[
-            'recently-node-tooltip recently-node-tooltip-portal is-visible',
-            tooltipPlacement.placeAbove ? 'is-portal-above' : 'is-portal-below',
-            tooltipPlacement.align === 'left' ? 'is-portal-left' : '',
-            tooltipPlacement.align === 'right' ? 'is-portal-right' : '',
+            'recently-node-tooltip recently-node-tooltip-portal',
+            tooltipVisible ? 'is-visible' : '',
+            tooltipPlacement.variant === 'desktop' ? 'is-dock-desktop' : 'is-dock-mobile',
+            'is-pinned',
           ].filter(Boolean).join(' ')}
-          style={{
-            left: tooltipPlacement.left,
-            top: tooltipPlacement.top,
+          style={
+            tooltipPlacement.variant === 'mobile'
+              ? {
+                  left: tooltipPlacement.left,
+                  top: 'auto',
+                  bottom: tooltipPlacement.bottom ?? 152,
+                }
+              : undefined
+          }
+          onPointerEnter={(event) => {
+            if (event.pointerType && event.pointerType !== 'mouse') return
+            cancelTooltipClose()
           }}
           onPointerDown={(event) => {
             const target = event.target as HTMLElement | null
@@ -338,7 +551,7 @@ function DeskObjectsLayer({
             onClick={(event) => {
               event.preventDefault()
               event.stopPropagation()
-              setHoveredId(null)
+              hideTooltipFast()
             }}
             aria-label={`Close details for ${hoveredObject.title}`}
           >
@@ -381,7 +594,16 @@ function DeskObjectsLayer({
     )
 
     return () => setPortalTooltip(null)
-  }, [hoveredObject, setPortalTooltip, tooltipPlacement])
+  }, [
+    cancelTooltipClose,
+    hideTooltipFast,
+    hoveredObject,
+    isShuffling,
+    setPortalTooltip,
+    tooltipPinned,
+    tooltipPlacement,
+    tooltipVisible,
+  ])
 
   return (
     <>

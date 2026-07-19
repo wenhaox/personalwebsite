@@ -304,83 +304,104 @@ export default function Recently() {
   ), [recentlyItems])
 
   const boardObjects = useMemo<BoardObject[]>(() => {
-    const extraPixelArt = [
-      '/pixel-objects/headphones.svg',
-      '/pixel-objects/coffee-mug.svg',
-      '/pixel-objects/gamepad.svg',
-      '/pixel-objects/book-stack.svg',
-      '/pixel-objects/compass.svg',
-      '/pixel-objects/cassette.svg',
-      '/pixel-objects/postcard.svg',
-      '/pixel-objects/radio.svg',
-      '/pixel-objects/hourglass.svg',
-      '/pixel-objects/arcade-token.svg',
-    ]
+    const byCategory = (category: string) => (
+      recentlyItems.find((item) => item.category.toLowerCase() === category.toLowerCase()) || null
+    )
 
-    const fallbackItem: RecentlyItem = {
-      category: 'Notes',
-      item: 'Desk fragment',
-      emoji: '✨',
-      description: 'A tiny piece from the week that still stuck around.',
-      date: 'recent',
+    const pick = (...categories: string[]) => {
+      for (const category of categories) {
+        const hit = byCategory(category)
+        if (hit) return hit
+      }
+      return null
     }
 
-    const list: BoardObject[] = [
+    const deskIcons: Array<{
+      id: string
+      kind: BoardObjectKind
+      pixelArt: string
+      fallbackTitle: string
+      fallbackSubtitle: string
+      fallbackDescription: string
+      item: RecentlyItem | null
+    }> = [
       {
         id: 'record',
         kind: 'record',
         pixelArt: '/pixel-objects/vinyl-player.svg',
-        title: musicItem?.item || 'Now spinning',
-        subtitle: musicItem?.date || 'This week',
-        description: musicItem?.description || 'Music in rotation right now.',
-        spotifyEmbed: musicItem?.spotifyEmbed,
-        link: getPrimaryLink(musicItem),
+        fallbackTitle: 'Now spinning',
+        fallbackSubtitle: 'This week',
+        fallbackDescription: 'Music in rotation right now.',
+        item: musicItem || pick('Music', 'Audio'),
       },
       {
         id: 'camera',
         kind: 'camera',
         pixelArt: '/pixel-objects/fujifilm-camera.svg',
-        title: photoItem?.item || 'Current photo obsession',
-        subtitle: photoItem?.date || 'This week',
-        description: photoItem?.description || 'Captured recently and still replaying in my head.',
-        image: getPrimaryImage(photoItem),
-        link: getPrimaryLink(photoItem),
+        fallbackTitle: 'Current photo obsession',
+        fallbackSubtitle: 'This week',
+        fallbackDescription: 'Captured recently and still replaying in my head.',
+        item: photoItem || pick('Place', 'Archive'),
       },
       {
         id: 'movie',
         kind: 'movie',
         pixelArt: '/pixel-objects/film-frame.svg',
-        title: movieItem?.item || 'Current watch',
-        subtitle: movieItem?.date || 'Recent',
-        description: movieItem?.description || 'A movie scene I keep thinking about.',
-        image: getPrimaryImage(movieItem),
-        link: getPrimaryLink(movieItem),
+        fallbackTitle: 'Current watch',
+        fallbackSubtitle: 'Recent',
+        fallbackDescription: 'A movie scene I keep thinking about.',
+        item: movieItem || pick('Watching'),
+      },
+      {
+        id: 'headphones',
+        kind: 'artifact',
+        pixelArt: '/pixel-objects/headphones.svg',
+        fallbackTitle: 'Late-night cassette mix',
+        fallbackSubtitle: 'Yesterday',
+        fallbackDescription: 'A mellow tape loop for long editing sessions.',
+        item: pick('Audio', 'Music'),
+      },
+      {
+        id: 'coffee',
+        kind: 'artifact',
+        pixelArt: '/pixel-objects/coffee-mug.svg',
+        fallbackTitle: 'Kenya AB pour-over dial-in',
+        fallbackSubtitle: 'Today',
+        fallbackDescription: 'Brighter cup at a finer grind and slightly cooler water.',
+        item: pick('Coffee'),
+      },
+      {
+        id: 'gamepad',
+        kind: 'artifact',
+        pixelArt: '/pixel-objects/gamepad.svg',
+        fallbackTitle: 'Retro co-op night',
+        fallbackSubtitle: 'Friday',
+        fallbackDescription: 'Quick arcade rounds after work.',
+        item: pick('Play'),
+      },
+      {
+        id: 'book',
+        kind: 'artifact',
+        pixelArt: '/pixel-objects/book-stack.svg',
+        fallbackTitle: 'The Creative Act',
+        fallbackSubtitle: 'This week',
+        fallbackDescription: 'Short sections, slow pace, and surprisingly useful prompts.',
+        item: pick('Reading'),
       },
     ]
 
-    const secondaryItems = shuffleWithSeed(recentlyItems.filter((item) => (
-      item !== musicItem && item !== photoItem && item !== movieItem
-    )), rollSeed)
-
-    const targetCount = 7
-    const artifactCount = Math.max(targetCount - list.length, 0)
-    const artifactPool = secondaryItems.length > 0 ? secondaryItems : [fallbackItem]
-
-    Array.from({ length: artifactCount }, (_, index) => artifactPool[index % artifactPool.length]).forEach((item, index) => {
-      list.push({
-        id: `object-${index}`,
-        kind: 'artifact',
-        pixelArt: extraPixelArt[index % extraPixelArt.length],
-        title: item.item,
-        subtitle: item.date || 'recent',
-        description: item.description || 'A smaller moment from the recent stack.',
-        image: getPrimaryImage(item),
-        link: getPrimaryLink(item),
-      })
-    })
-
-    return list
-  }, [movieItem, musicItem, photoItem, recentlyItems, rollSeed])
+    return deskIcons.map((icon) => ({
+      id: icon.id,
+      kind: icon.kind,
+      pixelArt: icon.pixelArt,
+      title: icon.item?.item || icon.fallbackTitle,
+      subtitle: icon.item?.date || icon.fallbackSubtitle,
+      description: icon.item?.description || icon.fallbackDescription,
+      image: getPrimaryImage(icon.item),
+      spotifyEmbed: icon.kind === 'record' ? icon.item?.spotifyEmbed : undefined,
+      link: getPrimaryLink(icon.item),
+    }))
+  }, [movieItem, musicItem, photoItem, recentlyItems])
 
   const shuffledSlots = useMemo(
     () => shuffleWithSeed(DESK_SLOT_RECTS, rollSeed),
@@ -428,6 +449,8 @@ export default function Recently() {
             />
           </div>
         </div>
+
+        <div className="recently-popup-dock" aria-hidden="true" />
 
         <RecentlyFunControls className="recently-mobile-fun-bar" layout="row" />
       </section>
