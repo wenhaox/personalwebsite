@@ -2,12 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import RecentlyFunControls from './RecentlyFunControls'
 
 type PhotoSort = 'theme' | 'color' | 'location' | 'date'
-
-const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
-const RECENTLY_LAMP_EVENT = 'recently:toggle-lamp'
-const RECENTLY_WATER_EVENT = 'recently:water-plant'
 
 const PHOTO_SORT_OPTIONS: Array<{ key: PhotoSort | 'all'; icon: string; label: string; href: string }> = [
   { key: 'all', icon: '◍', label: 'All Photos', href: '/photos' },
@@ -47,18 +44,6 @@ export default function Navigation() {
     { name: 'Recently', href: '/recently' },
     { name: 'Connect', href: '/connect' },
   ]
-
-  const handleRecentlyShelfDice = () => {
-    window.dispatchEvent(new Event(RECENTLY_SHUFFLE_EVENT))
-  }
-
-  const handleRecentlyLamp = () => {
-    window.dispatchEvent(new Event(RECENTLY_LAMP_EVENT))
-  }
-
-  const handleRecentlyWater = () => {
-    window.dispatchEvent(new Event(RECENTLY_WATER_EVENT))
-  }
 
   return (
     <nav
@@ -163,59 +148,7 @@ export default function Navigation() {
         )}
 
         {pathname === '/recently' && (
-          <div className="sidebar-recently-dice-panel mobile-hide-photo">
-            <button
-              type="button"
-              className="sidebar-recently-dice-btn sidebar-recently-control is-dice"
-              onClick={(event) => {
-                const button = event.currentTarget
-                button.classList.remove('is-acting')
-                void button.offsetWidth
-                button.classList.add('is-acting')
-                window.setTimeout(() => button.classList.remove('is-acting'), 750)
-                handleRecentlyShelfDice()
-              }}
-              aria-label="Shuffle shelf"
-              title="Shuffle shelf"
-            >
-              <img src="/pixel-objects/dice-cube.svg" alt="" aria-hidden="true" className="sidebar-recently-dice-art" />
-            </button>
-
-            <div className="sidebar-recently-fun-stack">
-              <button
-                type="button"
-                className="sidebar-recently-dice-btn sidebar-recently-control is-lamp"
-                onClick={(event) => {
-                  const button = event.currentTarget
-                  button.classList.remove('is-acting')
-                  void button.offsetWidth
-                  button.classList.add('is-acting')
-                  window.setTimeout(() => button.classList.remove('is-acting'), 520)
-                  handleRecentlyLamp()
-                }}
-                aria-label="Toggle desk lamp"
-                title="Toggle lamp"
-              >
-                <img src="/pixel-objects/desk-lamp.svg" alt="" aria-hidden="true" className="sidebar-recently-dice-art" />
-              </button>
-              <button
-                type="button"
-                className="sidebar-recently-dice-btn sidebar-recently-control is-water"
-                onClick={(event) => {
-                  const button = event.currentTarget
-                  button.classList.remove('is-acting')
-                  void button.offsetWidth
-                  button.classList.add('is-acting')
-                  window.setTimeout(() => button.classList.remove('is-acting'), 700)
-                  handleRecentlyWater()
-                }}
-                aria-label="Water the plant"
-                title="Water plant"
-              >
-                <img src="/pixel-objects/watering-can.svg" alt="" aria-hidden="true" className="sidebar-recently-dice-art" />
-              </button>
-            </div>
-          </div>
+          <RecentlyFunControls className="mobile-hide-photo" layout="stack" />
         )}
 
         {pathname === '/' && (

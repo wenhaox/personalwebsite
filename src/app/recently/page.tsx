@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DeskSurfaceSlot } from '../components/RecentlyIsometricDesk'
+import RecentlyFunControls from '../components/RecentlyFunControls'
 
 const RecentlyDeskBoard = dynamic(() => import('../components/RecentlyDeskBoard'), {
   ssr: false,
@@ -440,6 +441,8 @@ export default function Recently() {
             />
           </div>
         </div>
+
+        <RecentlyFunControls className="recently-mobile-fun-bar" layout="row" />
       </section>
     </div>
   )

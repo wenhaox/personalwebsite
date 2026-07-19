@@ -4159,6 +4159,81 @@ button.sidebar-recently-control.is-water:hover .sidebar-recently-dice-art {
   }
 }
 
+.recently-mobile-fun-bar {
+  display: none;
+}
+
+.recently-fun-controls-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.recently-fun-controls-row .sidebar-recently-fun-stack {
+  flex-direction: row;
+  gap: 0.35rem;
+}
+
+@media (max-width: 767px) {
+  .recently-page-root {
+    min-height: 100dvh;
+    padding: 0.35rem 0 5.5rem;
+    box-sizing: border-box;
+  }
+
+  .recently-board-shell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .recently-board-stage {
+    flex: 0 0 auto;
+    width: 100%;
+    height: min(58dvh, 26rem);
+    min-height: 16rem;
+  }
+
+  .recently-board-canvas {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .recently-mobile-fun-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    width: 100%;
+    margin: 0.15rem 0 0;
+    padding: 0.15rem 0.5rem 0.35rem;
+  }
+
+  .recently-mobile-fun-bar.sidebar-recently-dice-panel {
+    margin-top: 0.1rem;
+  }
+
+  .recently-mobile-fun-bar .sidebar-recently-dice-btn {
+    width: 3.4rem;
+    height: 3.4rem;
+  }
+
+  .recently-mobile-fun-bar .sidebar-recently-dice-art {
+    width: 2.55rem;
+    height: 2.55rem;
+  }
+
+  .recently-iso-object .recently-node-pixel {
+    width: 2.9rem;
+    height: 2.9rem;
+  }
+}
+
 @media (max-width: 900px) {
   .recently-board-shell {
     min-height: calc(100dvh - 4.2rem);

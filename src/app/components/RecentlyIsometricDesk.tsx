@@ -1,7 +1,7 @@
 'use client'
 
 import { Environment, Html } from '@react-three/drei'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Suspense, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
@@ -613,6 +613,23 @@ function DeskCanvasContents({ children, isDark }: { children: ReactNode; isDark:
   )
 }
 
+function AdaptiveDeskCamera() {
+  const { camera, size } = useThree()
+
+  useEffect(() => {
+    const cam = camera as THREE.OrthographicCamera
+    const narrow = size.width < 720
+    const short = size.height < 520
+
+    cam.zoom = narrow ? (short ? 14 : 17) : 30
+    cam.position.set(narrow ? 13.5 : 15, narrow ? 13.2 : 12.5, narrow ? 15.5 : 16)
+    cam.lookAt(0, narrow ? 2.55 : 2.4, narrow ? 0.35 : 0.6)
+    cam.updateProjectionMatrix()
+  }, [camera, size.width, size.height])
+
+  return null
+}
+
 export default function RecentlyIsometricDesk({ children }: { children: ReactNode }) {
   const isDark = useIsDarkMode()
 
@@ -623,12 +640,11 @@ export default function RecentlyIsometricDesk({ children }: { children: ReactNod
         dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         camera={{ position: [15, 12.5, 16], zoom: 30, near: -200, far: 360 }}
-        onCreated={({ camera, gl }) => {
-          camera.lookAt(0, 2.4, 0.6)
-          camera.updateProjectionMatrix()
+        onCreated={({ gl }) => {
           gl.setClearColor(0x000000, 0)
         }}
       >
+        <AdaptiveDeskCamera />
         <Suspense fallback={null}>
           <DeskCanvasContents isDark={isDark}>{children}</DeskCanvasContents>
         </Suspense>
