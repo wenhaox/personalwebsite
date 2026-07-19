@@ -931,6 +931,18 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
   position: relative;
 }
 
+.photo-film-slide.is-portrait {
+  --photo-film-strip-width: calc(var(--photo-film-strip-height) * 0.72);
+  flex-basis: var(--photo-film-strip-width);
+  min-width: var(--photo-film-strip-width);
+}
+
+.photo-film-slide.is-square {
+  --photo-film-strip-width: var(--photo-film-strip-height);
+  flex-basis: var(--photo-film-strip-width);
+  min-width: var(--photo-film-strip-width);
+}
+
 .photo-film-frame {
   position: relative;
   display: block;
@@ -987,20 +999,8 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
   backface-visibility: hidden;
 }
 
-.photo-film-image-shell.is-portrait-source img.photo-film-image-rotated {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: rotate(90deg) scale(1.34);
-}
-
-.photo-film-frame:hover .photo-film-image-shell img:not(.photo-film-image-rotated) {
+.photo-film-frame:hover .photo-film-image-shell img {
   transform: scale(1.02);
-  filter: contrast(1.03) saturate(1.05);
-}
-
-.photo-film-frame:hover .photo-film-image-shell img.photo-film-image-rotated {
-  transform: rotate(90deg) scale(1.37);
   filter: contrast(1.03) saturate(1.05);
 }
 

@@ -259,14 +259,16 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
     const shell = shellRef.current
     if (!shell) return
 
-    const slide = shell.querySelector('.photo-film-slide') as HTMLElement | null
-    if (!slide) {
+    const slides = Array.from(shell.querySelectorAll('.photo-film-slide')).slice(0, sourcePhotoCount) as HTMLElement[]
+    if (slides.length === 0) {
       setOverflows(false)
       return
     }
 
-    const slideWidth = slide.getBoundingClientRect().width
-    const totalWidth = slideWidth * sourcePhotoCount
+    const styles = window.getComputedStyle(shell.querySelector('.photo-film-embla-container') || shell)
+    const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0
+    const totalWidth = slides.reduce((sum, slide) => sum + slide.getBoundingClientRect().width, 0)
+      + gap * Math.max(0, slides.length - 1)
     setOverflows(totalWidth > shell.clientWidth + 8)
   }, [sourcePhotoCount])
 
@@ -390,9 +392,11 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
             {loopPhotos.map(({ photo, key }, photoIndex) => {
               const idKey = toIdKey(photo.id)
               const portraitSource = isPortraitAspect(photo.aspectRatio)
+              const squareSource = photo.aspectRatio === 'aspect-square'
+              const slideShape = portraitSource ? 'is-portrait' : squareSource ? 'is-square' : 'is-landscape'
 
               return (
-                <div key={key} className="photo-film-slide">
+                <div key={key} className={`photo-film-slide ${slideShape}`}>
                   <button
                     type="button"
                     className="photo-film-frame"
@@ -408,14 +412,14 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
                     }}
                     aria-label={`Preview ${photo.title}`}
                   >
-                    <span className={`photo-film-image-shell ${portraitSource ? 'is-portrait-source' : ''}`}>
+                    <span className="photo-film-image-shell">
                       <img
                         src={getPhotoStripImage(photo, idKey)}
                         alt={photo.title}
                         loading={photoIndex < 4 ? 'eager' : 'lazy'}
                         decoding="async"
                         fetchPriority={photoIndex < 2 ? 'high' : 'auto'}
-                        className={`photo-image-fade ${portraitSource ? 'photo-film-image-rotated' : ''}`.trim()}
+                        className="photo-image-fade"
                         ref={(node) => {
                           if (node?.complete) node.classList.add('is-loaded')
                           // Warm lightbox (same URL on phone) as soon as the strip tile paints.
