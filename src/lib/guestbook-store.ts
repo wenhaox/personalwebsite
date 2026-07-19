@@ -12,7 +12,7 @@ export interface GuestbookStore {
 export type StorageMode = 'redis' | 'local-file' | 'memory'
 
 /** Fresh board key — starts from the minimal hi + emoji seed. */
-export const STORE_KEY = 'site:guestbook:v2'
+export const STORE_KEY = 'site:guestbook:v3'
 export const LOCAL_STORE_PATH = path.join(process.cwd(), '.site-data', 'guestbook.json')
 
 export const SEED_STORE: GuestbookStore = {
@@ -26,7 +26,7 @@ export const SEED_STORE: GuestbookStore = {
       createdAt: '2026-07-18T19:00:00.000Z',
       x: 88,
       y: 72,
-      color: '#fff48b',
+      color: '#f7f8fb',
     },
   ],
   decorations: [

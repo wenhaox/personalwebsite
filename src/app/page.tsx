@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import SiteWarmup from '@/app/components/SiteWarmup'
 
 const getGreetingByHour = (hour: number): string => {
   if (hour >= 5 && hour < 12) return 'Good morning'
@@ -25,6 +26,7 @@ export default function Home() {
 
   return (
     <div className="flex items-start justify-start min-h-screen mobile-main-content mobile-home-content desktop-home-padding bg-background">
+      <SiteWarmup />
       <div className="max-w-xl space-y-4 md:space-y-5 about-home-stack">
         <h1 className="text-2xl md:text-3xl font-serif italic leading-tight text-left about-home-title">
           {greeting ? (

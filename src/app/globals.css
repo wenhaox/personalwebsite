@@ -2494,12 +2494,10 @@ button.sidebar-recently-control.is-water:hover .sidebar-recently-dice-art {
 
 .connect-board-shell .guestbook-cork-board {
   min-height: calc(100dvh - 11.5rem);
-  border-color: color-mix(in oklab, var(--color-border) 90%, #c8bea8);
-  background:
-    linear-gradient(180deg, rgba(255, 252, 245, 0.7), rgba(250, 246, 236, 0.76)),
-    color-mix(in oklab, var(--color-background) 84%, var(--color-card));
+  border-color: color-mix(in oklab, var(--color-border) 88%, #c9d0da);
+  background: color-mix(in oklab, var(--color-background) 94%, white);
   box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--color-border) 84%, #ece6d5);
+    inset 0 0 0 1px color-mix(in oklab, var(--color-border) 78%, transparent);
 }
 
 .connect-board-shell .guestbook-cork-board::before {
@@ -4804,7 +4802,7 @@ button.sidebar-recently-control.is-water:hover .sidebar-recently-dice-art {
   color: #1f2937;
   background:
     linear-gradient(176deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08)),
-    var(--note-paper, #fff9d7);
+    var(--note-paper, #f7f8fb);
   box-shadow:
     0 10px 16px rgba(15, 23, 42, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),

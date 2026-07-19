@@ -45,8 +45,9 @@ const NOTE_HEIGHT = 170
 const MIN_BOARD_ZOOM = 0.8
 const MAX_BOARD_ZOOM = 1.9
 const BOARD_ZOOM_STEP = 0.1
-const STICKY_COLORS = ['#fff48b', '#d8ecff', '#d7f8d9', '#f4dcff', '#ffe2c4']
-const DECORATIONS_KEY = 'guestboardDecorations'
+const STICKY_COLORS = ['#f7f8fb', '#eef3ff', '#eef8f1', '#f5f0ff', '#fff6f0']
+const DECORATIONS_KEY = 'guestboardDecorations:v2'
+const ENTRIES_KEY = 'guestbookEntries:v2'
 const EMOJI_PICKER = ['✨', '🌿', '🫶', '📷', '☕', '🌤️', '🎵', '🧠', '🪩', '💫', '🌼', '🍀']
 const GUESTBOOK_API_ENDPOINT = '/api/guestbook'
 
@@ -255,6 +256,8 @@ export default function GuestbookBook({
   const [hasMutatedEntries, setHasMutatedEntries] = useState(false)
   const [hasMutatedDecorations, setHasMutatedDecorations] = useState(false)
 
+  const [boardReady, setBoardReady] = useState(false)
+
   const zoomLabel = useMemo(() => `${Math.round(boardZoom * 100)}%`, [boardZoom])
   const inverseBoardZoom = useMemo(() => 1 / boardZoom, [boardZoom])
   const boardCanvasWidthPercent = useMemo(
@@ -285,36 +288,29 @@ export default function GuestbookBook({
     let isCancelled = false
 
     const loadBoard = async () => {
-      const localEntries = (() => {
+      const applyLocalFallback = () => {
         try {
-          return JSON.parse(localStorage.getItem('guestbookEntries') || 'null')
+          const localEntries = JSON.parse(localStorage.getItem(ENTRIES_KEY) || 'null')
+          const localNotes = normalizeNotesFromSource(localEntries)
+          const localPendingEntries = normalizePendingEntriesFromSource(localEntries)
+          const localDecorations = normalizeDecorationsFromSource(
+            JSON.parse(localStorage.getItem(DECORATIONS_KEY) || 'null')
+          )
+          if (isCancelled) return
+          setNotes(localNotes)
+          setPendingEntries(localPendingEntries)
+          setDecorations(localDecorations)
         } catch {
-          return null
+          // Keep empty board.
         }
-      })()
-
-      const localNotes = normalizeNotesFromSource(localEntries)
-      const localPendingEntries = normalizePendingEntriesFromSource(localEntries)
-
-      const localDecorations = normalizeDecorationsFromSource(
-        (() => {
-          try {
-            return JSON.parse(localStorage.getItem(DECORATIONS_KEY) || 'null')
-          } catch {
-            return null
-          }
-        })()
-      )
-
-      if (!isCancelled) {
-        setNotes(localNotes)
-        setPendingEntries(localPendingEntries)
-        setDecorations(localDecorations)
       }
 
       try {
         const response = await fetch(GUESTBOOK_API_ENDPOINT, { cache: 'no-store' })
-        if (!response.ok) return
+        if (!response.ok) {
+          applyLocalFallback()
+          return
+        }
 
         const payload = await response.json()
         if (isCancelled || !payload || typeof payload !== 'object') return
@@ -323,12 +319,23 @@ export default function GuestbookBook({
         const remotePendingEntries = normalizePendingEntriesFromSource((payload as { entries?: unknown[] }).entries)
         const remoteDecorations = normalizeDecorationsFromSource((payload as { decorations?: unknown[] }).decorations)
 
-        // Prefer the shared board whenever the API responds.
         setNotes(remoteNotes)
         setPendingEntries(remotePendingEntries)
         setDecorations(remoteDecorations)
+
+        const remotePayload = [
+          ...remoteNotes.map((note) => ({ ...note, name: 'Anonymous', approved: true })),
+          ...remotePendingEntries.map((entry) => ({ ...entry, name: 'Anonymous', approved: false })),
+        ]
+        localStorage.setItem(ENTRIES_KEY, JSON.stringify(remotePayload))
+        localStorage.setItem(DECORATIONS_KEY, JSON.stringify(remoteDecorations))
+        // Drop legacy caches that caused the old-notes flash.
+        localStorage.removeItem('guestbookEntries')
+        localStorage.removeItem('guestboardDecorations')
       } catch {
-        // Stay on local fallback when remote API is unavailable.
+        applyLocalFallback()
+      } finally {
+        if (!isCancelled) setBoardReady(true)
       }
     }
 
@@ -343,7 +350,7 @@ export default function GuestbookBook({
     if (!hasMutatedEntries) return
 
     localStorage.setItem(
-      'guestbookEntries',
+      ENTRIES_KEY,
       JSON.stringify(entriesPayload)
     )
   }, [entriesPayload, hasMutatedEntries])
@@ -1071,6 +1078,8 @@ export default function GuestbookBook({
                 minHeight: '100%',
                 transform: `scale(${boardZoom})`,
                 transformOrigin: 'top left',
+                opacity: boardReady ? 1 : 0,
+                transition: 'opacity 0.18s ease',
               }}
             >
               {decorations.map((item, index) => {
