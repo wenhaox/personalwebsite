@@ -7,21 +7,13 @@ import AutoScroll from 'embla-carousel-auto-scroll'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { MasonryPhotoAlbum } from 'react-photo-album'
 import 'react-photo-album/masonry.css'
+import { SITE_PHOTOS } from '@/data/site-photos'
+import type { PhotoItem } from '@/lib/photo-types'
 
 type SortBy = 'theme' | 'color' | 'location' | 'date'
 type OrderBy = 'newest' | 'oldest' | 'az' | 'za' | 'most'
 
-interface PhotoItem {
-  id: number | string
-  title: string
-  location: string
-  aspectRatio: string
-  color: string
-  theme: string
-  description: string
-  createdAt?: string
-  imageUrl?: string
-}
+export type { PhotoItem }
 
 interface PhotoCluster {
   key: string
@@ -57,140 +49,7 @@ const getDefaultOrder = (sortBy: SortBy | null): OrderBy => (
   sortBy === 'date' ? 'newest' : 'az'
 )
 
-const DEFAULT_PHOTOS: PhotoItem[] = [
-  {
-    id: 1,
-    title: 'City Lights',
-    location: 'San Francisco, CA',
-    aspectRatio: 'aspect-[3/4]',
-    color: 'blue',
-    theme: 'street',
-    description: 'The quiet moments between the chaos',
-    createdAt: '2026-03-29T08:00:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1011/1000/1400',
-  },
-  {
-    id: 2,
-    title: 'Golden Hour',
-    location: 'Marin County, CA',
-    aspectRatio: 'aspect-[4/3]',
-    color: 'golden',
-    theme: 'scenery',
-    description: 'When the world glows softly',
-    createdAt: '2026-03-26T18:00:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1025/1200/900',
-  },
-  {
-    id: 3,
-    title: 'Natural Light',
-    location: 'Studio',
-    aspectRatio: 'aspect-[2/3]',
-    color: 'warm',
-    theme: 'person',
-    description: 'Capturing the essence of being',
-    createdAt: '2026-03-22T13:00:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1005/900/1350',
-  },
-  {
-    id: 4,
-    title: 'Modern Lines',
-    location: 'Downtown',
-    aspectRatio: 'aspect-[16/9]',
-    color: 'monochrome',
-    theme: 'details',
-    description: 'Where geometry meets emotion',
-    createdAt: '2026-03-19T14:00:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1035/1400/800',
-  },
-  {
-    id: 5,
-    title: 'Forest Path',
-    location: 'Muir Woods, CA',
-    aspectRatio: 'aspect-[3/5]',
-    color: 'green',
-    theme: 'scenery',
-    description: "Finding peace in nature's cathedral",
-    createdAt: '2026-03-15T09:00:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1040/900/1500',
-  },
-  {
-    id: 6,
-    title: 'Reflections',
-    location: 'Urban',
-    aspectRatio: 'aspect-square',
-    color: 'blue',
-    theme: 'street',
-    description: 'Reality bent through glass and light',
-    createdAt: '2026-03-11T10:30:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1060/1200/1200',
-  },
-  {
-    id: 7,
-    title: 'Fogline',
-    location: 'Twin Peaks, CA',
-    aspectRatio: 'aspect-[16/9]',
-    color: 'monochrome',
-    theme: 'scenery',
-    description: 'Morning fog cutting across the ridge.',
-    createdAt: '2026-02-28T07:50:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1057/1400/900',
-  },
-  {
-    id: 8,
-    title: 'Window Seat',
-    location: 'Oakland, CA',
-    aspectRatio: 'aspect-[3/4]',
-    color: 'warm',
-    theme: 'person',
-    description: 'Soft side light and a slow afternoon.',
-    createdAt: '2026-02-21T16:20:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1027/1000/1400',
-  },
-  {
-    id: 9,
-    title: 'Crosswalk Rhythm',
-    location: 'Shibuya, Tokyo',
-    aspectRatio: 'aspect-[4/3]',
-    color: 'blue',
-    theme: 'street',
-    description: 'Layered movement at every signal change.',
-    createdAt: '2026-01-31T20:05:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1043/1200/900',
-  },
-  {
-    id: 10,
-    title: 'Paper Lanterns',
-    location: 'Kyoto, JP',
-    aspectRatio: 'aspect-[2/3]',
-    color: 'golden',
-    theme: 'details',
-    description: 'Quiet glow before the rain started.',
-    createdAt: '2025-12-18T19:15:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1068/900/1350',
-  },
-  {
-    id: 11,
-    title: 'Side Street Rain',
-    location: 'Seoul, KR',
-    aspectRatio: 'aspect-[3/5]',
-    color: 'green',
-    theme: 'street',
-    description: 'Neon signs reflected in wet asphalt.',
-    createdAt: '2025-11-06T22:10:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1019/900/1500',
-  },
-  {
-    id: 12,
-    title: 'Lakeside Noon',
-    location: 'Interlaken, CH',
-    aspectRatio: 'aspect-[4/3]',
-    color: 'green',
-    theme: 'scenery',
-    description: 'Bright water and clean mountain air.',
-    createdAt: '2025-10-01T12:30:00.000Z',
-    imageUrl: 'https://picsum.photos/id/1039/1200/900',
-  },
-]
+const DEFAULT_PHOTOS: PhotoItem[] = SITE_PHOTOS
 
 const PALETTE_LABELS: Record<string, string> = {
   blue: 'cool blues',
@@ -365,24 +224,33 @@ interface FilmReelClusterProps {
   onSelectPhoto: (photo: PhotoItem) => void
 }
 
-function useDesktopFilmScroll() {
+function useFilmStripViewport() {
   const [isDesktop, setIsDesktop] = useState(false)
+  const [reduceMotion, setReduceMotion] = useState(false)
 
   useEffect(() => {
-    const media = window.matchMedia('(min-width: 901px)')
-    const sync = () => setIsDesktop(media.matches)
+    const desktopMedia = window.matchMedia('(min-width: 901px)')
+    const motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sync = () => {
+      setIsDesktop(desktopMedia.matches)
+      setReduceMotion(motionMedia.matches)
+    }
     sync()
-    media.addEventListener('change', sync)
-    return () => media.removeEventListener('change', sync)
+    desktopMedia.addEventListener('change', sync)
+    motionMedia.addEventListener('change', sync)
+    return () => {
+      desktopMedia.removeEventListener('change', sync)
+      motionMedia.removeEventListener('change', sync)
+    }
   }, [])
 
-  return isDesktop
+  return { isDesktop, reduceMotion }
 }
 
 function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClusterProps) {
   const sourcePhotos = cluster.photos
   const sourcePhotoCount = sourcePhotos.length
-  const isDesktop = useDesktopFilmScroll()
+  const { isDesktop, reduceMotion } = useFilmStripViewport()
   const direction = clusterIndex % 2 === 0 ? 1 : -1
   const shellRef = useRef<HTMLDivElement>(null)
   const [overflows, setOverflows] = useState(false)
@@ -421,7 +289,10 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
     }
   }, [measureOverflow])
 
-  const shouldAutoScroll = isDesktop && overflows && sourcePhotoCount > 1
+  // Auto-scroll on mobile too — the strip is the browse surface when sorted,
+  // and continuous motion helps you discover frames without dragging every one.
+  const shouldAutoScroll = overflows && sourcePhotoCount > 1 && !reduceMotion
+  const scrollSpeed = (isDesktop ? 0.55 : 0.38) * direction
 
   const loopPhotos = useMemo(() => {
     const base = sourcePhotos.map((photo, index) => ({
@@ -448,18 +319,18 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
       list.unshift(
         AutoScroll({
           playOnInit: true,
-          speed: 0.55 * direction,
-          startDelay: 500,
-          stopOnInteraction: false,
-          stopOnMouseEnter: true,
+          speed: scrollSpeed,
+          startDelay: isDesktop ? 500 : 700,
+          stopOnInteraction: !isDesktop,
+          stopOnMouseEnter: isDesktop,
           stopOnFocusIn: true,
         })
       )
     }
     return list
-  }, [direction, shouldAutoScroll])
+  }, [isDesktop, scrollSpeed, shouldAutoScroll])
 
-  const [emblaRef] = useEmblaCarousel(
+  const [emblaRef, emblaApi] = useEmblaCarousel(
     {
       loop: shouldAutoScroll,
       align: 'start',
@@ -470,6 +341,39 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
     },
     plugins
   )
+
+  // On mobile, pause while the user drags, then resume after a short idle.
+  useEffect(() => {
+    if (!emblaApi || !shouldAutoScroll || isDesktop) return
+
+    const root = emblaApi.rootNode()
+    let resumeTimer: ReturnType<typeof setTimeout> | undefined
+
+    const stop = () => {
+      if (resumeTimer) clearTimeout(resumeTimer)
+      emblaApi.plugins()?.autoScroll?.stop()
+    }
+
+    const schedulePlay = () => {
+      if (resumeTimer) clearTimeout(resumeTimer)
+      resumeTimer = setTimeout(() => {
+        emblaApi.plugins()?.autoScroll?.play()
+      }, 1600)
+    }
+
+    root.addEventListener('pointerdown', stop)
+    root.addEventListener('pointerup', schedulePlay)
+    root.addEventListener('pointercancel', schedulePlay)
+    root.addEventListener('touchend', schedulePlay)
+
+    return () => {
+      if (resumeTimer) clearTimeout(resumeTimer)
+      root.removeEventListener('pointerdown', stop)
+      root.removeEventListener('pointerup', schedulePlay)
+      root.removeEventListener('pointercancel', schedulePlay)
+      root.removeEventListener('touchend', schedulePlay)
+    }
+  }, [emblaApi, isDesktop, shouldAutoScroll])
 
   return (
     <section className="photo-vsco-cluster-section">

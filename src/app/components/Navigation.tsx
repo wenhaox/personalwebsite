@@ -155,13 +155,11 @@ export default function Navigation() {
           <div
             className="w-48 h-64 bg-muted/10 rounded-md overflow-hidden flex items-end mobile-hide-photo"
             style={{
-              backgroundImage: 'url(https://picsum.photos/id/1005/480/640)',
+              backgroundImage: 'url(/photos/039-DSCF0593.jpg)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
-          >
-            <span className="w-full text-center text-[11px] text-stone-100 bg-black/35 py-2 backdrop-blur-[1px]">placeholder</span>
-          </div>
+          />
         )}
       </div>
     </nav>
