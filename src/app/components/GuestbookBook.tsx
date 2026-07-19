@@ -912,7 +912,7 @@ export default function GuestbookBook({
   return (
     <div className={`guestbook-cork-shell ${compact ? 'guestbook-cork-shell-compact' : ''} ${fullHeight ? 'guestbook-cork-shell-full' : ''}`}>
       <div className="guestbook-cork-meta">
-        <span className="text-[11px] uppercase tracking-[0.08em] text-muted">Anonymous guestboard</span>
+        <span className="text-[11px] uppercase tracking-[0.08em] text-muted">Guest board</span>
       </div>
 
       <div className="guestboard-tools">

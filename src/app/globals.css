@@ -4974,24 +4974,36 @@ body.is-desk-dragging .recently-node-tooltip {
 }
 
 .guestboard-tool-btn {
+  appearance: none;
+  -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 1.95rem;
-  border: 1px solid color-mix(in oklab, var(--color-border) 84%, #cbd5e1);
-  background: color-mix(in oklab, var(--color-background) 94%, #f8fafc);
-  color: var(--color-foreground);
-  border-radius: 999px;
-  padding: 0.28rem 0.7rem;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  color: color-mix(in oklab, var(--color-muted) 45%, var(--color-foreground));
+  border-radius: 0.45rem;
+  padding: 0.34rem 0.55rem;
+  font-family: var(--font-sans);
   font-size: 0.74rem;
-  line-height: 1;
-  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  font-weight: 400;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .guestboard-tool-btn:hover {
+  color: var(--color-foreground);
+  background: color-mix(in oklab, var(--color-muted) 10%, transparent);
+  transform: none;
+}
+
+.guestboard-tool-btn:active,
+.guestboard-tool-btn.is-active {
   color: var(--color-accent);
-  border-color: color-mix(in oklab, var(--color-accent) 46%, var(--color-border));
-  transform: translateY(-1px);
+  font-weight: 550;
+  background: color-mix(in oklab, var(--color-accent) 11%, transparent);
 }
 
 .guestboard-photo-tools {
