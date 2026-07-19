@@ -1,7 +1,12 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import useEmblaCarousel from 'embla-carousel-react'
+import AutoScroll from 'embla-carousel-auto-scroll'
+import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
+import { MasonryPhotoAlbum } from 'react-photo-album'
+import 'react-photo-album/masonry.css'
 
 type SortBy = 'theme' | 'color' | 'location' | 'date'
 type OrderBy = 'newest' | 'oldest' | 'az' | 'za' | 'most'
@@ -222,7 +227,7 @@ const getPhotoThumb = (photo: PhotoItem, idKey: string): string => {
   const width = Number(match[2])
   const height = Number(match[3])
   const query = match[4] || ''
-  const targetW = 640
+  const targetW = 420
 
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= targetW) return url
 
@@ -285,394 +290,181 @@ const isPortraitAspect = (aspectRatio: string): boolean => {
   return width < height
 }
 
+const getAspectSize = (aspectRatio: string): { width: number; height: number } => {
+  if (aspectRatio === 'aspect-square') return { width: 1200, height: 1200 }
+
+  const ratioMatch = aspectRatio.match(/(\d+)\s*\/\s*(\d+)/)
+  if (!ratioMatch) return { width: 1200, height: 900 }
+
+  const width = Number(ratioMatch[1])
+  const height = Number(ratioMatch[2])
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return { width: 1200, height: 900 }
+  }
+
+  return { width: width * 400, height: height * 400 }
+}
+
 interface FilmReelClusterProps {
   cluster: PhotoCluster
   clusterIndex: number
   onSelectPhoto: (photo: PhotoItem) => void
 }
 
+function useDesktopFilmScroll() {
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 901px)')
+    const sync = () => setIsDesktop(media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  return isDesktop
+}
+
 function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClusterProps) {
   const sourcePhotos = cluster.photos
   const sourcePhotoCount = sourcePhotos.length
-  const [isMobileViewport, setIsMobileViewport] = useState(false)
-  const hasAutoScrollLane = sourcePhotoCount > 2 && !isMobileViewport
-  const reelRef = useRef<HTMLDivElement | null>(null)
-  const pauseUntilRef = useRef(0)
-  const [isLaneScrollable, setIsLaneScrollable] = useState(sourcePhotoCount > 2)
-  const dragStateRef = useRef({
-    active: false,
-    moved: false,
-    pointerId: -1,
-    startX: 0,
-    startScrollLeft: 0,
-  })
-  const suppressClickUntilRef = useRef(0)
+  const isDesktop = useDesktopFilmScroll()
+  const direction = clusterIndex % 2 === 0 ? 1 : -1
+  const shellRef = useRef<HTMLDivElement>(null)
+  const [overflows, setOverflows] = useState(false)
 
-  const displayPhotos = useMemo(
-    () => (isLaneScrollable ? [...sourcePhotos, ...sourcePhotos] : sourcePhotos),
-    [isLaneScrollable, sourcePhotos]
+  const measureOverflow = useCallback(() => {
+    const shell = shellRef.current
+    if (!shell) return
+
+    const slide = shell.querySelector('.photo-film-slide') as HTMLElement | null
+    if (!slide) {
+      setOverflows(false)
+      return
+    }
+
+    const slideWidth = slide.getBoundingClientRect().width
+    const totalWidth = slideWidth * sourcePhotoCount
+    setOverflows(totalWidth > shell.clientWidth + 8)
+  }, [sourcePhotoCount])
+
+  useLayoutEffect(() => {
+    measureOverflow()
+  }, [measureOverflow, sourcePhotos])
+
+  useEffect(() => {
+    const shell = shellRef.current
+    if (!shell) return
+
+    const observer = new ResizeObserver(() => {
+      measureOverflow()
+    })
+    observer.observe(shell)
+    window.addEventListener('resize', measureOverflow)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measureOverflow)
+    }
+  }, [measureOverflow])
+
+  const shouldAutoScroll = isDesktop && overflows && sourcePhotoCount > 1
+
+  const loopPhotos = useMemo(() => {
+    const base = sourcePhotos.map((photo, index) => ({
+      photo,
+      key: `${cluster.key}-0-${toIdKey(photo.id)}-${index}`,
+    }))
+
+    if (!shouldAutoScroll) return base
+
+    const minSlides = Math.max(10, sourcePhotoCount * 2)
+    const copies = Math.max(2, Math.ceil(minSlides / sourcePhotoCount))
+
+    return Array.from({ length: copies }, (_, copyIndex) =>
+      sourcePhotos.map((photo, photoIndex) => ({
+        photo,
+        key: `${cluster.key}-${copyIndex}-${toIdKey(photo.id)}-${photoIndex}`,
+      }))
+    ).flat()
+  }, [cluster.key, shouldAutoScroll, sourcePhotos, sourcePhotoCount])
+
+  const plugins = useMemo(() => {
+    const list = [WheelGesturesPlugin()]
+    if (shouldAutoScroll) {
+      list.unshift(
+        AutoScroll({
+          playOnInit: true,
+          speed: 0.55 * direction,
+          startDelay: 500,
+          stopOnInteraction: false,
+          stopOnMouseEnter: true,
+          stopOnFocusIn: true,
+        })
+      )
+    }
+    return list
+  }, [direction, shouldAutoScroll])
+
+  const [emblaRef] = useEmblaCarousel(
+    {
+      loop: shouldAutoScroll,
+      align: 'start',
+      dragFree: true,
+      containScroll: shouldAutoScroll ? false : 'trimSnaps',
+      skipSnaps: true,
+      duration: 20,
+    },
+    plugins
   )
-  const laneModeClass = isLaneScrollable ? 'is-looping' : 'is-static'
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 767px)')
-    const syncViewportMode = () => {
-      setIsMobileViewport(mediaQuery.matches)
-    }
-
-    syncViewportMode()
-
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', syncViewportMode)
-      return () => mediaQuery.removeEventListener('change', syncViewportMode)
-    }
-
-    mediaQuery.addListener(syncViewportMode)
-    return () => mediaQuery.removeListener(syncViewportMode)
-  }, [])
-
-  useEffect(() => {
-    if (sourcePhotoCount > 2 && !isMobileViewport) {
-      setIsLaneScrollable(true)
-      return
-    }
-
-    setIsLaneScrollable(false)
-  }, [isMobileViewport, sourcePhotoCount])
-
-  useEffect(() => {
-    if (!isMobileViewport) return
-
-    const reel = reelRef.current
-    if (!reel) return
-
-    const onWheelMobile = (event: WheelEvent) => {
-      const maxScrollLeft = reel.scrollWidth - reel.clientWidth
-      if (maxScrollLeft <= 1) return
-
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
-        ? event.deltaX
-        : event.deltaY
-      if (Math.abs(delta) < 0.35) return
-
-      const next = reel.scrollLeft + delta
-      const clamped = Math.min(Math.max(next, 0), maxScrollLeft)
-
-      if (Math.abs(clamped - reel.scrollLeft) < 0.2) {
-        return
-      }
-
-      event.preventDefault()
-      reel.scrollLeft = clamped
-    }
-
-    reel.addEventListener('wheel', onWheelMobile, { passive: false })
-    return () => {
-      reel.removeEventListener('wheel', onWheelMobile)
-    }
-  }, [isMobileViewport, sourcePhotoCount])
-
-  useEffect(() => {
-    if (!hasAutoScrollLane) {
-      setIsLaneScrollable(false)
-      return
-    }
-
-    const reel = reelRef.current
-    if (!reel) return
-
-    const pauseAuto = (duration = 1400) => {
-      pauseUntilRef.current = performance.now() + duration
-    }
-
-    const speed = 24
-    let laneDirection = clusterIndex % 2 === 0 ? 1 : -1
-    let rafId = 0
-    let lastTime = performance.now()
-    let lastMeasureAt = 0
-    let lanePosition = 0
-    let singleSetWidth = 0
-    let shouldScrollByOverflow = false
-    let resizeObserver: ResizeObserver | null = null
-    const delayedMeasureTimeouts: number[] = []
-    const imageLoadListeners: Array<{ image: HTMLImageElement; handler: () => void }> = []
-    let isHoverPaused = false
-
-    const onWheel = () => pauseAuto(550)
-    const onTouchStart = () => pauseAuto(550)
-    const onPointerEnter = () => {
-      isHoverPaused = true
-    }
-    const onPointerLeave = () => {
-      isHoverPaused = false
-      pauseAuto(180)
-    }
-    const onScroll = () => {
-      lanePosition = reel.scrollLeft
-    }
-
-    const clampLanePosition = (value: number) => {
-      if (singleSetWidth <= 0) return 0
-      return Math.min(Math.max(value, 0), singleSetWidth)
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (event.pointerType === 'mouse' && event.button !== 0) return
-      if (!shouldScrollByOverflow) return
-
-      dragStateRef.current.active = true
-      dragStateRef.current.moved = false
-      dragStateRef.current.pointerId = event.pointerId
-      dragStateRef.current.startX = event.clientX
-      dragStateRef.current.startScrollLeft = reel.scrollLeft
-      lanePosition = reel.scrollLeft
-
-      pauseAuto(3200)
-      reel.classList.add('is-user-dragging')
-      reel.setPointerCapture(event.pointerId)
-    }
-
-    const onPointerMove = (event: PointerEvent) => {
-      if (!dragStateRef.current.active) return
-      if (dragStateRef.current.pointerId !== event.pointerId) return
-
-      const deltaX = event.clientX - dragStateRef.current.startX
-      if (Math.abs(deltaX) > 3) {
-        dragStateRef.current.moved = true
-      }
-
-      const next = dragStateRef.current.startScrollLeft - deltaX
-      lanePosition = clampLanePosition(next)
-      reel.scrollLeft = lanePosition
-    }
-
-    const finishPointer = (event: PointerEvent) => {
-      if (!dragStateRef.current.active) return
-      if (dragStateRef.current.pointerId !== event.pointerId) return
-
-      const moved = dragStateRef.current.moved
-      dragStateRef.current.active = false
-      dragStateRef.current.pointerId = -1
-      reel.classList.remove('is-user-dragging')
-
-      if (reel.hasPointerCapture(event.pointerId)) {
-        reel.releasePointerCapture(event.pointerId)
-      }
-
-      if (moved) {
-        suppressClickUntilRef.current = performance.now() + 240
-      }
-    }
-
-    const onPointerUp = (event: PointerEvent) => {
-      finishPointer(event)
-      pauseAuto(420)
-    }
-
-    const onPointerCancel = (event: PointerEvent) => {
-      finishPointer(event)
-      pauseAuto(380)
-    }
-
-    const onClickCapture = (event: MouseEvent) => {
-      if (performance.now() < suppressClickUntilRef.current) {
-        event.preventDefault()
-        event.stopPropagation()
-      }
-    }
-
-    const measure = () => {
-      const container = reel.firstElementChild
-      if (!(container instanceof HTMLElement)) return
-
-      const slides = Array.from(container.querySelectorAll<HTMLElement>('.photo-film-slide'))
-      if (slides.length === 0) return
-
-      const baseSlides = slides.slice(0, sourcePhotoCount)
-      if (baseSlides.length === 0) return
-
-      const computed = window.getComputedStyle(container)
-      const gapRaw = computed.columnGap && computed.columnGap !== 'normal' ? computed.columnGap : computed.gap
-      const gap = Number.parseFloat(gapRaw || '0') || 0
-      const totalSlidesWidth = baseSlides.reduce((sum, slide) => sum + slide.getBoundingClientRect().width, 0)
-
-      const measuredSingleSetWidth = totalSlidesWidth + (gap * Math.max(sourcePhotoCount - 1, 0))
-      const fallbackSingleSetWidth = isLaneScrollable
-        ? (reel.scrollWidth / 2)
-        : reel.scrollWidth
-
-      singleSetWidth = measuredSingleSetWidth > 0
-        ? measuredSingleSetWidth
-        : fallbackSingleSetWidth
-
-      const nextScrollable = (singleSetWidth - reel.clientWidth) > 1
-      shouldScrollByOverflow = nextScrollable
-      setIsLaneScrollable((current) => (current === nextScrollable ? current : nextScrollable))
-      lastMeasureAt = performance.now()
-
-      if (!nextScrollable) {
-        reel.scrollLeft = 0
-        lanePosition = 0
-        return
-      }
-
-      if (!isLaneScrollable) {
-        lanePosition = laneDirection < 0 ? singleSetWidth : 0
-        reel.scrollLeft = lanePosition
-        return
-      }
-
-      if (laneDirection < 0 && reel.scrollLeft < singleSetWidth * 0.5) {
-        lanePosition = singleSetWidth
-        reel.scrollLeft = lanePosition
-        return
-      }
-
-      lanePosition = reel.scrollLeft
-      while (lanePosition < 0) lanePosition += singleSetWidth
-      while (lanePosition > singleSetWidth) lanePosition -= singleSetWidth
-      reel.scrollLeft = lanePosition
-    }
-
-    const bindImageLoadMeasure = () => {
-      const images = Array.from(reel.querySelectorAll('img'))
-      images.forEach((image) => {
-        if (image.complete) return
-        const handler = () => measure()
-        image.addEventListener('load', handler)
-        imageLoadListeners.push({ image, handler })
-      })
-    }
-
-    const scheduleMeasureBursts = () => {
-      ;[0, 80, 180, 360, 800, 1400].forEach((delay) => {
-        const timeoutId = window.setTimeout(() => measure(), delay)
-        delayedMeasureTimeouts.push(timeoutId)
-      })
-    }
-
-    measure()
-    scheduleMeasureBursts()
-    bindImageLoadMeasure()
-
-    if (typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver(measure)
-      resizeObserver.observe(reel)
-
-      const container = reel.firstElementChild
-      if (container instanceof HTMLElement) {
-        resizeObserver.observe(container)
-      }
-    }
-
-    reel.addEventListener('wheel', onWheel, { passive: true })
-    reel.addEventListener('touchstart', onTouchStart, { passive: true })
-    reel.addEventListener('pointerenter', onPointerEnter)
-    reel.addEventListener('pointerleave', onPointerLeave)
-    reel.addEventListener('scroll', onScroll, { passive: true })
-    reel.addEventListener('pointerdown', onPointerDown, { passive: true })
-    reel.addEventListener('pointermove', onPointerMove, { passive: true })
-    reel.addEventListener('pointerup', onPointerUp)
-    reel.addEventListener('pointercancel', onPointerCancel)
-    reel.addEventListener('click', onClickCapture, true)
-    window.addEventListener('resize', measure)
-
-    const tick = (now: number) => {
-      const dt = Math.min(now - lastTime, 40)
-      lastTime = now
-      const hoveredNow = reel.matches(':hover')
-
-      if ((singleSetWidth <= 0 || now - lastMeasureAt > 450) && hasAutoScrollLane) {
-        measure()
-      }
-
-      if (shouldScrollByOverflow && singleSetWidth > 0) {
-        if (dragStateRef.current.active || isHoverPaused || hoveredNow || now < pauseUntilRef.current) {
-          lanePosition = reel.scrollLeft
-        } else {
-          lanePosition += (laneDirection * speed * dt) / 1000
-
-          if (laneDirection > 0 && lanePosition >= singleSetWidth) {
-            lanePosition -= singleSetWidth
-          } else if (laneDirection < 0 && lanePosition <= 0) {
-            lanePosition += singleSetWidth
-          }
-
-          reel.scrollLeft = lanePosition
-        }
-      }
-
-      rafId = window.requestAnimationFrame(tick)
-    }
-
-    rafId = window.requestAnimationFrame(tick)
-
-    return () => {
-      window.cancelAnimationFrame(rafId)
-      delayedMeasureTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId))
-      resizeObserver?.disconnect()
-      reel.removeEventListener('wheel', onWheel)
-      reel.removeEventListener('touchstart', onTouchStart)
-      reel.removeEventListener('pointerenter', onPointerEnter)
-      reel.removeEventListener('pointerleave', onPointerLeave)
-      reel.removeEventListener('scroll', onScroll)
-      reel.removeEventListener('pointerdown', onPointerDown)
-      reel.removeEventListener('pointermove', onPointerMove)
-      reel.removeEventListener('pointerup', onPointerUp)
-      reel.removeEventListener('pointercancel', onPointerCancel)
-      reel.removeEventListener('click', onClickCapture, true)
-      window.removeEventListener('resize', measure)
-      imageLoadListeners.forEach(({ image, handler }) => {
-        image.removeEventListener('load', handler)
-      })
-      reel.classList.remove('is-user-dragging')
-    }
-  }, [clusterIndex, displayPhotos.length, hasAutoScrollLane, sourcePhotoCount])
 
   return (
     <section className="photo-vsco-cluster-section">
       <div className="photo-vsco-cluster-section-head">
         <div className="photo-reel-meta" role="group" aria-label={`Photo roll ${cluster.label}`}>
           <span className="photo-reel-title">{cluster.label}</span>
+          <span className="photo-reel-count">{sourcePhotoCount}</span>
         </div>
       </div>
 
-      <div className={`photo-film-strip-shell ${laneModeClass}`}>
-        <div
-          ref={reelRef}
-          className={`photo-film-embla ${laneModeClass}`}
-        >
-          <div className={`photo-film-embla-container ${laneModeClass}`}>
-            {displayPhotos.map((photo, photoIndex) => {
+      <div className="photo-film-strip-shell" ref={shellRef}>
+        <div className="photo-film-embla" ref={emblaRef}>
+          <div className="photo-film-embla-container">
+            {loopPhotos.map(({ photo, key }, photoIndex) => {
               const idKey = toIdKey(photo.id)
               const portraitSource = isPortraitAspect(photo.aspectRatio)
 
               return (
-                <div
-                  key={`${cluster.key}-${idKey}-${photoIndex}`}
-                  className="photo-film-slide"
-                >
+                <div key={key} className="photo-film-slide">
                   <button
                     type="button"
-                    className="photo-film-frame photo-film-frame-landscape"
+                    className="photo-film-frame"
                     onClick={() => onSelectPhoto(photo)}
+                    onMouseEnter={() => {
+                      const preload = new window.Image()
+                      preload.src = getPhotoImage(photo, idKey)
+                    }}
                     aria-label={`Preview ${photo.title}`}
                   >
-                    <span
-                      className={`photo-film-image-shell photo-film-image-shell-landscape ${portraitSource ? 'is-portrait-source' : ''}`}
-                    >
+                    <span className={`photo-film-image-shell ${portraitSource ? 'is-portrait-source' : ''}`}>
                       <img
                         src={getPhotoThumb(photo, idKey)}
                         alt={photo.title}
-                        loading="eager"
+                        loading={photoIndex < 4 ? 'eager' : 'lazy'}
                         decoding="async"
-                        className={portraitSource ? 'photo-film-image-rotated' : ''}
+                        fetchPriority={photoIndex < 2 ? 'high' : 'auto'}
+                        className={`photo-image-fade ${portraitSource ? 'photo-film-image-rotated' : ''}`.trim()}
+                        ref={(node) => {
+                          if (node?.complete) node.classList.add('is-loaded')
+                        }}
+                        onLoad={(event) => {
+                          event.currentTarget.classList.add('is-loaded')
+                          if (photoIndex === 0) measureOverflow()
+                        }}
                       />
                     </span>
                     <span className="photo-meta-overlay photo-meta-overlay-compact">
                       <span className="photo-meta-overlay-title">{photo.title}</span>
                       <span className="photo-meta-overlay-line">{photo.location}</span>
-                      <span className="photo-meta-overlay-line">{photo.color} | {photo.theme}</span>
                     </span>
                   </button>
                 </div>
@@ -686,14 +478,31 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
 }
 
 function PhotographyClient() {
+  const router = useRouter()
   const searchParams = useSearchParams()
 
   const [sortBy, setSortBy] = useState<SortBy | null>(null)
   const [filterTag, setFilterTag] = useState('')
   const [orderBy, setOrderBy] = useState<OrderBy>('newest')
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null)
+  const [lightboxReady, setLightboxReady] = useState(false)
   const [customPhotos, setCustomPhotos] = useState<PhotoItem[]>([])
-  const [isPhotoContentReady, setIsPhotoContentReady] = useState(false)
+
+  const openPhoto = (photo: PhotoItem) => {
+    setSelectedPhoto(photo)
+    setLightboxReady(false)
+
+    const fullSrc = getPhotoImage(photo, toIdKey(photo.id))
+    const image = new window.Image()
+    image.decoding = 'async'
+    image.onload = () => setLightboxReady(true)
+    image.onerror = () => setLightboxReady(true)
+    image.src = fullSrc
+
+    if (image.complete) {
+      setLightboxReady(true)
+    }
+  }
 
   useEffect(() => {
     const stored = localStorage.getItem('customPhotos')
@@ -741,62 +550,6 @@ function PhotographyClient() {
 
   const photos = useMemo(() => [...DEFAULT_PHOTOS, ...customPhotos], [customPhotos])
 
-  const allPhotoSources = useMemo(() => {
-    const sourceSet = new Set<string>()
-    photos.forEach((photo) => {
-      sourceSet.add(getPhotoThumb(photo, toIdKey(photo.id)))
-    })
-    return Array.from(sourceSet)
-  }, [photos])
-
-  useEffect(() => {
-    let isCancelled = false
-    setIsPhotoContentReady(false)
-
-    if (allPhotoSources.length === 0) {
-      setIsPhotoContentReady(true)
-      return () => {
-        isCancelled = true
-      }
-    }
-
-    const preloadImages: HTMLImageElement[] = []
-    let completedCount = 0
-
-    const markResolved = () => {
-      completedCount += 1
-      if (completedCount !== allPhotoSources.length || isCancelled) return
-
-      if (!isCancelled) {
-        setIsPhotoContentReady(true)
-      }
-    }
-
-    const maxWaitTimeoutId = window.setTimeout(() => {
-      if (!isCancelled) {
-        setIsPhotoContentReady(true)
-      }
-    }, 1400)
-
-    allPhotoSources.forEach((source) => {
-      const image = new Image()
-      image.decoding = 'async'
-      image.onload = markResolved
-      image.onerror = markResolved
-      image.src = source
-      preloadImages.push(image)
-    })
-
-    return () => {
-      isCancelled = true
-      window.clearTimeout(maxWaitTimeoutId)
-      preloadImages.forEach((image) => {
-        image.onload = null
-        image.onerror = null
-      })
-    }
-  }, [allPhotoSources])
-
   const photoTimestampMap = useMemo(() => {
     const map = new Map<string, number>()
 
@@ -817,14 +570,6 @@ function PhotographyClient() {
     return map
   }, [photos])
 
-  const allPhotosSorted = useMemo(() => (
-    [...photos].sort((a, b) => {
-      const timeA = photoTimestampMap.get(toIdKey(a.id)) || 0
-      const timeB = photoTimestampMap.get(toIdKey(b.id)) || 0
-      return timeB - timeA
-    })
-  ), [photoTimestampMap, photos])
-
   const filteredByTag = useMemo(() => {
     if (!sortBy || !filterTag) return photos
 
@@ -837,11 +582,14 @@ function PhotographyClient() {
   const clusters = useMemo<PhotoCluster[]>(() => {
     if (!sortBy) return []
 
+    const activeSort = sortBy
+    const activeOrder = orderBy
+    const sourcePhotos = filteredByTag
     const grouped = new Map<string, PhotoCluster>()
 
-    filteredByTag.forEach((photo) => {
-      const value = getClusterValue(photo, sortBy, photoTimestampMap)
-      const key = `${sortBy}:${value}`.toLowerCase()
+    sourcePhotos.forEach((photo) => {
+      const value = getClusterValue(photo, activeSort, photoTimestampMap)
+      const key = `${activeSort}:${value}`.toLowerCase()
       const existing = grouped.get(key)
 
       if (existing) {
@@ -852,7 +600,7 @@ function PhotographyClient() {
       grouped.set(key, {
         key,
         value,
-        label: getClusterLabel(sortBy, value),
+        label: getClusterLabel(activeSort, value),
         photos: [photo],
       })
     })
@@ -864,17 +612,17 @@ function PhotographyClient() {
       0
     )
 
-    if (orderBy === 'az') {
+    if (activeOrder === 'az') {
       values.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' }))
-    } else if (orderBy === 'za') {
+    } else if (activeOrder === 'za') {
       values.sort((a, b) => b.label.localeCompare(a.label, undefined, { numeric: true, sensitivity: 'base' }))
-    } else if (orderBy === 'most') {
+    } else if (activeOrder === 'most') {
       values.sort((a, b) => {
         const countDiff = b.photos.length - a.photos.length
         if (countDiff !== 0) return countDiff
         return clusterTime(b) - clusterTime(a)
       })
-    } else if (orderBy === 'oldest') {
+    } else if (activeOrder === 'oldest') {
       values.sort((a, b) => clusterTime(a) - clusterTime(b))
     } else {
       values.sort((a, b) => clusterTime(b) - clusterTime(a))
@@ -884,105 +632,130 @@ function PhotographyClient() {
       cluster.photos.sort((a, b) => {
         const timeA = photoTimestampMap.get(toIdKey(a.id)) || 0
         const timeB = photoTimestampMap.get(toIdKey(b.id)) || 0
-        return orderBy === 'oldest' ? timeA - timeB : timeB - timeA
+        return activeOrder === 'oldest' ? timeA - timeB : timeB - timeA
       })
     })
 
     return values
   }, [filteredByTag, orderBy, photoTimestampMap, sortBy])
 
+  const collagePhotos = useMemo(() => (
+    [...photos]
+      .sort((a, b) => {
+        const timeA = photoTimestampMap.get(toIdKey(a.id)) || 0
+        const timeB = photoTimestampMap.get(toIdKey(b.id)) || 0
+        return timeB - timeA
+      })
+      .map((photo) => {
+        const idKey = toIdKey(photo.id)
+        const size = getAspectSize(photo.aspectRatio)
+        return {
+          src: getPhotoThumb(photo, idKey),
+          width: size.width,
+          height: size.height,
+          alt: photo.title,
+          key: idKey,
+        }
+      })
+  ), [photoTimestampMap, photos])
+
+  const pushSort = (nextSort: SortBy | null, nextOrder?: OrderBy) => {
+    if (!nextSort) {
+      router.push('/photos')
+      return
+    }
+
+    const order = nextOrder || getDefaultOrder(nextSort)
+    router.push(`/photos?sort=${nextSort}&order=${order}`)
+  }
+
   return (
     <div className="photos-page-root flex items-start justify-start min-h-screen px-20 py-16 mobile-main-content bg-background">
       <div className="w-full max-w-[1700px] mx-auto">
         <h1 className="sr-only">Photos</h1>
 
-        <div className="photo-mobile-toolbar photo-inline-sorter mb-4 page-load-seq page-load-seq-1">
-          <div className="photo-sort-pills">
+        <div className="photo-mobile-toolbar photo-inline-sorter mb-4">
+          <div className="photo-mobile-filter-row" role="tablist" aria-label="Sort photos">
             <button
               type="button"
-              className={`photo-sort-pill ${!sortBy ? 'is-active' : ''}`}
-              onClick={() => {
-                setSortBy(null)
-                setFilterTag('')
-                setOrderBy(getDefaultOrder(null))
-              }}
+              role="tab"
+              aria-selected={!sortBy}
+              className={`photo-mobile-chip ${!sortBy ? 'is-active' : ''}`}
+              onClick={() => pushSort(null)}
             >
-              All Photos
+              All
             </button>
             {SORT_OPTIONS.map((option) => (
               <button
                 key={option.key}
                 type="button"
-                className={`photo-sort-pill ${sortBy === option.key ? 'is-active' : ''}`}
-                onClick={() => {
-                  setSortBy(option.key)
-                  setFilterTag('')
-                  setOrderBy(getDefaultOrder(option.key))
-                }}
+                role="tab"
+                aria-selected={sortBy === option.key}
+                className={`photo-mobile-chip ${sortBy === option.key ? 'is-active' : ''}`}
+                onClick={() => pushSort(option.key)}
               >
                 {option.label}
               </button>
             ))}
-          </div>
 
-          {sortBy && (
-            <label className="photo-select-shell photo-filter-pill is-active">
-              <span className="photo-select-label">Order</span>
-              <select
-                className="photo-select-input photo-select-input-filter"
-                value={orderBy}
-                onChange={(event) => {
-                  setOrderBy(event.target.value as OrderBy)
-                }}
-              >
-                {getOrderOptions(sortBy).map((option) => (
-                  <option key={option.key} value={option.key}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-          )}
+            {sortBy && (
+              <label className="photo-mobile-order">
+                <select
+                  className="photo-mobile-order-select"
+                  value={orderBy}
+                  aria-label="Order"
+                  onChange={(event) => {
+                    const nextOrder = event.target.value as OrderBy
+                    setOrderBy(nextOrder)
+                    router.push(`/photos?sort=${sortBy}&order=${nextOrder}`)
+                  }}
+                >
+                  {getOrderOptions(sortBy).map((option) => (
+                    <option key={option.key} value={option.key}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
         </div>
 
-        {!isPhotoContentReady ? (
-          <div className="photo-loading-spinner-wrap" aria-live="polite" aria-label="Loading photos">
-            <span className="photo-loading-spinner" aria-hidden="true" />
-          </div>
-        ) : !sortBy ? (
-          <div className="photo-vsco-board photo-fade-in">
-            <div className="photo-vsco-masonry">
-              {allPhotosSorted.map((photo) => {
-                const idKey = toIdKey(photo.id)
-                return (
-                  <button
-                    key={idKey}
-                    type="button"
-                    className="photo-vsco-card"
-                    onClick={() => setSelectedPhoto(photo)}
-                  >
-                    <div className="photo-vsco-media">
-                      <img
-                        src={getPhotoThumb(photo, idKey)}
-                        alt={photo.title}
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      <span className="photo-meta-overlay">
-                        <span className="photo-meta-overlay-title">{photo.title}</span>
-                        <span className="photo-meta-overlay-line">{photo.location}</span>
-                        <span className="photo-meta-overlay-line">{photo.color} | {photo.theme}</span>
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
+        {!sortBy ? (
+          <div className="photo-collage-shell">
+            <MasonryPhotoAlbum
+              photos={collagePhotos}
+              spacing={8}
+              columns={(containerWidth) => {
+                if (containerWidth < 520) return 2
+                if (containerWidth < 900) return 3
+                return 4
+              }}
+              onClick={({ photo }) => {
+                const match = photos.find((item) => toIdKey(item.id) === photo.key)
+                if (match) openPhoto(match)
+              }}
+              render={{
+                image: (props, context) => (
+                  <img
+                    {...props}
+                    className={`photo-image-fade photo-collage-image ${props.className || ''}`.trim()}
+                    loading={context.index < 6 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority={context.index < 3 ? 'high' : 'auto'}
+                    onLoad={(event) => {
+                      props.onLoad?.(event)
+                      event.currentTarget.classList.add('is-loaded')
+                    }}
+                  />
+                ),
+              }}
+            />
           </div>
         ) : (
-          <div className="photo-vsco-cluster-stack photo-fade-in">
+          <div className="photo-vsco-cluster-stack">
             {clusters.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-title">No photos in this filter</div>
-                <div className="empty-state-message">Try a different sidebar filter.</div>
+                <div className="empty-state-message">Try a different sort.</div>
               </div>
             ) : (
               clusters.map((cluster, clusterIndex) => (
@@ -990,7 +763,7 @@ function PhotographyClient() {
                   key={cluster.key}
                   cluster={cluster}
                   clusterIndex={clusterIndex}
-                  onSelectPhoto={setSelectedPhoto}
+                  onSelectPhoto={openPhoto}
                 />
               ))
             )}
@@ -999,36 +772,42 @@ function PhotographyClient() {
 
         {selectedPhoto && (
           <div
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 md:p-6"
+            className="photo-lightbox"
             onClick={() => setSelectedPhoto(null)}
           >
-            <div className="relative w-fit max-w-[96vw]" onClick={(e) => e.stopPropagation()}>
+            <div className="photo-lightbox-panel" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setSelectedPhoto(null)}
-                className="absolute top-3 right-3 w-10 h-10 bg-black/55 hover:bg-black/75 text-stone-50 rounded-full flex items-center justify-center transition-colors z-20 text-base"
+                className="photo-lightbox-close"
                 aria-label="Close photo view"
               >
                 ✕
               </button>
 
-              <div className="bg-card rounded-lg overflow-hidden border border-border/80 inline-block">
+              <div className="photo-lightbox-frame">
+                {!lightboxReady && (
+                  <div className="photo-lightbox-loading" aria-live="polite" aria-label="Loading photo">
+                    <span className="photo-lightbox-spinner" aria-hidden="true" />
+                  </div>
+                )}
                 <img
                   src={getPhotoImage(selectedPhoto, toIdKey(selectedPhoto.id))}
                   alt={selectedPhoto.title}
-                  className="max-h-[84vh] max-w-[96vw] w-auto h-auto block"
+                  className={`photo-lightbox-image ${lightboxReady ? 'is-ready' : ''}`}
+                  onLoad={() => setLightboxReady(true)}
                 />
+              </div>
 
-                <div className="mt-2 px-2 pb-2">
-                  <h2 className="text-sm md:text-base font-serif italic leading-tight">{selectedPhoto.title}</h2>
-                  <div className="mt-1 text-[10px] md:text-[11px] text-muted flex flex-wrap items-center gap-1.5">
-                    <span>{selectedPhoto.location}</span>
-                    <span>|</span>
-                    <span>{selectedPhoto.color}</span>
-                    <span>|</span>
-                    <span>{selectedPhoto.theme}</span>
-                  </div>
-                  <p className="mt-1.5 text-[10px] md:text-[11px] text-muted leading-relaxed max-w-[56rem]">{selectedPhoto.description}</p>
+              <div className="photo-lightbox-meta">
+                <h2 className="photo-lightbox-title">{selectedPhoto.title}</h2>
+                <div className="photo-lightbox-line">
+                  <span>{selectedPhoto.location}</span>
+                  <span>|</span>
+                  <span>{selectedPhoto.color}</span>
+                  <span>|</span>
+                  <span>{selectedPhoto.theme}</span>
                 </div>
+                <p className="photo-lightbox-copy">{selectedPhoto.description}</p>
               </div>
             </div>
           </div>
@@ -1040,7 +819,7 @@ function PhotographyClient() {
 
 export default function PhotographyPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <Suspense fallback={<div className="photos-page-root min-h-screen bg-background" />}>
       <PhotographyClient />
     </Suspense>
   )

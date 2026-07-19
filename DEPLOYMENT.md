@@ -96,24 +96,25 @@ If you prefer Netlify over Vercel:
 
 ---
 
-## Environment Variables (If Needed)
+## Environment Variables (Connect guestbook)
 
-If you add any API keys or secrets later:
+The Connect page guestbook needs shared storage in production (Vercel’s filesystem does not persist).
 
-1. Go to Vercel → Your Project → Settings → Environment Variables
-2. Add your variables (e.g., `NEXT_PUBLIC_API_KEY`)
-3. Redeploy your site
+1. Create a free Redis DB at [Upstash](https://console.upstash.com) → **REST API**
+2. In Vercel → Project → **Settings → Environment Variables**, add:
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+3. Redeploy
+
+Without these, notes still work in each visitor’s browser (`localStorage`), but they won’t sync across devices.
+
+See `env.example` in the repo.
 
 ---
 
-## 🎨 Custom Admin Password
+## Custom Admin Password
 
-**Important**: Before deploying, change the admin password!
-
-1. Open `src/app/components/Navigation.tsx`
-2. Find line 27: `if (password === 'admin123')`
-3. Change `'admin123'` to your own secure password
-4. Commit and push the changes
+Admin routes were removed from this version. Guestbook notes pin immediately (no approval queue).
 
 ---
 

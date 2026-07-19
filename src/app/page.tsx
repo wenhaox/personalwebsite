@@ -37,11 +37,11 @@ export default function Home() {
 
         <div className="space-y-2.5 md:space-y-3.5 text-base leading-7 about-seq-body about-flow-prose about-mobile-centered">
           <p className="about-seq-line about-seq-line-1">
-            I&apos;m interested in bring-up and integration for robotics and consumer hardware. I care about good design and making things that are purposeful and built to last.
+            I&apos;m interested in robotics and consumer hardware, mostly integration and testing. I care about good design and making things that are purposeful and built to last.
           </p>
 
           <p className="about-seq-line about-seq-line-2">
-            I photograph how people interact with physical spaces — more on{' '}
+            A lot of my time goes into observing how people move through the world, more on{' '}
             <a
               href="/photos"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
@@ -52,7 +52,7 @@ export default function Home() {
           </p>
 
           <p className="about-seq-line about-seq-line-3">
-            Some other things I enjoy are finding a local cafe in a new neighborhood, basketball, touring old architectural spaces, getting outside around blue hour, and hopefully leatherworking soon!
+            Some other things I enjoy are getting outside around blue hour, touring spaces, finding a cafe in a new neighborhood, basketball, and sci-fi mysteries.
           </p>
 
           <p className="about-seq-line about-seq-line-4">
@@ -69,7 +69,7 @@ export default function Home() {
 
         {/* Photo section - only visible on mobile */}
         <div className="hidden mobile-show-photo pt-4 pb-4">
-          <div className="w-48 h-64 bg-muted/10 rounded-2xl flex items-center justify-center mx-auto">
+          <div className="w-48 h-64 bg-muted/10 rounded-md flex items-center justify-center mx-auto">
             <span className="text-muted text-sm">photo</span>
           </div>
         </div>

@@ -10,28 +10,28 @@ const SOCIAL_LINKS = [
 
 export default function Connect() {
   return (
-    <div className="connect-page-root flex items-stretch justify-start min-h-[100dvh] overflow-y-auto px-32 py-10 mobile-main-content bg-background">
-      <div className="w-full flex flex-col">
-        <section className="space-y-5 flex flex-col flex-1 min-h-0">
+    <div className="connect-page-root mobile-main-content bg-background">
+      <div className="connect-page-inner">
+        <section className="connect-page-section">
           <h1 className="sr-only">Connect</h1>
 
-          <div className="connect-icons-shell hidden max-sm:flex page-load-seq page-load-seq-1">
+          <div className="connect-board-shell page-load-seq page-load-seq-1">
+            <GuestbookBook compact fullHeight showZoomTools={false} enableBoardZoom={false} />
+          </div>
+
+          <div className="connect-social-under">
             {SOCIAL_LINKS.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
                 target={item.href.startsWith('http') ? '_blank' : undefined}
                 rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="connect-icon-link"
+                className="connect-social-under-link"
+                aria-label={item.label}
               >
-                <span className={`connect-icon-badge ${item.label === 'Email' ? 'connect-icon-badge-email' : ''}`}>{item.icon}</span>
-                <span>{item.label}</span>
+                <span className={`connect-social-under-icon ${item.label === 'Email' ? 'is-email' : ''}`}>{item.icon}</span>
               </a>
             ))}
-          </div>
-
-          <div className="connect-board-shell page-load-seq page-load-seq-2 flex-1 min-h-0">
-            <GuestbookBook compact fullHeight showZoomTools={false} enableBoardZoom={false} />
           </div>
         </section>
       </div>

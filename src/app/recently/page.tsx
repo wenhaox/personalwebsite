@@ -1,6 +1,13 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { DeskSurfaceSlot } from '../components/RecentlyIsometricDesk'
+
+const RecentlyDeskBoard = dynamic(() => import('../components/RecentlyDeskBoard'), {
+  ssr: false,
+  loading: () => <div className="recently-iso-canvas recently-iso-canvas-loading" />,
+})
 
 interface RecentlyLink {
   url: string
@@ -37,28 +44,17 @@ interface BoardObject {
   spotifyEmbed?: string
 }
 
-interface BoardRect {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
 const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
 
-const SHELF_SLOT_RECTS: BoardRect[] = [
-  { x: 0.195, y: 0.166, width: 0.1, height: 0.102 },
-  { x: 0.449, y: 0.166, width: 0.1, height: 0.102 },
-  { x: 0.703, y: 0.166, width: 0.1, height: 0.102 },
-  { x: 0.195, y: 0.318, width: 0.1, height: 0.102 },
-  { x: 0.449, y: 0.318, width: 0.1, height: 0.102 },
-  { x: 0.703, y: 0.318, width: 0.1, height: 0.102 },
-  { x: 0.195, y: 0.47, width: 0.1, height: 0.102 },
-  { x: 0.449, y: 0.47, width: 0.1, height: 0.102 },
-  { x: 0.703, y: 0.47, width: 0.1, height: 0.102 },
-  { x: 0.195, y: 0.622, width: 0.1, height: 0.102 },
-  { x: 0.449, y: 0.622, width: 0.1, height: 0.102 },
-  { x: 0.703, y: 0.622, width: 0.1, height: 0.102 },
+// Spread across the larger desk surface.
+const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
+  { x: 0.16, z: 0.24, scale: 0.95 },
+  { x: 0.44, z: 0.18, scale: 1.08 },
+  { x: 0.76, z: 0.30, scale: 0.92 },
+  { x: 0.24, z: 0.64, scale: 0.98 },
+  { x: 0.52, z: 0.72, scale: 1.04 },
+  { x: 0.82, z: 0.58, scale: 0.96 },
+  { x: 0.48, z: 0.46, scale: 0.9 },
 ]
 
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
@@ -181,6 +177,73 @@ const shuffleWithSeed = <T,>(list: T[], seed: number): T[] => {
   return next
 }
 
+interface ObjectPresentation {
+  motionClass: string
+  pixelExtraClass: string
+  spriteExtraClass: string
+  showCoffeeSteam: boolean
+  showCassetteReels: boolean
+  isSmoothArt: boolean
+}
+
+const STATIC_MOTION = 'is-static-item'
+
+const getObjectPresentation = (pixelArt: string, kind: string): ObjectPresentation => {
+  const base: ObjectPresentation = {
+    motionClass: STATIC_MOTION,
+    pixelExtraClass: '',
+    spriteExtraClass: '',
+    showCoffeeSteam: false,
+    showCassetteReels: false,
+    isSmoothArt: pixelArt.endsWith('/dice-cube.svg'),
+  }
+
+  switch (pixelArt) {
+    case '/pixel-objects/vinyl-record.svg':
+      return { ...base, motionClass: 'is-record-disc', pixelExtraClass: 'has-vinyl-spin', spriteExtraClass: 'is-vinyl-stage' }
+    case '/pixel-objects/film-frame.svg':
+      return { ...base, motionClass: 'is-film-flicker' }
+    case '/pixel-objects/fujifilm-camera.svg':
+      return { ...base, motionClass: 'is-camera-shutter' }
+    case '/pixel-objects/cassette.svg':
+      return { ...base, pixelExtraClass: 'has-cassette-reels', showCassetteReels: true }
+    case '/pixel-objects/arcade-token.svg':
+      return { ...base, motionClass: 'is-token-flip', spriteExtraClass: 'is-token-stage' }
+    case '/pixel-objects/hourglass.svg':
+      return { ...base, motionClass: 'is-hourglass-flip' }
+    case '/pixel-objects/compass.svg':
+      return { ...base, motionClass: 'is-compass-sway' }
+    case '/pixel-objects/coffee-mug.svg':
+      return { ...base, pixelExtraClass: 'has-coffee-steam', showCoffeeSteam: true }
+    case '/pixel-objects/radio.svg':
+      return { ...base, motionClass: 'is-radio-wiggle' }
+    case '/pixel-objects/desk-lamp.svg':
+      return { ...base, motionClass: 'is-lamp-glow' }
+    case '/pixel-objects/headphones.svg':
+      return { ...base, motionClass: 'is-headphones-bob' }
+    case '/pixel-objects/gamepad.svg':
+      return { ...base, motionClass: 'is-gamepad-tap' }
+    case '/pixel-objects/postcard.svg':
+      return { ...base, motionClass: 'is-postcard-flutter' }
+    case '/pixel-objects/book-stack.svg':
+      return { ...base, motionClass: 'is-book-breathe' }
+    case '/pixel-objects/backpack.svg':
+      return { ...base, motionClass: 'is-backpack-sway' }
+    case '/pixel-objects/potted-plant.svg':
+      return { ...base, motionClass: 'is-plant-sway' }
+    case '/pixel-objects/dice-cube.svg':
+      return { ...base, motionClass: 'is-dice-idle', isSmoothArt: true }
+    default:
+      if (kind === 'movie') {
+        return { ...base, motionClass: 'is-film-flicker' }
+      }
+      if (kind === 'camera') {
+        return { ...base, motionClass: 'is-camera-shutter' }
+      }
+      return base
+  }
+}
+
 const getPrimaryImage = (item: RecentlyItem | null): string | undefined => {
   if (!item) return undefined
   if (typeof item.image === 'string' && item.image.trim()) return item.image
@@ -207,15 +270,10 @@ const getPrimaryLink = (item: RecentlyItem | null): RecentlyLink | undefined => 
 
 export default function Recently() {
   const shuffleTimeoutRef = useRef<number | null>(null)
-  const tooltipCloseTimerRef = useRef<number | null>(null)
-  const tooltipRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [isShuffling, setIsShuffling] = useState(false)
   const [rollSeed, setRollSeed] = useState(1)
-  const [isReady, setIsReady] = useState(false)
+  const [isReady, setIsReady] = useState(true)
   const [items, setItems] = useState<RecentlyItem[]>([])
-  const [isMobileViewport, setIsMobileViewport] = useState(false)
-  const [tooltipEdgeMap, setTooltipEdgeMap] = useState<Record<string, { left: boolean; right: boolean; top: boolean }>>({})
 
   useEffect(() => {
     const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
@@ -223,124 +281,13 @@ export default function Recently() {
     setIsReady(true)
   }, [])
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 900px)')
-    const syncViewportMode = () => {
-      setIsMobileViewport(mediaQuery.matches)
-    }
-
-    syncViewportMode()
-
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', syncViewportMode)
-      return () => mediaQuery.removeEventListener('change', syncViewportMode)
-    }
-
-    mediaQuery.addListener(syncViewportMode)
-    return () => mediaQuery.removeListener(syncViewportMode)
-  }, [])
-
   useEffect(() => (
     () => {
       if (shuffleTimeoutRef.current) {
         window.clearTimeout(shuffleTimeoutRef.current)
       }
-
-      if (tooltipCloseTimerRef.current) {
-        window.clearTimeout(tooltipCloseTimerRef.current)
-      }
     }
   ), [])
-
-  const cancelTooltipClose = useCallback(() => {
-    if (!tooltipCloseTimerRef.current) return
-    window.clearTimeout(tooltipCloseTimerRef.current)
-    tooltipCloseTimerRef.current = null
-  }, [])
-
-  const queueTooltipClose = useCallback((id: string) => {
-    cancelTooltipClose()
-    tooltipCloseTimerRef.current = window.setTimeout(() => {
-      setHoveredId((current) => (current === id ? null : current))
-    }, 150)
-  }, [cancelTooltipClose])
-
-  const updateTooltipEdgeMap = useCallback((id: string) => {
-    window.requestAnimationFrame(() => {
-      const tooltip = tooltipRefs.current[id]
-      if (!tooltip) return
-
-      const rect = tooltip.getBoundingClientRect()
-      const margin = 10
-      const nextEdgeState = {
-        left: rect.left < margin,
-        right: rect.right > (window.innerWidth - margin),
-        top: rect.top < margin,
-      }
-
-      setTooltipEdgeMap((current) => {
-        const existing = current[id]
-        if (
-          existing &&
-          existing.left === nextEdgeState.left &&
-          existing.right === nextEdgeState.right &&
-          existing.top === nextEdgeState.top
-        ) {
-          return current
-        }
-
-        return {
-          ...current,
-          [id]: nextEdgeState,
-        }
-      })
-    })
-  }, [])
-
-  useEffect(() => {
-    if (!hoveredId) return
-
-    const syncHoveredTooltip = () => {
-      updateTooltipEdgeMap(hoveredId)
-    }
-
-    syncHoveredTooltip()
-    window.addEventListener('resize', syncHoveredTooltip)
-    window.addEventListener('scroll', syncHoveredTooltip, { passive: true })
-
-    return () => {
-      window.removeEventListener('resize', syncHoveredTooltip)
-      window.removeEventListener('scroll', syncHoveredTooltip)
-    }
-  }, [hoveredId, updateTooltipEdgeMap])
-
-  useEffect(() => {
-    if (!isMobileViewport || !hoveredId) return
-
-    const closeTooltipIfOutside = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null
-      if (!target) return
-
-      if (target.closest('.recently-node-shell')) return
-      if (target.closest('.recently-node-tooltip')) return
-
-      setHoveredId(null)
-    }
-
-    const closeTooltipOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setHoveredId(null)
-      }
-    }
-
-    window.addEventListener('pointerdown', closeTooltipIfOutside)
-    window.addEventListener('keydown', closeTooltipOnEscape)
-
-    return () => {
-      window.removeEventListener('pointerdown', closeTooltipIfOutside)
-      window.removeEventListener('keydown', closeTooltipOnEscape)
-    }
-  }, [hoveredId, isMobileViewport])
 
   const recentlyItems = items.length > 0 ? items : DEFAULT_RECENTLY_ITEMS
 
@@ -364,19 +311,16 @@ export default function Recently() {
 
   const boardObjects = useMemo<BoardObject[]>(() => {
     const extraPixelArt = [
-      '/pixel-objects/cassette.svg',
       '/pixel-objects/headphones.svg',
-      '/pixel-objects/arcade-token.svg',
-      '/pixel-objects/hourglass.svg',
-      '/pixel-objects/postcard.svg',
-      '/pixel-objects/gamepad.svg',
-      '/pixel-objects/compass.svg',
       '/pixel-objects/coffee-mug.svg',
-      '/pixel-objects/backpack.svg',
+      '/pixel-objects/potted-plant.svg',
+      '/pixel-objects/gamepad.svg',
       '/pixel-objects/book-stack.svg',
-      '/pixel-objects/radio.svg',
+      '/pixel-objects/compass.svg',
+      '/pixel-objects/cassette.svg',
+      '/pixel-objects/postcard.svg',
       '/pixel-objects/desk-lamp.svg',
-      '/pixel-objects/dice-cube.svg',
+      '/pixel-objects/radio.svg',
     ]
 
     const fallbackItem: RecentlyItem = {
@@ -424,7 +368,7 @@ export default function Recently() {
       item !== musicItem && item !== photoItem && item !== movieItem
     )), rollSeed)
 
-    const targetCount = 12
+    const targetCount = 7
     const artifactCount = Math.max(targetCount - list.length, 0)
     const artifactPool = secondaryItems.length > 0 ? secondaryItems : [fallbackItem]
 
@@ -445,8 +389,8 @@ export default function Recently() {
   }, [movieItem, musicItem, photoItem, recentlyItems, rollSeed])
 
   const slotLayout = useMemo(() => {
-    const shuffledSlots = shuffleWithSeed(SHELF_SLOT_RECTS, rollSeed)
-    const nextLayout: Record<string, BoardRect> = {}
+    const shuffledSlots = shuffleWithSeed(DESK_SLOT_RECTS, rollSeed)
+    const nextLayout: Record<string, DeskSurfaceSlot> = {}
 
     boardObjects.forEach((object, index) => {
       nextLayout[object.id] = shuffledSlots[index % shuffledSlots.length]
@@ -456,10 +400,8 @@ export default function Recently() {
   }, [boardObjects, rollSeed])
 
   const handleRollShelf = useCallback(() => {
-    if (!isReady) return
+    if (!isReady || isShuffling) return
 
-    cancelTooltipClose()
-    setHoveredId(null)
     setIsShuffling(true)
     setRollSeed((current) => current + 1)
 
@@ -469,8 +411,8 @@ export default function Recently() {
 
     shuffleTimeoutRef.current = window.setTimeout(() => {
       setIsShuffling(false)
-    }, 720)
-  }, [cancelTooltipClose, isReady])
+    }, 700)
+  }, [isReady, isShuffling])
 
   useEffect(() => {
     const handleSidebarShuffle = () => {
@@ -488,153 +430,14 @@ export default function Recently() {
       <section className="recently-board-shell page-load-seq page-load-seq-1">
         <div className="recently-board-stage">
           <div className="recently-board-canvas">
-            <div className="recently-pixel-shelf-layer" aria-hidden="true">
-              <span className="recently-pixel-shelf-post recently-pixel-shelf-post-left" />
-              <span className="recently-pixel-shelf-post recently-pixel-shelf-post-right" />
-              <span className="recently-pixel-shelf recently-pixel-shelf-top" />
-              <span className="recently-pixel-shelf recently-pixel-shelf-upper" />
-              <span className="recently-pixel-shelf recently-pixel-shelf-mid" />
-              <span className="recently-pixel-shelf recently-pixel-shelf-bottom" />
-            </div>
-
-            {boardObjects.map((object, index) => {
-              const rect = slotLayout[object.id] || SHELF_SLOT_RECTS[index % SHELF_SLOT_RECTS.length]
-              const isRecord = object.kind === 'record'
-              const artPath = object.pixelArt
-              const isDice = artPath.endsWith('/dice-cube.svg')
-              const isHovered = hoveredId === object.id
-              const tooltipEdgeState = tooltipEdgeMap[object.id]
-              const isTopEdge = rect.y < 0.24 || Boolean(tooltipEdgeState?.top)
-              const isLeftEdge = rect.x < 0.16 || Boolean(tooltipEdgeState?.left)
-              const isRightEdge = rect.x + rect.width > 0.84 || Boolean(tooltipEdgeState?.right)
-              const motionClass = isRecord ? 'is-record-disc' : ''
-              const tooltipClassName = [
-                'recently-node-tooltip',
-                isHovered ? 'is-visible' : '',
-                isTopEdge ? 'is-top-edge' : '',
-                isLeftEdge ? 'is-left-edge' : '',
-                isRightEdge ? 'is-right-edge' : '',
-              ].filter(Boolean).join(' ')
-
-              return (
-                <article
-                  key={object.id}
-                  className={`recently-object-slot ${isShuffling ? 'is-shuffling' : ''} ${isReady ? 'is-ready' : ''}`}
-                  style={{
-                    left: `${rect.x * 100}%`,
-                    top: `${rect.y * 100}%`,
-                    width: `${rect.width * 100}%`,
-                    height: `${rect.height * 100}%`,
-                    zIndex: isHovered ? 260 : 80 + index,
-                  }}
-                >
-                  <div
-                    className="recently-node-shell"
-                    onMouseEnter={() => {
-                      cancelTooltipClose()
-                      setHoveredId(object.id)
-                      updateTooltipEdgeMap(object.id)
-                    }}
-                    onMouseLeave={() => {
-                      queueTooltipClose(object.id)
-                    }}
-                    onTouchStart={() => {
-                      cancelTooltipClose()
-                      setHoveredId((current) => {
-                        const next = current === object.id ? null : object.id
-
-                        if (next) {
-                          window.requestAnimationFrame(() => {
-                            updateTooltipEdgeMap(object.id)
-                          })
-                        }
-
-                        return next
-                      })
-                    }}
-                  >
-                    <div
-                      className={`recently-node recently-node-${object.kind} ${isHovered ? 'is-hovered' : ''} ${isRecord ? 'is-record-playing' : ''}`}
-                      aria-label={object.title}
-                      role="img"
-                    >
-                      <span className={`recently-node-pixel recently-node-pixel-${object.kind}`}>
-                        <span className="recently-node-pixel-sprite">
-                          <img
-                            src={object.pixelArt}
-                            alt=""
-                            aria-hidden="true"
-                            className={`recently-node-pixel-image ${isDice ? 'is-smooth-art' : ''} ${motionClass}`}
-                          />
-                        </span>
-                      </span>
-                    </div>
-
-                    <div
-                      ref={(node) => {
-                        tooltipRefs.current[object.id] = node
-                      }}
-                      className={tooltipClassName}
-                      onMouseEnter={() => {
-                        cancelTooltipClose()
-                        setHoveredId(object.id)
-                        updateTooltipEdgeMap(object.id)
-                      }}
-                      onMouseLeave={() => {
-                        queueTooltipClose(object.id)
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className="recently-node-tooltip-close"
-                        onClick={(event) => {
-                          event.preventDefault()
-                          event.stopPropagation()
-                          setHoveredId(null)
-                        }}
-                        onTouchStart={(event) => {
-                          event.stopPropagation()
-                        }}
-                        aria-label={`Close details for ${object.title}`}
-                      >
-                        ✕
-                      </button>
-
-                      {object.spotifyEmbed && (
-                        <iframe
-                          src={object.spotifyEmbed}
-                          className="recently-node-tooltip-spotify"
-                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                          loading="lazy"
-                          title={`${object.title} Spotify player`}
-                        />
-                      )}
-
-                      {!object.spotifyEmbed && object.image && (
-                        <img src={object.image} alt={object.title} className="recently-node-tooltip-media" />
-                      )}
-
-                      <div className="recently-node-tooltip-body">
-                        <p className="recently-node-tooltip-title">{object.title}</p>
-                        <p className="recently-node-tooltip-subtitle">{object.subtitle}</p>
-                        <p className="recently-node-tooltip-copy">{object.description}</p>
-
-                        {object.link && (
-                          <a
-                            href={object.link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="recently-node-tooltip-link"
-                          >
-                            {object.link.text} ↗
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              )
-            })}
+            <RecentlyDeskBoard
+              objects={boardObjects}
+              slotLayout={slotLayout}
+              fallbackSlots={DESK_SLOT_RECTS}
+              isReady={isReady}
+              isShuffling={isShuffling}
+              getPresentation={getObjectPresentation}
+            />
           </div>
         </div>
       </section>

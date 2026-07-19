@@ -12,6 +12,8 @@ interface GuestbookStore {
   updatedAt: string
 }
 
+type StorageMode = 'redis' | 'local-file' | 'memory'
+
 const STORE_KEY = 'site:guestbook:v1'
 const LOCAL_STORE_PATH = path.join(process.cwd(), '.site-data', 'guestbook.json')
 const EMPTY_STORE: GuestbookStore = {
@@ -19,6 +21,8 @@ const EMPTY_STORE: GuestbookStore = {
   decorations: [],
   updatedAt: '',
 }
+
+const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
 
 const isObject = (value: unknown): value is Record<string, unknown> => (
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -44,11 +48,15 @@ const readLocalStore = async (): Promise<GuestbookStore> => {
 }
 
 const writeLocalStore = async (nextStore: GuestbookStore) => {
+  // On Vercel the filesystem is ephemeral — only useful for local `next dev`.
+  if (process.env.VERCEL === '1') return false
+
   try {
     await mkdir(path.dirname(LOCAL_STORE_PATH), { recursive: true })
     await writeFile(LOCAL_STORE_PATH, JSON.stringify(nextStore, null, 2), 'utf8')
+    return true
   } catch {
-    // Ignore local persistence errors so API still responds.
+    return false
   }
 }
 
@@ -63,47 +71,76 @@ const createRedisClient = () => {
   return new Redis({ url, token })
 }
 
-const readStore = async (): Promise<GuestbookStore> => {
+const resolveStorage = (): { redis: Redis | null; mode: StorageMode } => {
   const redis = createRedisClient()
+  if (redis) return { redis, mode: 'redis' }
+  if (process.env.VERCEL === '1') return { redis: null, mode: 'memory' }
+  return { redis: null, mode: 'local-file' }
+}
+
+const readStore = async (): Promise<{ store: GuestbookStore; mode: StorageMode }> => {
+  const { redis, mode } = resolveStorage()
 
   if (redis) {
     try {
       const data = await redis.get<GuestbookStore>(STORE_KEY)
-      return normalizeStore(data)
+      return { store: normalizeStore(data), mode: 'redis' }
     } catch {
-      // Fall back to local storage when remote store is unavailable.
+      // Fall through to local/memory.
     }
   }
 
-  return readLocalStore()
+  if (mode === 'local-file') {
+    return { store: await readLocalStore(), mode: 'local-file' }
+  }
+
+  // Vercel without Redis: empty store (browser localStorage still works for each visitor).
+  return { store: { ...EMPTY_STORE }, mode: 'memory' }
 }
 
-const writeStore = async (nextStore: GuestbookStore) => {
-  const redis = createRedisClient()
+const writeStore = async (nextStore: GuestbookStore): Promise<StorageMode> => {
+  const { redis, mode } = resolveStorage()
 
   if (redis) {
     try {
       await redis.set(STORE_KEY, nextStore)
-      return
+      return 'redis'
     } catch {
-      // Fall back to local storage when remote write fails.
+      // Fall through.
     }
   }
 
-  await writeLocalStore(nextStore)
+  if (mode === 'local-file') {
+    const ok = await writeLocalStore(nextStore)
+    return ok ? 'local-file' : 'memory'
+  }
+
+  return 'memory'
 }
 
-const buildResponse = (store: GuestbookStore) => (
-  NextResponse.json(store, {
-    headers: {
-      'Cache-Control': 'no-store',
+const buildResponse = (store: GuestbookStore, mode: StorageMode, extra?: Record<string, unknown>) => (
+  NextResponse.json(
+    {
+      ...store,
+      storage: mode,
+      durable: mode === 'redis' || mode === 'local-file',
+      ...extra,
     },
-  })
+    {
+      headers: {
+        'Cache-Control': 'no-store',
+      },
+    }
+  )
 )
 
 export async function GET() {
-  const store = await readStore()
-  return buildResponse(store)
+  const { store, mode } = await readStore()
+  return buildResponse(store, mode, {
+    hint: mode === 'memory' && isProduction
+      ? 'Add Upstash Redis (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN) in Vercel env for shared guestbook storage.'
+      : undefined,
+  })
 }
 
 const parseIncomingStorePatch = (body: unknown) => {
@@ -131,15 +168,20 @@ const upsertStore = async (request: NextRequest) => {
     return NextResponse.json({ error: 'Invalid guestbook payload.' }, { status: 400 })
   }
 
-  const current = await readStore()
+  const { store: current } = await readStore()
   const nextStore: GuestbookStore = {
     entries: incoming.entries ?? current.entries,
     decorations: incoming.decorations ?? current.decorations,
     updatedAt: new Date().toISOString(),
   }
 
-  await writeStore(nextStore)
-  return buildResponse(nextStore)
+  const mode = await writeStore(nextStore)
+
+  return buildResponse(nextStore, mode, {
+    hint: mode === 'memory' && isProduction
+      ? 'Guestbook saved in this browser only until Redis env vars are set on Vercel.'
+      : undefined,
+  })
 }
 
 export async function PUT(request: NextRequest) {
