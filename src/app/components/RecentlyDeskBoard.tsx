@@ -91,11 +91,11 @@ function DeskObjectsLayer({
   ))
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [pressEpoch, setPressEpoch] = useState(0)
   const [tooltipPlacement, setTooltipPlacement] = useState<TooltipPlacement | null>(null)
   const shellRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const tooltipCloseTimeoutRef = useRef<number | null>(null)
   const dragMovedRef = useRef(false)
-  const skipClickRef = useRef(false)
+  const pressIdRef = useRef<string | null>(null)
   const dragOriginRef = useRef<{ id: string; x: number; y: number } | null>(null)
   const dragOffsetRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 })
   const layoutRef = useRef(slotLayout)
@@ -116,7 +116,11 @@ function DeskObjectsLayer({
     }
 
     if (seedAppliedRef.current !== layoutSeed) {
-      let next = defaultLayout
+      // Dice shuffle uses the shuffled slot list, not the named default map.
+      let next: Record<string, DeskSurfaceSlot> = {}
+      objectIds.forEach((id, index) => {
+        next[id] = { ...fallbackSlots[index % fallbackSlots.length] }
+      })
       for (const id of objectIds) {
         next = resolveSlotCollisions(next, id)
       }
@@ -124,21 +128,7 @@ function DeskObjectsLayer({
       saveDeskLayout(next)
       seedAppliedRef.current = layoutSeed
     }
-  }, [defaultLayout, layoutSeed, objectIds])
-
-  const cancelTooltipClose = useCallback(() => {
-    if (tooltipCloseTimeoutRef.current) {
-      window.clearTimeout(tooltipCloseTimeoutRef.current)
-      tooltipCloseTimeoutRef.current = null
-    }
-  }, [])
-
-  const queueTooltipClose = useCallback((objectId: string) => {
-    cancelTooltipClose()
-    tooltipCloseTimeoutRef.current = window.setTimeout(() => {
-      setHoveredId((current) => (current === objectId ? null : current))
-    }, 160)
-  }, [cancelTooltipClose])
+  }, [defaultLayout, fallbackSlots, layoutSeed, objectIds])
 
   const updateTooltipPlacement = useCallback((objectId: string) => {
     const shell = shellRefs.current[objectId]
@@ -146,33 +136,38 @@ function DeskObjectsLayer({
 
     const rect = shell.getBoundingClientRect()
     const gap = 10
-    const estimatedHeight = Math.min(window.innerHeight * 0.44, 340)
-    const placeAbove = rect.top > estimatedHeight + gap + 16
+    const margin = 8
+    const maxWidth = Math.min(288, window.innerWidth - margin * 2)
+    const estimatedHeight = Math.min(window.innerHeight - margin * 2, 280)
+    const spaceAbove = rect.top - margin
+    const spaceBelow = window.innerHeight - rect.bottom - margin
+    const placeAbove = spaceAbove >= spaceBelow && spaceAbove >= Math.min(estimatedHeight, 160)
+
     const centerX = rect.left + rect.width / 2
-    const maxWidth = Math.min(288, window.innerWidth - 16)
     let left = centerX
     let align: TooltipPlacement['align'] = 'center'
 
-    if (centerX - maxWidth / 2 < 8) {
-      left = 8
+    if (centerX - maxWidth / 2 < margin) {
+      left = margin
       align = 'left'
-    } else if (centerX + maxWidth / 2 > window.innerWidth - 8) {
-      left = window.innerWidth - 8
+    } else if (centerX + maxWidth / 2 > window.innerWidth - margin) {
+      left = window.innerWidth - margin
       align = 'right'
+    }
+
+    let top = placeAbove ? rect.top - gap : rect.bottom + gap
+    if (placeAbove) {
+      top = Math.min(window.innerHeight - margin, Math.max(estimatedHeight + margin, top))
+    } else {
+      top = Math.max(margin, Math.min(top, window.innerHeight - estimatedHeight - margin))
     }
 
     setTooltipPlacement({
       left,
-      top: placeAbove ? rect.top - gap : rect.bottom + gap,
+      top,
       placeAbove,
       align,
     })
-  }, [])
-
-  useEffect(() => () => {
-    if (tooltipCloseTimeoutRef.current) {
-      window.clearTimeout(tooltipCloseTimeoutRef.current)
-    }
   }, [])
 
   useLayoutEffect(() => {
@@ -200,11 +195,7 @@ function DeskObjectsLayer({
       const target = event.target as HTMLElement | null
       if (!target) return
       if (target.closest('.recently-node-tooltip')) return
-      // Close before a drag starts on any desk icon.
-      if (target.closest('.recently-node-shell')) {
-        setHoveredId(null)
-        return
-      }
+      if (target.closest('.recently-node-shell')) return
       setHoveredId(null)
     }
 
@@ -221,53 +212,59 @@ function DeskObjectsLayer({
   }, [hoveredId, draggingId])
 
   useEffect(() => {
-    if (!draggingId || !desk) return
+    if (!pressEpoch) return
+    const activeId = pressIdRef.current
+    if (!activeId) return
 
     const onMove = (event: PointerEvent) => {
       const origin = dragOriginRef.current
-      if (!origin || origin.id !== draggingId) return
+      if (!origin || origin.id !== activeId) return
 
       const dist = Math.hypot(event.clientX - origin.x, event.clientY - origin.y)
-      if (!dragMovedRef.current && dist < 3) return
-      dragMovedRef.current = true
-      setHoveredId(null)
+      if (!dragMovedRef.current && dist < 5) return
 
-      const scale = layoutRef.current[draggingId]?.scale ?? 1
-      const projected = desk.projectPointerToSlot(event.clientX, event.clientY, scale)
+      if (!dragMovedRef.current) {
+        dragMovedRef.current = true
+        setHoveredId(null)
+        setTooltipPlacement(null)
+        setDraggingId(activeId)
+        document.body.classList.add('is-desk-dragging')
+      }
+
+      const scale = layoutRef.current[activeId]?.scale ?? 1
+      const projected = desk?.projectPointerToSlot(event.clientX, event.clientY, scale)
       if (!projected) return
 
       const draft = {
         ...layoutRef.current,
-        [draggingId]: {
+        [activeId]: {
           x: projected.x + dragOffsetRef.current.x,
           z: projected.z + dragOffsetRef.current.z,
           scale,
         },
       }
-      setSlotLayout(clampLayoutSlot(draft, draggingId))
+      setSlotLayout(clampLayoutSlot(draft, activeId))
     }
 
     const onUp = () => {
+      const id = activeId
       const didMove = dragMovedRef.current
-      const settled = didMove
-        ? resolveSlotCollisions(layoutRef.current, draggingId)
-        : layoutRef.current
+
       if (didMove) {
+        const settled = resolveSlotCollisions(layoutRef.current, id)
         setSlotLayout(settled)
         layoutRef.current = settled
+        saveDeskLayout(settled)
+        setHoveredId(null)
+      } else {
+        setHoveredId((current) => (current === id ? null : id))
       }
-      saveDeskLayout(settled)
-      setDraggingId(null)
+
+      pressIdRef.current = null
       dragOriginRef.current = null
       dragOffsetRef.current = { x: 0, z: 0 }
-      if (didMove) {
-        skipClickRef.current = true
-        setHoveredId(null)
-        window.setTimeout(() => {
-          skipClickRef.current = false
-        }, 220)
-      }
       dragMovedRef.current = false
+      setDraggingId(null)
       document.body.classList.remove('is-desk-dragging')
     }
 
@@ -279,15 +276,15 @@ function DeskObjectsLayer({
       window.removeEventListener('pointerup', onUp)
       window.removeEventListener('pointercancel', onUp)
     }
-  }, [desk, draggingId])
+  }, [desk, pressEpoch])
 
-  const startDrag = useCallback((objectId: string, event: React.PointerEvent) => {
+  const beginPress = useCallback((objectId: string, event: React.PointerEvent) => {
     if (event.button !== 0) return
     const target = event.target as HTMLElement | null
     if (target?.closest('.recently-node-tooltip')) return
 
-    event.preventDefault()
     dragMovedRef.current = false
+    pressIdRef.current = objectId
     dragOriginRef.current = { id: objectId, x: event.clientX, y: event.clientY }
 
     const currentSlot = layoutRef.current[objectId]
@@ -302,12 +299,8 @@ function DeskObjectsLayer({
       dragOffsetRef.current = { x: 0, z: 0 }
     }
 
-    cancelTooltipClose()
-    setHoveredId(null)
-    setTooltipPlacement(null)
-    setDraggingId(objectId)
-    document.body.classList.add('is-desk-dragging')
-  }, [cancelTooltipClose, desk])
+    setPressEpoch((n) => n + 1)
+  }, [desk])
 
   const hoveredObject = hoveredId
     ? objects.find((object) => object.id === hoveredId) ?? null
@@ -332,23 +325,11 @@ function DeskObjectsLayer({
             left: tooltipPlacement.left,
             top: tooltipPlacement.top,
           }}
-          onMouseEnter={() => {
-            if (draggingId) return
-            cancelTooltipClose()
-            setHoveredId(hoveredObject.id)
-          }}
-          onMouseLeave={() => {
-            if (draggingId) return
-            queueTooltipClose(hoveredObject.id)
-          }}
           onPointerDown={(event) => {
             const target = event.target as HTMLElement | null
-            // Let links / close / embeds work; otherwise close so desk stays draggable.
             if (target?.closest('a, button, iframe, input, textarea')) {
               event.stopPropagation()
-              return
             }
-            setHoveredId(null)
           }}
         >
           <button
@@ -400,14 +381,7 @@ function DeskObjectsLayer({
     )
 
     return () => setPortalTooltip(null)
-  }, [
-    cancelTooltipClose,
-    draggingId,
-    hoveredObject,
-    queueTooltipClose,
-    setPortalTooltip,
-    tooltipPlacement,
-  ])
+  }, [hoveredObject, setPortalTooltip, tooltipPlacement])
 
   return (
     <>
@@ -435,12 +409,7 @@ function DeskObjectsLayer({
                   shellRefs.current[object.id] = node
                 }}
                 className="recently-node-shell"
-                onPointerDown={(event) => startDrag(object.id, event)}
-                onClick={() => {
-                  if (skipClickRef.current || draggingId || dragMovedRef.current) return
-                  cancelTooltipClose()
-                  setHoveredId((current) => (current === object.id ? null : object.id))
-                }}
+                onPointerDown={(event) => beginPress(object.id, event)}
               >
                 <div
                   className={`recently-node recently-node-${object.kind} ${isHovered ? 'is-hovered' : ''}`.trim()}

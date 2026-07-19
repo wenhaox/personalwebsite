@@ -40,8 +40,8 @@ interface GuestbookBookProps {
   enableBoardZoom?: boolean
 }
 
-const NOTE_WIDTH = 210
-const NOTE_HEIGHT = 170
+const NOTE_WIDTH = 148
+const NOTE_HEIGHT = 118
 const MIN_BOARD_ZOOM = 0.8
 const MAX_BOARD_ZOOM = 1.9
 const BOARD_ZOOM_STEP = 0.1

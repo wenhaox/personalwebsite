@@ -4,7 +4,18 @@ export interface DeskSurfaceSlot {
   scale?: number
 }
 
-export const DESK_LAYOUT_STORAGE_KEY = 'recently:desk-layout:v1'
+export const DESK_LAYOUT_STORAGE_KEY = 'recently:desk-layout:v2'
+
+/** Default icon placement (captured from a settled local desk). */
+export const DEFAULT_DESK_LAYOUT: Record<string, DeskSurfaceSlot> = {
+  record: { x: 0.311, z: 0.507, scale: 0.82 },
+  camera: { x: 0.723, z: 0.443, scale: 0.82 },
+  movie: { x: 0.541, z: 1, scale: 0.82 },
+  'object-0': { x: 0.92, z: 0.2, scale: 0.82 },
+  'object-1': { x: 0.528, z: 0.352, scale: 0.82 },
+  'object-2': { x: 1, z: 0.673, scale: 0.82 },
+  'object-3': { x: 0.202, z: 0.154, scale: 0.82 },
+}
 
 /** Match RecentlyIsometricDesk.deskSlotToWorld margins. */
 export const DESK_UV = {
@@ -143,7 +154,8 @@ export function buildDefaultLayout(
 ): Record<string, DeskSurfaceSlot> {
   const layout: Record<string, DeskSurfaceSlot> = {}
   objectIds.forEach((id, index) => {
-    layout[id] = { ...slots[index % slots.length] }
+    const named = DEFAULT_DESK_LAYOUT[id]
+    layout[id] = named ? { ...named } : { ...slots[index % slots.length] }
   })
   return layout
 }

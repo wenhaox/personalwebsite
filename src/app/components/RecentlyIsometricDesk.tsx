@@ -515,17 +515,17 @@ function AdaptiveDeskCamera({
     const cam = camera as THREE.OrthographicCamera
     const narrow = size.width < 720
     const short = size.height < 520
-    const tiny = size.width < 390 || size.height < 460
+    const tiny = size.width < 420 || size.height < 500
 
-    // Fit the full desk in frame; pull back a bit on the smallest windows.
-    const zoom = narrow ? (tiny ? 17.5 : short ? 19.5 : 23.5) : 30
+    // Pull back so the full desk stays in frame on phones.
+    const zoom = narrow ? (tiny ? 14.2 : short ? 16.5 : 20) : 30
     cam.zoom = zoom
-    cam.position.set(narrow ? 12.8 : 15, narrow ? 12.6 : 12.5, narrow ? 14.8 : 16)
-    cam.lookAt(0, narrow ? 2.35 : 2.4, narrow ? 0.15 : 0.6)
+    cam.position.set(narrow ? 13.2 : 15, narrow ? 13.2 : 12.5, narrow ? 15.2 : 16)
+    cam.lookAt(0, narrow ? 2.1 : 2.4, narrow ? 0.05 : 0.6)
     cam.updateProjectionMatrix()
 
     // Keep HTML icons proportional to the desk zoom (desktop baseline = 30).
-    const scale = narrow ? (zoom / 30) * 1.35 : 1
+    const scale = narrow ? (zoom / 30) * 1.12 : 1
     onViewScale(scale)
   }, [camera, onViewScale, size.height, size.width])
 

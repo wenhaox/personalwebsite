@@ -3825,6 +3825,8 @@ body.is-desk-dragging .recently-node-tooltip {
   width: min(18rem, calc(100vw - 1rem));
   max-height: calc(100dvh - 1rem);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   border-radius: 0.85rem;
   border: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
   background: var(--color-card);
@@ -3842,7 +3844,8 @@ body.is-desk-dragging .recently-node-tooltip {
   bottom: auto;
   right: auto;
   width: min(18rem, calc(100vw - 1rem));
-  max-height: min(44dvh, 21rem);
+  max-height: min(70dvh, 20rem);
+  overflow: hidden;
   opacity: 1;
   pointer-events: auto;
   z-index: 2147483646;
@@ -3942,6 +3945,8 @@ body.is-desk-dragging .recently-node-tooltip {
 
 .recently-node-tooltip-body {
   padding: 0.6rem 0.72rem 0.7rem;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .recently-node-tooltip-title {
@@ -3949,6 +3954,9 @@ body.is-desk-dragging .recently-node-tooltip {
   font-family: var(--font-serif);
   font-style: italic;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .recently-node-tooltip-subtitle {
@@ -3957,6 +3965,9 @@ body.is-desk-dragging .recently-node-tooltip {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .recently-node-tooltip-copy {
@@ -3964,6 +3975,10 @@ body.is-desk-dragging .recently-node-tooltip {
   font-size: 0.69rem;
   line-height: 1.45;
   color: color-mix(in oklab, var(--color-foreground) 82%, var(--color-muted));
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
 }
 
 .recently-node-tooltip-link {
@@ -4561,11 +4576,11 @@ body.is-desk-dragging .recently-node-tooltip {
     right: auto;
     top: calc(0.55rem + env(safe-area-inset-top, 0px));
     bottom: auto;
-    width: min(19rem, calc(100vw - 1rem));
-    max-height: min(44dvh, 21rem);
+    width: min(17.5rem, calc(100vw - 1rem));
+    max-height: min(68dvh, 19.5rem);
+    overflow: hidden;
     transform: translate(-50%, -10px);
     padding-top: 1.95rem;
-    overscroll-behavior: contain;
   }
 
   .recently-node-tooltip:not(.recently-node-tooltip-portal).is-top-edge,
@@ -4590,10 +4605,24 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-node-tooltip-portal {
-    width: min(19rem, calc(100vw - 1rem));
-    max-height: min(44dvh, 21rem);
+    width: min(17.5rem, calc(100vw - 1rem));
+    max-height: min(68dvh, 19.5rem);
+    overflow: hidden;
     padding-top: 1.95rem;
-    overscroll-behavior: contain;
+  }
+
+  .recently-node-tooltip-spotify {
+    height: 108px;
+    flex: 0 0 auto;
+  }
+
+  .recently-node-tooltip-media {
+    max-height: 7.5rem;
+    aspect-ratio: 16 / 10;
+  }
+
+  .recently-node-tooltip-copy {
+    -webkit-line-clamp: 3;
   }
 
   .recently-node-tooltip-close {

@@ -43,7 +43,7 @@ export default function Home() {
           </p>
 
           <p className="about-seq-line about-seq-line-2">
-            A lot of my time also goes into observing how people move through the world, more on{' '}
+            I also spend some time observing how people move through the world, more on{' '}
             <a
               href="/photos"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
@@ -67,13 +67,6 @@ export default function Home() {
             </a>
             !
           </p>
-        </div>
-
-        {/* Photo section - only visible on mobile */}
-        <div className="hidden mobile-show-photo pt-4 pb-4">
-          <div className="w-48 h-64 bg-muted/10 rounded-md flex items-center justify-center mx-auto">
-            <span className="text-muted text-sm">photo</span>
-          </div>
         </div>
 
       </div>
