@@ -4,24 +4,24 @@ export interface DeskSurfaceSlot {
   scale?: number
 }
 
-export const DESK_LAYOUT_STORAGE_KEY = 'recently:desk-layout:v3'
+export const DESK_LAYOUT_STORAGE_KEY = 'recently:desk-layout:v6'
 
 /** Default icon placement (captured from a settled local desk). */
 export const DEFAULT_DESK_LAYOUT: Record<string, DeskSurfaceSlot> = {
-  record: { x: 0.311, z: 0.507, scale: 0.82 },
-  camera: { x: 0.723, z: 0.443, scale: 0.82 },
-  movie: { x: 0.541, z: 1, scale: 0.82 },
-  headphones: { x: 0.92, z: 0.2, scale: 0.82 },
-  coffee: { x: 0.528, z: 0.352, scale: 0.82 },
-  gamepad: { x: 1, z: 0.673, scale: 0.82 },
-  book: { x: 0.202, z: 0.154, scale: 0.82 },
+  record: { x: 0.252, z: 0.754, scale: 0.82 },
+  camera: { x: 0.783, z: 0.564, scale: 0.82 },
+  movie: { x: 0.605, z: 0.9, scale: 0.82 },
+  headphones: { x: 0.96, z: 0.318, scale: 0.82 },
+  coffee: { x: 0.488, z: 0.281, scale: 0.82 },
+  gamepad: { x: 0.96, z: 0.96, scale: 0.82 },
+  book: { x: 0.266, z: 0.223, scale: 0.82 },
 }
 
 /** Match RecentlyIsometricDesk.deskSlotToWorld margins. */
 export const DESK_UV = {
-  marginX: 2.8,
-  marginZBack: 2.6,
-  marginZFront: 0.45,
+  marginX: 2.35,
+  marginZBack: 2.45,
+  marginZFront: 0.55,
   width: 22,
   depth: 12,
   z: 0.2,
@@ -30,7 +30,7 @@ export const DESK_UV = {
 } as const
 
 /** Minimum world-space gap between icon centers (keeps sprites from stacking). */
-export const MIN_ICON_SEPARATION = 2.45
+export const MIN_ICON_SEPARATION = 2.95
 
 /** Soft keep-out around lamp / bonsai corners (world XZ). */
 const PROP_KEEP_OUTS: Array<{ x: number; z: number; radius: number }> = [
@@ -38,7 +38,9 @@ const PROP_KEEP_OUTS: Array<{ x: number; z: number; radius: number }> = [
   { x: DESK_UV.width * 0.5 - 1.55, z: DESK_UV.z - DESK_UV.depth * 0.5 + 1.45, radius: 2.4 },
 ]
 
-const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
+const SLOT_INSET = 0.04
+
+const clampSlotAxis = (value: number) => Math.min(1 - SLOT_INSET, Math.max(SLOT_INSET, value))
 
 export function deskUsableBounds() {
   const usableW = DESK_UV.width - DESK_UV.marginX * 2
@@ -58,16 +60,16 @@ export function slotToWorldXZ(slot: DeskSurfaceSlot): { x: number; z: number } {
 export function worldXZToSlot(x: number, z: number, scale = 1): DeskSurfaceSlot {
   const { usableW, usableD, z0 } = deskUsableBounds()
   return {
-    x: clamp01(x / usableW + 0.5),
-    z: clamp01((z - z0) / usableD),
+    x: clampSlotAxis(x / usableW + 0.5),
+    z: clampSlotAxis((z - z0) / usableD),
     scale,
   }
 }
 
 export function clampSlotToDesk(slot: DeskSurfaceSlot): DeskSurfaceSlot {
   return {
-    x: clamp01(slot.x),
-    z: clamp01(slot.z),
+    x: clampSlotAxis(slot.x),
+    z: clampSlotAxis(slot.z),
     scale: slot.scale ?? 1,
   }
 }

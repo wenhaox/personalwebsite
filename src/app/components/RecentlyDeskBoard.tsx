@@ -292,12 +292,15 @@ function DeskObjectsLayer({
     const dock = document.querySelector('.recently-popup-dock') as HTMLElement | null
     const funBar = document.querySelector('.recently-mobile-fun-bar') as HTMLElement | null
     const stage = document.querySelector('.recently-board-stage') as HTMLElement | null
-    const gap = 12
+    const gap = 16
 
     const placeAboveFunBar = (funTop: number, ceiling: number) => {
-      const bottom = Math.max(gap, window.innerHeight - funTop + gap)
-      // Tall overlay over the desk; fun bar stays visible underneath.
-      const maxHeight = Math.max(200, Math.min(560, funTop - ceiling - gap * 2))
+      const nav = document.querySelector('.mobile-nav') as HTMLElement | null
+      const navTop = nav?.getBoundingClientRect().top ?? window.innerHeight
+      // Keep popup clear of dice row and bottom nav.
+      const clearTop = Math.min(funTop, navTop) - gap
+      const bottom = Math.max(gap, window.innerHeight - clearTop)
+      const maxHeight = Math.max(160, Math.min(420, clearTop - ceiling - gap))
       document.documentElement.style.setProperty('--recently-mobile-popup-max-h', `${maxHeight}px`)
       setTooltipPlacement({
         variant: 'mobile',

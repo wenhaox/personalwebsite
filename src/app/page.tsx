@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import SiteWarmup from '@/app/components/SiteWarmup'
 
 const getGreetingByHour = (hour: number): string => {
@@ -12,6 +12,9 @@ const getGreetingByHour = (hour: number): string => {
 
 export default function Home() {
   const [greeting, setGreeting] = useState<string | null>(null)
+  const [align, setAlign] = useState<'center' | 'start'>('center')
+  const shellRef = useRef<HTMLDivElement>(null)
+  const stackRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const updateGreeting = () => {
@@ -24,10 +27,47 @@ export default function Home() {
     return () => window.clearInterval(timer)
   }, [])
 
+  useLayoutEffect(() => {
+    const shell = shellRef.current
+    const stack = stackRef.current
+    if (!shell || !stack) return
+
+    const updateAlign = () => {
+      // Desktop About stays top-aligned; only mobile uses fit-based centering.
+      if (!window.matchMedia('(max-width: 1024px)').matches) {
+        setAlign('start')
+        return
+      }
+      const styles = window.getComputedStyle(shell)
+      const padY = (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0)
+      const available = shell.clientHeight - padY
+      const needed = stack.scrollHeight
+      // Center when the copy fits; otherwise pin to top so nothing is clipped.
+      setAlign(needed <= available - 4 ? 'center' : 'start')
+    }
+
+    updateAlign()
+    const observer = new ResizeObserver(updateAlign)
+    observer.observe(shell)
+    observer.observe(stack)
+    window.addEventListener('resize', updateAlign)
+    // Animations finish and can change measured height.
+    const settle = window.setTimeout(updateAlign, 900)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateAlign)
+      window.clearTimeout(settle)
+    }
+  }, [greeting])
+
   return (
-    <div className="flex items-start justify-start min-h-screen mobile-main-content mobile-home-content desktop-home-padding bg-background">
+    <div
+      ref={shellRef}
+      className={`about-home-shell mobile-main-content mobile-home-content desktop-home-padding bg-background is-align-${align}`}
+    >
       <SiteWarmup />
-      <div className="max-w-xl space-y-4 md:space-y-5 about-home-stack">
+      <div ref={stackRef} className="max-w-xl space-y-4 md:space-y-5 about-home-stack">
         <h1 className="text-2xl md:text-3xl font-serif italic leading-tight text-left about-home-title">
           {greeting ? (
             <>
@@ -59,7 +99,7 @@ export default function Home() {
 
           <p className="about-seq-line about-seq-line-4">
             I&apos;m always down to meet curious people. Please{' '}
-            <a 
+            <a
               href="/connect"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
             >
@@ -68,7 +108,6 @@ export default function Home() {
             !
           </p>
         </div>
-
       </div>
     </div>
   )

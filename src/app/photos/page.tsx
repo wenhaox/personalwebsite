@@ -218,8 +218,8 @@ const getPhotoImage = (photo: PhotoItem, idKey: string): string => (
   photo.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(`photo-${idKey}`)}/1200/1600`
 )
 
-const getPhotoThumb = (photo: PhotoItem, idKey: string): string => {
-  const url = getPhotoImage(photo, idKey)
+/** Resize picsum-style /w/h URLs to a target width (keeps aspect). */
+const resizePhotoUrl = (url: string, targetW: number): string => {
   const match = url.match(/^(.*?)\/(\d+)\/(\d+)(\?.*)?$/)
   if (!match) return url
 
@@ -227,12 +227,66 @@ const getPhotoThumb = (photo: PhotoItem, idKey: string): string => {
   const width = Number(match[2])
   const height = Number(match[3])
   const query = match[4] || ''
-  const targetW = 420
 
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= targetW) return url
 
   const targetH = Math.max(1, Math.round((height * targetW) / width))
   return `${base}/${targetW}/${targetH}${query}`
+}
+
+const isNarrowViewport = () => (
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 1024px)').matches
+)
+
+/** Width tuned for the lightbox — phone stays modest so files stay small. */
+const getLightboxTargetWidth = () => {
+  if (typeof window === 'undefined') return 1100
+  if (!isNarrowViewport()) return 1100
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+  return Math.min(860, Math.max(640, Math.round(window.innerWidth * dpr)))
+}
+
+const getPhotoThumb = (photo: PhotoItem, idKey: string): string => (
+  resizePhotoUrl(getPhotoImage(photo, idKey), 360)
+)
+
+const getPhotoLightboxImage = (photo: PhotoItem, idKey: string): string => (
+  resizePhotoUrl(getPhotoImage(photo, idKey), getLightboxTargetWidth())
+)
+
+/**
+ * Grid/strip source. On phone this matches the lightbox URL so tap-open
+ * is usually already in the HTTP cache (biggest perceived speedup).
+ */
+const getPhotoStripImage = (photo: PhotoItem, idKey: string): string => {
+  if (isNarrowViewport()) return getPhotoLightboxImage(photo, idKey)
+  return getPhotoThumb(photo, idKey)
+}
+
+const fullImagePreloadCache = new Map<string, HTMLImageElement>()
+
+const preloadFullPhoto = (photo: PhotoItem) => {
+  const idKey = toIdKey(photo.id)
+  const fullSrc = getPhotoLightboxImage(photo, idKey)
+  const cached = fullImagePreloadCache.get(fullSrc)
+  if (cached) return cached
+
+  const image = new window.Image()
+  image.decoding = 'async'
+  try {
+    image.fetchPriority = 'high'
+  } catch {
+    // Older browsers may not support fetchPriority on Image().
+  }
+  image.src = fullSrc
+  fullImagePreloadCache.set(fullSrc, image)
+  return image
+}
+
+const warmPhotoBatch = (list: PhotoItem[], limit = 8) => {
+  list.slice(0, limit).forEach((photo) => {
+    preloadFullPhoto(photo)
+  })
 }
 
 const getDateBucket = (timestamp: number): string => {
@@ -439,15 +493,20 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
                     type="button"
                     className="photo-film-frame"
                     onClick={() => onSelectPhoto(photo)}
+                    onTouchStart={() => {
+                      preloadFullPhoto(photo)
+                    }}
+                    onPointerDown={() => {
+                      preloadFullPhoto(photo)
+                    }}
                     onMouseEnter={() => {
-                      const preload = new window.Image()
-                      preload.src = getPhotoImage(photo, idKey)
+                      preloadFullPhoto(photo)
                     }}
                     aria-label={`Preview ${photo.title}`}
                   >
                     <span className={`photo-film-image-shell ${portraitSource ? 'is-portrait-source' : ''}`}>
                       <img
-                        src={getPhotoThumb(photo, idKey)}
+                        src={getPhotoStripImage(photo, idKey)}
                         alt={photo.title}
                         loading={photoIndex < 4 ? 'eager' : 'lazy'}
                         decoding="async"
@@ -455,6 +514,8 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
                         className={`photo-image-fade ${portraitSource ? 'photo-film-image-rotated' : ''}`.trim()}
                         ref={(node) => {
                           if (node?.complete) node.classList.add('is-loaded')
+                          // Warm lightbox (same URL on phone) as soon as the strip tile paints.
+                          if (photoIndex < 6) preloadFullPhoto(photo)
                         }}
                         onLoad={(event) => {
                           event.currentTarget.classList.add('is-loaded')
@@ -490,18 +551,22 @@ function PhotographyClient() {
 
   const openPhoto = (photo: PhotoItem) => {
     setSelectedPhoto(photo)
-    setLightboxReady(false)
+    document.body.classList.add('photo-lightbox-open')
 
-    const fullSrc = getPhotoImage(photo, toIdKey(photo.id))
-    const image = new window.Image()
-    image.decoding = 'async'
-    image.onload = () => setLightboxReady(true)
-    image.onerror = () => setLightboxReady(true)
-    image.src = fullSrc
+    const image = preloadFullPhoto(photo)
+    const alreadyReady = image.complete && image.naturalWidth > 0
+    setLightboxReady(alreadyReady)
 
-    if (image.complete) {
-      setLightboxReady(true)
-    }
+    if (alreadyReady) return
+
+    const markReady = () => setLightboxReady(true)
+    image.addEventListener('load', markReady, { once: true })
+    image.addEventListener('error', markReady, { once: true })
+  }
+
+  const closePhoto = () => {
+    setSelectedPhoto(null)
+    document.body.classList.remove('photo-lightbox-open')
   }
 
   useEffect(() => {
@@ -518,6 +583,10 @@ function PhotographyClient() {
     }
   }, [])
 
+  useEffect(() => () => {
+    document.body.classList.remove('photo-lightbox-open')
+  }, [])
+
   useEffect(() => {
     const sortParam = searchParams.get('sort')
     const tagParam = searchParams.get('tag')
@@ -532,7 +601,7 @@ function PhotographyClient() {
     setSortBy(nextSort)
     setFilterTag(validSort && tagParam ? tagParam.trim() : '')
     setOrderBy(nextOrder)
-    setSelectedPhoto(null)
+    closePhoto()
   }, [searchParams])
 
   useEffect(() => {
@@ -540,7 +609,7 @@ function PhotographyClient() {
 
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setSelectedPhoto(null)
+        closePhoto()
       }
     }
 
@@ -650,7 +719,7 @@ function PhotographyClient() {
         const idKey = toIdKey(photo.id)
         const size = getAspectSize(photo.aspectRatio)
         return {
-          src: getPhotoThumb(photo, idKey),
+          src: getPhotoStripImage(photo, idKey),
           width: size.width,
           height: size.height,
           alt: photo.title,
@@ -658,6 +727,31 @@ function PhotographyClient() {
         }
       })
   ), [photoTimestampMap, photos])
+
+  useEffect(() => {
+    if (photos.length === 0) return
+
+    const runWarm = () => warmPhotoBatch(photos, isNarrowViewport() ? 10 : 6)
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+    let idleHandle: number | null = null
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null
+
+    if (typeof w.requestIdleCallback === 'function') {
+      idleHandle = w.requestIdleCallback(runWarm)
+    } else {
+      timeoutHandle = setTimeout(runWarm, 180)
+    }
+
+    return () => {
+      if (idleHandle !== null && typeof w.cancelIdleCallback === 'function') {
+        w.cancelIdleCallback(idleHandle)
+      }
+      if (timeoutHandle !== null) clearTimeout(timeoutHandle)
+    }
+  }, [photos])
 
   const pushSort = (nextSort: SortBy | null, nextOrder?: OrderBy) => {
     if (!nextSort) {
@@ -735,19 +829,31 @@ function PhotographyClient() {
                 if (match) openPhoto(match)
               }}
               render={{
-                image: (props, context) => (
-                  <img
-                    {...props}
-                    className={`photo-image-fade photo-collage-image ${props.className || ''}`.trim()}
-                    loading={context.index < 6 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    fetchPriority={context.index < 3 ? 'high' : 'auto'}
-                    onLoad={(event) => {
-                      props.onLoad?.(event)
-                      event.currentTarget.classList.add('is-loaded')
+                image: (props, context) => {
+                  const match = photos.find((item) => toIdKey(item.id) === context.photo.key)
+                  return (
+                    <img
+                      {...props}
+                      className={`photo-image-fade photo-collage-image ${props.className || ''}`.trim()}
+                      loading={context.index < 6 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      fetchPriority={context.index < 3 ? 'high' : 'auto'}
+                    onPointerDown={() => {
+                      if (match) preloadFullPhoto(match)
                     }}
-                  />
-                ),
+                    onTouchStart={() => {
+                      if (match) preloadFullPhoto(match)
+                    }}
+                    onMouseEnter={() => {
+                      if (match) preloadFullPhoto(match)
+                    }}
+                      onLoad={(event) => {
+                        props.onLoad?.(event)
+                        event.currentTarget.classList.add('is-loaded')
+                      }}
+                    />
+                  )
+                },
               }}
             />
           </div>
@@ -774,11 +880,11 @@ function PhotographyClient() {
         {selectedPhoto && (
           <div
             className="photo-lightbox"
-            onClick={() => setSelectedPhoto(null)}
+            onClick={closePhoto}
           >
             <div className="photo-lightbox-panel" onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={() => setSelectedPhoto(null)}
+                onClick={closePhoto}
                 className="photo-lightbox-close"
                 aria-label="Close photo view"
               >
@@ -786,15 +892,23 @@ function PhotographyClient() {
               </button>
 
               <div className="photo-lightbox-frame">
+                <img
+                  src={getPhotoStripImage(selectedPhoto, toIdKey(selectedPhoto.id))}
+                  alt=""
+                  aria-hidden="true"
+                  className={`photo-lightbox-thumb ${lightboxReady ? 'is-faded' : ''}`}
+                />
                 {!lightboxReady && (
                   <div className="photo-lightbox-loading" aria-live="polite" aria-label="Loading photo">
                     <span className="photo-lightbox-spinner" aria-hidden="true" />
                   </div>
                 )}
                 <img
-                  src={getPhotoImage(selectedPhoto, toIdKey(selectedPhoto.id))}
+                  src={getPhotoLightboxImage(selectedPhoto, toIdKey(selectedPhoto.id))}
                   alt={selectedPhoto.title}
                   className={`photo-lightbox-image ${lightboxReady ? 'is-ready' : ''}`}
+                  decoding="async"
+                  fetchPriority="high"
                   onLoad={() => setLightboxReady(true)}
                 />
               </div>

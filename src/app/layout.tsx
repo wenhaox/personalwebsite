@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Crimson_Text } from "next/font/google";
+import { Geist, Crimson_Text } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import Navigation from "./components/Navigation";
@@ -53,10 +53,10 @@ const themeInitScript = `(() => {
   }
 })();`;
 
-const inter = Inter({
+const geist = Geist({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
-  variable: "--font-inter",
+  variable: "--font-geist",
 });
 
 const crimsonText = Crimson_Text({
@@ -109,7 +109,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body suppressHydrationWarning className={`${inter.variable} ${crimsonText.variable} antialiased`}>
+      <body suppressHydrationWarning className={`${geist.variable} ${crimsonText.variable} antialiased`}>
         <Suspense fallback={navigationFallback}>
           <Navigation />
         </Suspense>
