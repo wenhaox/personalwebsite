@@ -220,7 +220,9 @@ function InteractiveLamp({ isOn }: { isOn: boolean }) {
   const viewScale = useDeskViewScale()
 
   useFrame((_, delta) => {
-    glow.current = THREE.MathUtils.damp(glow.current, isOn ? 1 : 0, 1.15, delta)
+    // Match SoftRoomLight so glow and desk shadow settle together.
+    const lambda = isOn ? 3.4 : 3.8
+    glow.current = THREE.MathUtils.damp(glow.current, isOn ? 1 : 0, lambda, delta)
     const g = glow.current
     if (lightRef.current) {
       lightRef.current.intensity = g * 2.6
@@ -259,7 +261,7 @@ function InteractiveLamp({ isOn }: { isOn: boolean }) {
       <pointLight
         ref={lightRef}
         position={[0, 1.15, 0.2]}
-        intensity={isOn ? 2.6 : 0}
+        intensity={0}
         distance={14}
         decay={2}
         color="#ffd89a"
@@ -267,7 +269,7 @@ function InteractiveLamp({ isOn }: { isOn: boolean }) {
       <pointLight
         ref={fillRef}
         position={[0.5, 0.4, 0.8]}
-        intensity={isOn ? 0.7 : 0}
+        intensity={0}
         distance={8}
         decay={2}
         color="#ffe8c4"
@@ -444,7 +446,9 @@ function SoftRoomLight({ isDark, lampOn }: { isDark: boolean; lampOn: boolean })
   const level = useRef(lampOn ? 1 : 0)
 
   useFrame((_, delta) => {
-    level.current = THREE.MathUtils.damp(level.current, lampOn ? 1 : 0, 1.15, delta)
+    // Same settle speed as InteractiveLamp so light + shadow stay locked.
+    const lambda = lampOn ? 3.4 : 3.8
+    level.current = THREE.MathUtils.damp(level.current, lampOn ? 1 : 0, lambda, delta)
     const g = level.current
     if (ambientRef.current) {
       ambientRef.current.intensity = isDark

@@ -2939,16 +2939,6 @@ body.is-desk-dragging .recently-node-tooltip {
   transform-origin: center bottom;
 }
 
-.recently-node-pixel-image.is-backpack-sway {
-  animation: recentlyBackpackSway 3.4s ease-in-out infinite;
-  transform-origin: center top;
-}
-
-.recently-node-pixel-image.is-plant-sway {
-  animation: recentlyPlantSway 3.8s ease-in-out infinite;
-  transform-origin: center bottom;
-}
-
 .recently-node-pixel-image.is-dice-idle {
   animation: recentlyDiceIdle 5s ease-in-out infinite;
   transform-origin: center center;
@@ -2990,24 +2980,6 @@ body.is-desk-dragging .recently-node-tooltip {
   }
   50% {
     transform: scaleY(1.03) translateY(-1px);
-  }
-}
-
-@keyframes recentlyBackpackSway {
-  0%, 100% {
-    transform: rotate(-2deg);
-  }
-  50% {
-    transform: rotate(2.5deg);
-  }
-}
-
-@keyframes recentlyPlantSway {
-  0%, 100% {
-    transform: rotate(-2deg) skewX(0deg);
-  }
-  50% {
-    transform: rotate(2.5deg) skewX(1deg);
   }
 }
 
@@ -3297,6 +3269,10 @@ body.is-desk-dragging .recently-node-tooltip {
     brightness(1.18)
     contrast(1.14)
     saturate(1.1);
+}
+
+.recently-pixel-lamp .recently-pixel-prop-art {
+  transition: filter 0.32s ease;
 }
 
 .recently-pixel-lamp.is-on .recently-pixel-prop-art {

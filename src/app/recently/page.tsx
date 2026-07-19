@@ -200,7 +200,6 @@ const getObjectPresentation = (pixelArt: string, kind: string): ObjectPresentati
 
   switch (pixelArt) {
     case '/pixel-objects/vinyl-player.svg':
-    case '/pixel-objects/vinyl-record.svg':
       return { ...base, motionClass: 'is-turntable', pixelExtraClass: 'has-turntable', spriteExtraClass: 'is-turntable-stage', isSmoothArt: false }
     case '/pixel-objects/film-frame.svg':
       return { ...base, motionClass: 'is-film-flicker' }
@@ -218,8 +217,6 @@ const getObjectPresentation = (pixelArt: string, kind: string): ObjectPresentati
       return { ...base, pixelExtraClass: 'has-coffee-steam', showCoffeeSteam: true }
     case '/pixel-objects/radio.svg':
       return { ...base, motionClass: 'is-radio-wiggle' }
-    case '/pixel-objects/desk-lamp.svg':
-      return { ...base, motionClass: 'is-lamp-glow' }
     case '/pixel-objects/headphones.svg':
       return { ...base, motionClass: 'is-headphones-bob' }
     case '/pixel-objects/gamepad.svg':
@@ -228,10 +225,6 @@ const getObjectPresentation = (pixelArt: string, kind: string): ObjectPresentati
       return { ...base, motionClass: 'is-postcard-flutter' }
     case '/pixel-objects/book-stack.svg':
       return { ...base, motionClass: 'is-book-breathe' }
-    case '/pixel-objects/backpack.svg':
-      return { ...base, motionClass: 'is-backpack-sway' }
-    case '/pixel-objects/potted-plant.svg':
-      return { ...base, motionClass: 'is-plant-sway' }
     case '/pixel-objects/dice-cube.svg':
       return { ...base, motionClass: 'is-dice-idle', isSmoothArt: true }
     default:
