@@ -104,18 +104,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid payload.' }, { status: 400 })
   }
 
+  const action = body.action === 'reject'
+    ? 'reject'
+    : body.action === 'approve'
+      ? 'approve'
+      : body.action === 'list'
+        ? 'list'
+        : null
+
   if (body.password !== expected) {
     return NextResponse.json({ error: 'Wrong password.' }, { status: 401 })
   }
 
-  const action = body.action === 'reject' ? 'reject' : body.action === 'approve' ? 'approve' : null
-  const id = typeof body.id === 'number' ? body.id : Number(body.id)
-
-  if (!action || !Number.isFinite(id)) {
-    return NextResponse.json({ error: 'Need action (approve|reject) and id.' }, { status: 400 })
+  if (!action) {
+    return NextResponse.json({ error: 'Need action (list|approve|reject).' }, { status: 400 })
   }
 
   const store = await readStore()
+
+  if (action === 'list') {
+    return NextResponse.json(store, { headers: { 'Cache-Control': 'no-store' } })
+  }
+
+  const id = typeof body.id === 'number' ? body.id : Number(body.id)
+  if (!Number.isFinite(id)) {
+    return NextResponse.json({ error: 'Need id.' }, { status: 400 })
+  }
+
   const entries = store.entries.filter(isObject)
 
   if (action === 'reject') {

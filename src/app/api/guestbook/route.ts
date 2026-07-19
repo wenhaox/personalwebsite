@@ -136,11 +136,23 @@ const buildResponse = (store: GuestbookStore, mode: StorageMode, extra?: Record<
 
 export async function GET() {
   const { store, mode } = await readStore()
-  return buildResponse(store, mode, {
-    hint: mode === 'memory' && isProduction
-      ? 'Add Upstash Redis (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN) in Vercel env for shared guestbook storage.'
-      : undefined,
+  const publicEntries = store.entries.filter((entry) => {
+    if (!isObject(entry)) return false
+    return entry.approved !== false
   })
+
+  return buildResponse(
+    {
+      ...store,
+      entries: publicEntries,
+    },
+    mode,
+    {
+      hint: mode === 'memory' && isProduction
+        ? 'Add Upstash Redis (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN) in Vercel env for shared guestbook storage.'
+        : undefined,
+    }
+  )
 }
 
 const parseIncomingStorePatch = (body: unknown) => {
@@ -189,7 +201,14 @@ const mergePublicEntries = (currentEntries: unknown[], incomingEntries: unknown[
     const existing = currentById.get(id)
 
     if (existing && isApprovedEntry(existing)) {
-      merged.push({ ...entry, ...existing, approved: true, id })
+      // Allow layout updates from the board, but keep server message + approved state.
+      merged.push({
+        ...existing,
+        ...entry,
+        message: existing.message,
+        approved: true,
+        id,
+      })
       seen.add(id)
       continue
     }

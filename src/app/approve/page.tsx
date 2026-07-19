@@ -27,16 +27,26 @@ export default function ApproveGuestbookPage() {
     [entries]
   )
 
-  const load = useCallback(async () => {
+  const loadWithPassword = useCallback(async (nextPassword: string) => {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/guestbook', { cache: 'no-store' })
-      if (!response.ok) throw new Error('Could not load guestbook.')
-      const payload = await response.json()
+      const response = await fetch('/api/guestbook/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: nextPassword, action: 'list' }),
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload.error || 'Could not load guestbook.')
+      }
       setEntries(Array.isArray(payload.entries) ? payload.entries : [])
+      return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Load failed.')
+      setAuthed(false)
+      sessionStorage.removeItem(PASSWORD_KEY)
+      return false
     } finally {
       setLoading(false)
     }
@@ -44,23 +54,25 @@ export default function ApproveGuestbookPage() {
 
   useEffect(() => {
     const saved = sessionStorage.getItem(PASSWORD_KEY)
-    if (saved) {
-      setPassword(saved)
-      setAuthed(true)
-    }
-  }, [])
+    if (!saved) return
+    setPassword(saved)
+    void loadWithPassword(saved).then((ok) => {
+      if (ok) setAuthed(true)
+    })
+  }, [loadWithPassword])
 
-  useEffect(() => {
-    if (authed) void load()
-  }, [authed, load])
-
-  const handleUnlock = (event: FormEvent) => {
+  const handleUnlock = async (event: FormEvent) => {
     event.preventDefault()
-    if (!password.trim()) {
+    const nextPassword = password.trim()
+    if (!nextPassword) {
       setError('Enter your approve password.')
       return
     }
-    sessionStorage.setItem(PASSWORD_KEY, password.trim())
+
+    const ok = await loadWithPassword(nextPassword)
+    if (!ok) return
+
+    sessionStorage.setItem(PASSWORD_KEY, nextPassword)
     setAuthed(true)
     setError('')
   }
@@ -89,7 +101,7 @@ export default function ApproveGuestbookPage() {
   if (!authed) {
     return (
       <div className="approve-page mobile-main-content bg-background">
-        <form className="approve-card" onSubmit={handleUnlock}>
+        <form className="approve-card" onSubmit={(event) => void handleUnlock(event)}>
           <h1 className="approve-title">Approve guestbook</h1>
           <p className="approve-copy">Only you should know this password. It is not linked from the site nav.</p>
           <input
@@ -101,7 +113,9 @@ export default function ApproveGuestbookPage() {
             autoComplete="current-password"
           />
           {error && <p className="approve-error">{error}</p>}
-          <button type="submit" className="approve-btn">Unlock</button>
+          <button type="submit" className="approve-btn" disabled={loading}>
+            {loading ? 'Checking…' : 'Unlock'}
+          </button>
         </form>
       </div>
     )
@@ -115,7 +129,11 @@ export default function ApproveGuestbookPage() {
             <h1 className="approve-title">Pending notes</h1>
             <p className="approve-copy">{pending.length} waiting</p>
           </div>
-          <button type="button" className="approve-btn approve-btn-ghost" onClick={() => void load()}>
+          <button
+            type="button"
+            className="approve-btn approve-btn-ghost"
+            onClick={() => void loadWithPassword(password)}
+          >
             Refresh
           </button>
         </div>
