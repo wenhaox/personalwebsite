@@ -899,16 +899,15 @@ export default function GuestbookBook({
       name: 'Anonymous',
       message: trimmedMessage,
       date: toDisplayDate({ createdAt: now.toISOString() }),
-      approved: true,
+      approved: false,
       createdAt: now.toISOString(),
       color: STICKY_COLORS[Math.floor(Math.random() * STICKY_COLORS.length)],
       ...placement,
     }
 
-    // Admin panel was removed — pin notes immediately so Connect works.
-    setNotes((prev) => [...prev, newEntry])
+    setPendingEntries((prev) => [...prev, newEntry])
     setHasMutatedEntries(true)
-    setSubmissionFeedback('Pinned to the board.')
+    setSubmissionFeedback('Sent for approval.')
     setMessage('')
 
     window.setTimeout(() => setSubmissionFeedback(''), 2800)
@@ -1232,8 +1231,8 @@ export default function GuestbookBook({
           <button
             type="submit"
             className="guestbook-pin-button guestbook-pin-button-inside"
-            aria-label="Pin note"
-            title="Pin note"
+            aria-label="Send note"
+            title="Send note"
           >
             📌
           </button>

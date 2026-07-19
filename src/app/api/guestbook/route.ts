@@ -161,6 +161,56 @@ const parseIncomingStorePatch = (body: unknown) => {
   }
 }
 
+const entryId = (entry: Record<string, unknown>) => {
+  const id = typeof entry.id === 'number' ? entry.id : Number(entry.id)
+  return Number.isFinite(id) ? id : null
+}
+
+const isApprovedEntry = (entry: Record<string, unknown>) => entry.approved !== false
+
+/** Public writes may add/update pending notes and decorations, but cannot self-approve. */
+const mergePublicEntries = (currentEntries: unknown[], incomingEntries: unknown[]) => {
+  const current = currentEntries.filter(isObject)
+  const incoming = incomingEntries.filter(isObject)
+  const currentById = new Map<number, Record<string, unknown>>()
+  for (const entry of current) {
+    const id = entryId(entry)
+    if (id != null) currentById.set(id, entry)
+  }
+
+  const incomingIds = new Set<number>()
+  const merged: Record<string, unknown>[] = []
+  const seen = new Set<number>()
+
+  for (const entry of incoming) {
+    const id = entryId(entry)
+    if (id == null) continue
+    incomingIds.add(id)
+    const existing = currentById.get(id)
+
+    if (existing && isApprovedEntry(existing)) {
+      merged.push({ ...entry, ...existing, approved: true, id })
+      seen.add(id)
+      continue
+    }
+
+    merged.push({ ...entry, approved: false, id })
+    seen.add(id)
+  }
+
+  // Keep server notes the client omitted (other visitors' pending / approved).
+  for (const entry of current) {
+    const id = entryId(entry)
+    if (id == null || seen.has(id)) continue
+    if (!incomingIds.has(id)) {
+      merged.push(entry)
+      seen.add(id)
+    }
+  }
+
+  return merged
+}
+
 const upsertStore = async (request: NextRequest) => {
   const incoming = parseIncomingStorePatch(await request.json().catch(() => null))
 
@@ -170,7 +220,9 @@ const upsertStore = async (request: NextRequest) => {
 
   const { store: current } = await readStore()
   const nextStore: GuestbookStore = {
-    entries: incoming.entries ?? current.entries,
+    entries: incoming.entries !== undefined
+      ? mergePublicEntries(current.entries, incoming.entries)
+      : current.entries,
     decorations: incoming.decorations ?? current.decorations,
     updatedAt: new Date().toISOString(),
   }

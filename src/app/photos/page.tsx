@@ -670,11 +670,11 @@ function PhotographyClient() {
   }
 
   return (
-    <div className="photos-page-root flex items-start justify-start min-h-screen px-20 py-16 mobile-main-content bg-background">
-      <div className="w-full max-w-[1700px] mx-auto">
+    <div className="photos-page-root mobile-main-content bg-background">
+      <div className="photos-page-inner">
         <h1 className="sr-only">Photos</h1>
 
-        <div className="photo-mobile-toolbar photo-inline-sorter mb-4">
+        <div className="photo-mobile-toolbar photo-inline-sorter">
           <div className="photo-mobile-filter-row" role="tablist" aria-label="Sort photos">
             <button
               type="button"
@@ -719,6 +719,7 @@ function PhotographyClient() {
           </div>
         </div>
 
+        <div className="photos-page-content">
         {!sortBy ? (
           <div className="photo-collage-shell">
             <MasonryPhotoAlbum
@@ -812,6 +813,7 @@ function PhotographyClient() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   )

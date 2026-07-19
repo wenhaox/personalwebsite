@@ -108,13 +108,21 @@ The Connect page guestbook needs shared storage in production (Vercel’s filesy
 
 Without these, notes still work in each visitor’s browser (`localStorage`), but they won’t sync across devices.
 
+Also set a private approve password:
+
+- `GUESTBOOK_APPROVE_PASSWORD` — used only at `/approve` (not linked in the nav)
+
+Visitors’ notes stay pending until you approve them there. Reject deletes the note.
+
 See `env.example` in the repo.
 
 ---
 
-## Custom Admin Password
+## Guestbook approve queue
 
-Admin routes were removed from this version. Guestbook notes pin immediately (no approval queue).
+1. Set `GUESTBOOK_APPROVE_PASSWORD` in `.env.local` (local) and Vercel env (production)
+2. Open `/approve` on your site
+3. Unlock with that password, then Approve or Reject pending notes
 
 ---
 

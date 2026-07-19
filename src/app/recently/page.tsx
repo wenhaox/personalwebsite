@@ -46,15 +46,15 @@ interface BoardObject {
 
 const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
 
-// Spread across the larger desk surface.
+// Balanced across the desk; clear of lamp (back-left) and bonsai (back-right).
 const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
-  { x: 0.16, z: 0.24, scale: 0.95 },
-  { x: 0.44, z: 0.18, scale: 1.08 },
-  { x: 0.76, z: 0.30, scale: 0.92 },
-  { x: 0.24, z: 0.64, scale: 0.98 },
-  { x: 0.52, z: 0.72, scale: 1.04 },
-  { x: 0.82, z: 0.58, scale: 0.96 },
-  { x: 0.48, z: 0.46, scale: 0.9 },
+  { x: 0.20, z: 0.30, scale: 0.92 },
+  { x: 0.50, z: 0.26, scale: 0.92 },
+  { x: 0.78, z: 0.30, scale: 0.92 },
+  { x: 0.28, z: 0.56, scale: 0.92 },
+  { x: 0.72, z: 0.56, scale: 0.92 },
+  { x: 0.28, z: 0.88, scale: 0.92 },
+  { x: 0.72, z: 0.88, scale: 0.92 },
 ]
 
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
@@ -313,14 +313,14 @@ export default function Recently() {
     const extraPixelArt = [
       '/pixel-objects/headphones.svg',
       '/pixel-objects/coffee-mug.svg',
-      '/pixel-objects/potted-plant.svg',
       '/pixel-objects/gamepad.svg',
       '/pixel-objects/book-stack.svg',
       '/pixel-objects/compass.svg',
       '/pixel-objects/cassette.svg',
       '/pixel-objects/postcard.svg',
-      '/pixel-objects/desk-lamp.svg',
       '/pixel-objects/radio.svg',
+      '/pixel-objects/hourglass.svg',
+      '/pixel-objects/arcade-token.svg',
     ]
 
     const fallbackItem: RecentlyItem = {

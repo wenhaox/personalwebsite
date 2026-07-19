@@ -47,20 +47,34 @@ export default function ThemeToggle() {
 
     const root = document.documentElement
     const body = document.body
+    const lightBg = '#f4f5ef'
+    const darkBg = '#1a1a1a'
+
+    // Freeze transitions so sidebar + main flip in the same frame
+    root.classList.add('theme-switching')
 
     if (isDark) {
       root.classList.add('dark')
       root.style.colorScheme = 'dark'
-      root.style.backgroundColor = '#1a1a1a'
-      body.style.backgroundColor = '#1a1a1a'
+      root.style.backgroundColor = darkBg
+      body.style.backgroundColor = darkBg
+      body.style.colorScheme = 'dark'
     } else {
       root.classList.remove('dark')
       root.style.colorScheme = 'light'
-      root.style.backgroundColor = '#faf9f7'
-      body.style.backgroundColor = '#faf9f7'
+      root.style.backgroundColor = lightBg
+      body.style.backgroundColor = lightBg
+      body.style.colorScheme = 'light'
     }
 
     localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light')
+
+    // Drop the freeze after paint so hover transitions still work afterward
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        root.classList.remove('theme-switching')
+      })
+    })
   }, [isDark, isThemeReady])
 
   return (

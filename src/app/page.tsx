@@ -37,7 +37,7 @@ export default function Home() {
 
         <div className="space-y-2.5 md:space-y-3.5 text-base leading-7 about-seq-body about-flow-prose about-mobile-centered">
           <p className="about-seq-line about-seq-line-1">
-            I&apos;m interested in robotics and consumer hardware, mostly integration and testing. I care about good design and making things that are purposeful and built to last.
+            I&apos;m interested in bring-up, integration, and testing for robotics and consumer hardware. I care about good design and making things that are purposeful and built to last.
           </p>
 
           <p className="about-seq-line about-seq-line-2">
