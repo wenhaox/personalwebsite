@@ -1,124 +1,17 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import path from 'node:path'
-
-import { Redis } from '@upstash/redis'
 import { NextRequest, NextResponse } from 'next/server'
+
+import {
+  isObject,
+  readStore,
+  writeStore,
+  type GuestbookStore,
+} from '@/lib/guestbook-store'
 
 export const runtime = 'nodejs'
 
-interface GuestbookStore {
-  entries: unknown[]
-  decorations: unknown[]
-  updatedAt: string
-}
-
-type StorageMode = 'redis' | 'local-file' | 'memory'
-
-const STORE_KEY = 'site:guestbook:v1'
-const LOCAL_STORE_PATH = path.join(process.cwd(), '.site-data', 'guestbook.json')
-const EMPTY_STORE: GuestbookStore = {
-  entries: [],
-  decorations: [],
-  updatedAt: '',
-}
-
 const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
 
-const isObject = (value: unknown): value is Record<string, unknown> => (
-  Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-)
-
-const normalizeStore = (value: unknown): GuestbookStore => {
-  if (!isObject(value)) return { ...EMPTY_STORE }
-
-  return {
-    entries: Array.isArray(value.entries) ? value.entries : [],
-    decorations: Array.isArray(value.decorations) ? value.decorations : [],
-    updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : '',
-  }
-}
-
-const readLocalStore = async (): Promise<GuestbookStore> => {
-  try {
-    const raw = await readFile(LOCAL_STORE_PATH, 'utf8')
-    return normalizeStore(JSON.parse(raw))
-  } catch {
-    return { ...EMPTY_STORE }
-  }
-}
-
-const writeLocalStore = async (nextStore: GuestbookStore) => {
-  // On Vercel the filesystem is ephemeral — only useful for local `next dev`.
-  if (process.env.VERCEL === '1') return false
-
-  try {
-    await mkdir(path.dirname(LOCAL_STORE_PATH), { recursive: true })
-    await writeFile(LOCAL_STORE_PATH, JSON.stringify(nextStore, null, 2), 'utf8')
-    return true
-  } catch {
-    return false
-  }
-}
-
-const createRedisClient = () => {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
-
-  if (!url || !token) {
-    return null
-  }
-
-  return new Redis({ url, token })
-}
-
-const resolveStorage = (): { redis: Redis | null; mode: StorageMode } => {
-  const redis = createRedisClient()
-  if (redis) return { redis, mode: 'redis' }
-  if (process.env.VERCEL === '1') return { redis: null, mode: 'memory' }
-  return { redis: null, mode: 'local-file' }
-}
-
-const readStore = async (): Promise<{ store: GuestbookStore; mode: StorageMode }> => {
-  const { redis, mode } = resolveStorage()
-
-  if (redis) {
-    try {
-      const data = await redis.get<GuestbookStore>(STORE_KEY)
-      return { store: normalizeStore(data), mode: 'redis' }
-    } catch {
-      // Fall through to local/memory.
-    }
-  }
-
-  if (mode === 'local-file') {
-    return { store: await readLocalStore(), mode: 'local-file' }
-  }
-
-  // Vercel without Redis: empty store (browser localStorage still works for each visitor).
-  return { store: { ...EMPTY_STORE }, mode: 'memory' }
-}
-
-const writeStore = async (nextStore: GuestbookStore): Promise<StorageMode> => {
-  const { redis, mode } = resolveStorage()
-
-  if (redis) {
-    try {
-      await redis.set(STORE_KEY, nextStore)
-      return 'redis'
-    } catch {
-      // Fall through.
-    }
-  }
-
-  if (mode === 'local-file') {
-    const ok = await writeLocalStore(nextStore)
-    return ok ? 'local-file' : 'memory'
-  }
-
-  return 'memory'
-}
-
-const buildResponse = (store: GuestbookStore, mode: StorageMode, extra?: Record<string, unknown>) => (
+const buildResponse = (store: GuestbookStore, mode: string, extra?: Record<string, unknown>) => (
   NextResponse.json(
     {
       ...store,
@@ -201,7 +94,6 @@ const mergePublicEntries = (currentEntries: unknown[], incomingEntries: unknown[
     const existing = currentById.get(id)
 
     if (existing && isApprovedEntry(existing)) {
-      // Allow layout updates from the board, but keep server message + approved state.
       merged.push({
         ...existing,
         ...entry,
@@ -217,7 +109,6 @@ const mergePublicEntries = (currentEntries: unknown[], incomingEntries: unknown[
     seen.add(id)
   }
 
-  // Keep server notes the client omitted (other visitors' pending / approved).
   for (const entry of current) {
     const id = entryId(entry)
     if (id == null || seen.has(id)) continue

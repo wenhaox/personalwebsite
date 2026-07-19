@@ -323,21 +323,10 @@ export default function GuestbookBook({
         const remotePendingEntries = normalizePendingEntriesFromSource((payload as { entries?: unknown[] }).entries)
         const remoteDecorations = normalizeDecorationsFromSource((payload as { decorations?: unknown[] }).decorations)
 
-        if (remoteNotes.length > 0) {
-          setNotes(remoteNotes)
-        } else if (remotePendingEntries.length > 0) {
-          setNotes([])
-        } else if (localNotes.length === 0 && remotePendingEntries.length === 0) {
-          setNotes([])
-        }
-
-        if (remotePendingEntries.length > 0 || localPendingEntries.length === 0) {
-          setPendingEntries(remotePendingEntries)
-        }
-
-        if (remoteDecorations.length > 0 || localDecorations.length === 0) {
-          setDecorations(remoteDecorations)
-        }
+        // Prefer the shared board whenever the API responds.
+        setNotes(remoteNotes)
+        setPendingEntries(remotePendingEntries)
+        setDecorations(remoteDecorations)
       } catch {
         // Stay on local fallback when remote API is unavailable.
       }
