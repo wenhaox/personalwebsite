@@ -275,10 +275,13 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
       return
     }
 
-    const styles = window.getComputedStyle(shell.querySelector('.photo-film-embla-container') || shell)
-    const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0
-    const totalWidth = slides.reduce((sum, slide) => sum + slide.getBoundingClientRect().width, 0)
-      + gap * Math.max(0, slides.length - 1)
+    const totalWidth = slides.reduce((sum, slide, index) => {
+      const rect = slide.getBoundingClientRect().width
+      const marginRight = index < slides.length - 1
+        ? (parseFloat(window.getComputedStyle(slide).marginRight) || 0)
+        : 0
+      return sum + rect + marginRight
+    }, 0)
     setOverflows(totalWidth > shell.clientWidth + 8)
   }, [sourcePhotoCount])
 
@@ -353,6 +356,16 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
     },
     plugins
   )
+
+  useEffect(() => {
+    if (!emblaApi) return
+    // Re-measure after portrait/landscape widths settle so spacing stays correct.
+    const id = window.requestAnimationFrame(() => {
+      emblaApi.reInit()
+      measureOverflow()
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [emblaApi, loopPhotos, measureOverflow, shouldAutoScroll])
 
   // On mobile, pause while the user drags, then resume after a short idle.
   useEffect(() => {

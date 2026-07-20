@@ -920,27 +920,34 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
 
 .photo-film-embla-container {
   display: flex;
-  gap: 0.65rem;
+  align-items: stretch;
+  /* Prefer margins over gap — Embla mis-measures CSS gap with mixed portrait/landscape widths. */
+  gap: 0;
   touch-action: pan-y pinch-zoom;
 }
 
 .photo-film-slide {
-  flex: 0 0 var(--photo-film-strip-width);
+  --photo-film-slide-gap: 0.65rem;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: var(--photo-film-strip-width);
   min-width: var(--photo-film-strip-width);
+  max-width: var(--photo-film-strip-width);
   height: var(--photo-film-strip-height);
+  margin-right: var(--photo-film-slide-gap);
   position: relative;
 }
 
 .photo-film-slide.is-portrait {
   --photo-film-strip-width: calc(var(--photo-film-strip-height) * 0.72);
-  flex-basis: var(--photo-film-strip-width);
-  min-width: var(--photo-film-strip-width);
 }
 
 .photo-film-slide.is-square {
   --photo-film-strip-width: var(--photo-film-strip-height);
-  flex-basis: var(--photo-film-strip-width);
-  min-width: var(--photo-film-strip-width);
+}
+
+.photo-film-slide.is-landscape {
+  /* uses shell --photo-film-strip-width */
 }
 
 .photo-film-frame {
@@ -1228,7 +1235,10 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
   }
 
   .photo-film-slide {
-    flex-basis: var(--photo-film-strip-width);
+    width: var(--photo-film-strip-width);
+    min-width: var(--photo-film-strip-width);
+    max-width: var(--photo-film-strip-width);
+    margin-right: 0.55rem;
   }
 }
 
