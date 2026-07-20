@@ -10,7 +10,7 @@ import 'react-photo-album/masonry.css'
 import { SITE_PHOTOS } from '@/data/site-photos'
 import type { PhotoItem } from '@/lib/photo-types'
 
-type SortBy = 'theme' | 'color' | 'location' | 'date' | 'favorites'
+type SortBy = 'theme' | 'color' | 'location' | 'date'
 type OrderBy = 'newest' | 'oldest' | 'az' | 'za' | 'most'
 
 export type { PhotoItem }
@@ -23,7 +23,6 @@ interface PhotoCluster {
 }
 
 const SORT_OPTIONS: Array<{ key: SortBy; icon: string; label: string }> = [
-  { key: 'favorites', icon: '★', label: 'Favorites' },
   { key: 'theme', icon: '◈', label: 'Theme' },
   { key: 'color', icon: '◉', label: 'Color' },
   { key: 'location', icon: '⌖', label: 'Location' },
@@ -181,8 +180,6 @@ const getDateBucketLabel = (bucket: string): string => {
 }
 
 const getClusterValue = (photo: PhotoItem, sortBy: SortBy, timestampMap: Map<string, number>): string => {
-  if (sortBy === 'favorites') return 'favorites'
-
   if (sortBy === 'date') {
     const timestamp = timestampMap.get(toIdKey(photo.id)) || Date.now()
     return getDateBucket(timestamp)
@@ -196,7 +193,6 @@ const getClusterValue = (photo: PhotoItem, sortBy: SortBy, timestampMap: Map<str
 }
 
 const getClusterLabel = (sortBy: SortBy, value: string): string => {
-  if (sortBy === 'favorites') return 'Favorites'
   if (sortBy === 'date') return getDateBucketLabel(value)
   if (sortBy === 'color') return PALETTE_LABELS[value.toLowerCase()] || value
   if (sortBy === 'theme') return THEME_LABELS[value.toLowerCase()] || value
@@ -546,17 +542,6 @@ function PhotographyClient() {
     [photos]
   )
 
-  const favoritesCluster = useMemo<PhotoCluster>(() => ({
-    key: 'favorites',
-    value: 'favorites',
-    label: 'Favorites',
-    photos: [...favoritePhotos].sort((a, b) => {
-      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
-      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
-      return timeB - timeA
-    }),
-  }), [favoritePhotos])
-
   const photoTimestampMap = useMemo(() => {
     const map = new Map<string, number>()
 
@@ -588,10 +573,6 @@ function PhotographyClient() {
 
   const clusters = useMemo<PhotoCluster[]>(() => {
     if (!sortBy) return []
-
-    if (sortBy === 'favorites') {
-      return favoritesCluster.photos.length > 0 ? [favoritesCluster] : []
-    }
 
     const activeSort = sortBy
     const activeOrder = orderBy
@@ -648,10 +629,10 @@ function PhotographyClient() {
     })
 
     return values
-  }, [favoritesCluster, filteredByTag, orderBy, photoTimestampMap, sortBy])
+  }, [filteredByTag, orderBy, photoTimestampMap, sortBy])
 
   const collagePhotos = useMemo(() => (
-    [...photos]
+    [...favoritePhotos]
       .sort((a, b) => {
         const timeA = photoTimestampMap.get(toIdKey(a.id)) || 0
         const timeB = photoTimestampMap.get(toIdKey(b.id)) || 0
@@ -668,7 +649,7 @@ function PhotographyClient() {
           key: idKey,
         }
       })
-  ), [photoTimestampMap, photos])
+  ), [favoritePhotos, photoTimestampMap])
 
   useEffect(() => {
     if (photos.length === 0) return
@@ -719,7 +700,7 @@ function PhotographyClient() {
               className={`photo-mobile-chip ${!sortBy ? 'is-active' : ''}`}
               onClick={() => pushSort(null)}
             >
-              All
+              Favorites
             </button>
             {SORT_OPTIONS.map((option) => (
               <button
@@ -734,7 +715,7 @@ function PhotographyClient() {
               </button>
             ))}
 
-            {sortBy && sortBy !== 'favorites' && (
+            {sortBy && (
               <label className="photo-mobile-order">
                 <select
                   className="photo-mobile-order-select"
@@ -757,17 +738,7 @@ function PhotographyClient() {
 
         <div className="photos-page-content">
         {!sortBy ? (
-          <div className="photo-all-layout">
-            {favoritesCluster.photos.length > 0 && (
-              <div className="photo-favorites-column">
-                <FilmReelCluster
-                  cluster={favoritesCluster}
-                  clusterIndex={0}
-                  onSelectPhoto={openPhoto}
-                />
-              </div>
-            )}
-            <div className="photo-collage-shell">
+          <div className="photo-collage-shell">
             <MasonryPhotoAlbum
               photos={collagePhotos}
               spacing={8}
@@ -777,12 +748,14 @@ function PhotographyClient() {
                 return 4
               }}
               onClick={({ photo }) => {
-                const match = photos.find((item) => toIdKey(item.id) === photo.key)
+                const match = favoritePhotos.find((item) => toIdKey(item.id) === photo.key)
+                  || photos.find((item) => toIdKey(item.id) === photo.key)
                 if (match) openPhoto(match)
               }}
               render={{
                 image: (props, context) => {
-                  const match = photos.find((item) => toIdKey(item.id) === context.photo.key)
+                  const match = favoritePhotos.find((item) => toIdKey(item.id) === context.photo.key)
+                    || photos.find((item) => toIdKey(item.id) === context.photo.key)
                   return (
                     <img
                       {...props}
@@ -808,7 +781,6 @@ function PhotographyClient() {
                 },
               }}
             />
-            </div>
           </div>
         ) : (
           <div className="photo-vsco-cluster-stack">
