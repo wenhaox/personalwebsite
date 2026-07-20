@@ -152,14 +152,13 @@ export default function Navigation() {
         )}
 
         {pathname === '/' && (
-          <div
-            className="w-48 h-64 bg-muted/10 rounded-md overflow-hidden flex items-end mobile-hide-photo"
-            style={{
-              backgroundImage: 'url(/photos/172-about-portrait.jpg)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center top',
-            }}
-          />
+          <div className="about-sidebar-photo mobile-hide-photo" aria-hidden="true">
+            <img
+              src="/photos/172-about-portrait.jpg"
+              alt=""
+              className="about-sidebar-photo-img"
+            />
+          </div>
         )}
       </div>
     </nav>
