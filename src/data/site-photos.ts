@@ -1910,7 +1910,6 @@ export const SITE_PHOTOS: PhotoItem[] = [
     theme: "people",
     description: "Soft overcast light by the mill.",
     imageUrl: "/photos/172-about-portrait.jpg",
-    favorite: true,
   },
   {
     id: 173,
