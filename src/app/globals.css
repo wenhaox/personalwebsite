@@ -2314,6 +2314,9 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
   overflow: hidden;
   background: color-mix(in oklab, var(--color-muted) 10%, var(--color-background));
   flex-shrink: 0;
+  /* Sit closer under the nav links (overrides space-y-8). */
+  margin-top: 0.85rem !important;
+  align-self: flex-start;
 }
 
 .about-sidebar-photo-img {
@@ -2321,10 +2324,10 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Keep a bit of zoom, but show more of the lower half. */
-  object-position: center 42%;
-  transform: scale(1.16);
-  transform-origin: center 48%;
+  /* Less zoom, bias lower so more of the bottom stays visible. */
+  object-position: center 68%;
+  transform: scale(1.04);
+  transform-origin: center 65%;
 }
 
 .sidebar-connect-links {
