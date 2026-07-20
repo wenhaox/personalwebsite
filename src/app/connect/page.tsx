@@ -3,9 +3,9 @@
 import GuestbookBook from '@/app/components/GuestbookBook'
 
 const SOCIAL_LINKS = [
-  { label: 'X', icon: 'X', href: 'https://x.com/yourusername' },
-  { label: 'LinkedIn', icon: 'in', href: 'https://linkedin.com/in/yourusername' },
-  { label: 'Email', icon: '@', href: 'mailto:your.email@example.com' },
+  { label: 'X', icon: 'X', href: 'https://x.com/_pwxu' },
+  { label: 'LinkedIn', icon: 'in', href: 'https://www.linkedin.com/in/pwxu/' },
+  { label: 'Email', icon: '@', href: 'mailto:pwxu32@gmail.com' },
 ]
 
 export default function Connect() {
