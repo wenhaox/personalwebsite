@@ -155,9 +155,9 @@ export default function Navigation() {
           <div
             className="w-48 h-64 bg-muted/10 rounded-md overflow-hidden flex items-end mobile-hide-photo"
             style={{
-              backgroundImage: 'url(/photos/039-DSCF0593.jpg)',
+              backgroundImage: 'url(/photos/172-about-portrait.jpg)',
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              backgroundPosition: 'center top',
             }}
           />
         )}
