@@ -1230,7 +1230,8 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
     transform: translateY(0);
   }
 
-  .photo-meta-overlay-title {
+  /* On mobile, keep one descriptive chip: the title (what it is). */
+  .photo-meta-overlay-compact .photo-meta-overlay-line {
     display: none;
   }
 
