@@ -897,7 +897,8 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
 
 .photo-film-strip-shell {
   --photo-film-strip-height: clamp(148px, 15.5vw, 188px);
-  --photo-film-strip-width: calc(var(--photo-film-strip-height) * 1.32);
+  /* Match dominant 3:2 landscape frames so horizontals aren't cropped. */
+  --photo-film-strip-width: calc(var(--photo-film-strip-height) * 1.5);
   position: relative;
   border: 0;
   border-radius: 0;
@@ -1207,7 +1208,7 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
   @media (max-width: 767px) {
   .photo-film-strip-shell {
     --photo-film-strip-height: clamp(132px, 38vw, 168px);
-    --photo-film-strip-width: calc(var(--photo-film-strip-height) * 1.33);
+    --photo-film-strip-width: calc(var(--photo-film-strip-height) * 1.5);
     padding: 0;
   }
 
