@@ -231,7 +231,23 @@ const getAspectSize = (aspectRatio: string): { width: number; height: number } =
 interface FilmReelClusterProps {
   cluster: PhotoCluster
   clusterIndex: number
+  sortBy: SortBy
+  timestampMap: Map<string, number>
   onSelectPhoto: (photo: PhotoItem) => void
+}
+
+const getPhotoCategoryTag = (
+  photo: PhotoItem,
+  sortBy: SortBy,
+  timestampMap: Map<string, number>
+): string => {
+  if (sortBy === 'theme') return getClusterLabel('theme', photo.theme)
+  if (sortBy === 'color') return getClusterLabel('color', photo.color)
+  if (sortBy === 'location') return photo.location
+  if (sortBy === 'date') {
+    return getClusterLabel('date', getClusterValue(photo, 'date', timestampMap))
+  }
+  return photo.title
 }
 
 function useFilmStripViewport() {
@@ -257,7 +273,7 @@ function useFilmStripViewport() {
   return { isDesktop, reduceMotion }
 }
 
-function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClusterProps) {
+function FilmReelCluster({ cluster, clusterIndex, sortBy, timestampMap, onSelectPhoto }: FilmReelClusterProps) {
   const sourcePhotos = cluster.photos
   const sourcePhotoCount = sourcePhotos.length
   const { isDesktop, reduceMotion } = useFilmStripViewport()
@@ -455,8 +471,9 @@ function FilmReelCluster({ cluster, clusterIndex, onSelectPhoto }: FilmReelClust
                       />
                     </span>
                     <span className="photo-meta-overlay photo-meta-overlay-compact">
-                      <span className="photo-meta-overlay-title">{photo.title}</span>
-                      <span className="photo-meta-overlay-line">{photo.location}</span>
+                      <span className="photo-meta-overlay-line">
+                        {getPhotoCategoryTag(photo, sortBy, timestampMap)}
+                      </span>
                     </span>
                   </button>
                 </div>
@@ -808,6 +825,8 @@ function PhotographyClient() {
                   key={cluster.key}
                   cluster={cluster}
                   clusterIndex={clusterIndex}
+                  sortBy={sortBy}
+                  timestampMap={photoTimestampMap}
                   onSelectPhoto={openPhoto}
                 />
               ))
