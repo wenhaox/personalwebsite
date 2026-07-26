@@ -16,6 +16,7 @@ interface BoardDecoration {
   id: number
   kind: 'emoji' | 'photo'
   value: string
+  approved?: boolean
   x?: number
   y?: number
   size?: number
@@ -28,15 +29,21 @@ const normalizeDecorations = (value: unknown): BoardDecoration[] => {
   if (!Array.isArray(value)) return []
   return value
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
-    .map((item, index) => ({
-      id: typeof item.id === 'number' ? item.id : index,
-      kind: item.kind === 'photo' ? 'photo' : 'emoji',
-      value: typeof item.value === 'string' ? item.value : '',
-      x: typeof item.x === 'number' ? item.x : undefined,
-      y: typeof item.y === 'number' ? item.y : undefined,
-      size: typeof item.size === 'number' ? item.size : undefined,
-      rotation: typeof item.rotation === 'number' ? item.rotation : undefined,
-    }))
+    .map((item, index) => {
+      const kind: BoardDecoration['kind'] = item.kind === 'photo' ? 'photo' : 'emoji'
+      const approved = kind === 'emoji' ? true : item.approved !== false
+
+      return {
+        id: typeof item.id === 'number' ? item.id : index,
+        kind,
+        value: typeof item.value === 'string' ? item.value : '',
+        approved,
+        x: typeof item.x === 'number' ? item.x : undefined,
+        y: typeof item.y === 'number' ? item.y : undefined,
+        size: typeof item.size === 'number' ? item.size : undefined,
+        rotation: typeof item.rotation === 'number' ? item.rotation : undefined,
+      }
+    })
     .filter((item) => item.value.trim().length > 0)
 }
 
@@ -57,6 +64,16 @@ export default function ApproveGuestbookPage() {
   const approved = useMemo(
     () => entries.filter((entry) => entry.approved !== false),
     [entries]
+  )
+
+  const pendingStickers = useMemo(
+    () => decorations.filter((item) => item.kind === 'photo' && item.approved === false),
+    [decorations]
+  )
+
+  const liveStickers = useMemo(
+    () => decorations.filter((item) => item.kind === 'emoji' || item.approved !== false),
+    [decorations]
   )
 
   const applyStore = useCallback((payload: Record<string, unknown>) => {
@@ -116,7 +133,7 @@ export default function ApproveGuestbookPage() {
 
   const moderate = async (
     id: number,
-    action: 'approve' | 'reject' | 'delete-decoration',
+    action: 'approve' | 'reject' | 'delete-decoration' | 'approve-decoration',
   ) => {
     setStatus('')
     setError('')
@@ -132,7 +149,7 @@ export default function ApproveGuestbookPage() {
       }
       applyStore(payload)
       setStatus(
-        action === 'approve'
+        action === 'approve' || action === 'approve-decoration'
           ? 'Approved.'
           : action === 'delete-decoration'
             ? 'Decoration deleted.'
@@ -174,7 +191,7 @@ export default function ApproveGuestbookPage() {
           <div>
             <h1 className="approve-title">Guestbook moderation</h1>
             <p className="approve-copy">
-              {pending.length} pending · {approved.length} notes · {decorations.length} stickers
+              {pending.length} pending notes · {pendingStickers.length} pending stickers · {approved.length} notes · {liveStickers.length} live stickers
             </p>
           </div>
           <button
@@ -217,6 +234,46 @@ export default function ApproveGuestbookPage() {
         </section>
 
         <section className="approve-section">
+          <h2 className="approve-section-title">Pending stickers</h2>
+          {!loading && pendingStickers.length === 0 && (
+            <p className="approve-copy">No photos or GIFs waiting for approval.</p>
+          )}
+
+          <ul className="approve-list">
+            {pendingStickers.map((item) => (
+              <li key={item.id} className="approve-item approve-item-decoration">
+                <div className="approve-decoration-preview">
+                  <img src={item.value} alt="" className="approve-decoration-photo" />
+                  <div>
+                    <p className="approve-message">Photo / GIF</p>
+                    <p className="approve-copy">{item.value.slice(0, 64)}</p>
+                  </div>
+                </div>
+                <div className="approve-meta">
+                  <span>pending</span>
+                  <div className="approve-actions">
+                    <button
+                      type="button"
+                      className="approve-btn"
+                      onClick={() => void moderate(item.id, 'approve-decoration')}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      className="approve-btn approve-btn-danger"
+                      onClick={() => void moderate(item.id, 'delete-decoration')}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="approve-section">
           <h2 className="approve-section-title">Notes on the board</h2>
           {!loading && approved.length === 0 && (
             <p className="approve-copy">No approved sticky notes yet.</p>
@@ -248,12 +305,12 @@ export default function ApproveGuestbookPage() {
 
         <section className="approve-section">
           <h2 className="approve-section-title">Images & emojis</h2>
-          {!loading && decorations.length === 0 && (
+          {!loading && liveStickers.length === 0 && (
             <p className="approve-copy">No photos or emojis on the board.</p>
           )}
 
           <ul className="approve-list">
-            {decorations.map((item) => (
+            {liveStickers.map((item) => (
               <li key={item.id} className="approve-item approve-item-decoration">
                 <div className="approve-decoration-preview">
                   {item.kind === 'photo' ? (
@@ -263,7 +320,7 @@ export default function ApproveGuestbookPage() {
                   )}
                   <div>
                     <p className="approve-message">
-                      {item.kind === 'photo' ? 'Photo sticker' : 'Emoji sticker'}
+                      {item.kind === 'photo' ? 'Photo / GIF' : 'Emoji sticker'}
                     </p>
                     <p className="approve-copy">
                       {item.kind === 'photo' ? item.value.slice(0, 64) : item.value}
@@ -271,7 +328,7 @@ export default function ApproveGuestbookPage() {
                   </div>
                 </div>
                 <div className="approve-meta">
-                  <span>{item.kind}</span>
+                  <span>{item.kind === 'photo' ? 'photo / gif' : 'emoji'}</span>
                   <div className="approve-actions">
                     <button
                       type="button"

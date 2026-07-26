@@ -16,13 +16,14 @@ const getApprovePassword = () => (
   || ''
 )
 
-type ModerateAction = 'list' | 'approve' | 'reject' | 'delete-decoration'
+type ModerateAction = 'list' | 'approve' | 'reject' | 'delete-decoration' | 'approve-decoration'
 
 const resolveAction = (value: unknown): ModerateAction | null => {
   if (value === 'list') return 'list'
   if (value === 'approve') return 'approve'
   if (value === 'reject' || value === 'delete') return 'reject'
   if (value === 'delete-decoration') return 'delete-decoration'
+  if (value === 'approve-decoration') return 'approve-decoration'
   return null
 }
 
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   if (!action) {
     return NextResponse.json(
-      { error: 'Need action (list|approve|reject|delete|delete-decoration).' },
+      { error: 'Need action (list|approve|reject|delete|delete-decoration|approve-decoration).' },
       { status: 400 }
     )
   }
@@ -71,6 +72,18 @@ export async function POST(request: NextRequest) {
     const nextStore = {
       ...store,
       decorations: decorations.filter((item) => item.id !== id),
+      updatedAt: new Date().toISOString(),
+    }
+    await writeStore(nextStore)
+    return NextResponse.json(nextStore, { headers: { 'Cache-Control': 'no-store' } })
+  }
+
+  if (action === 'approve-decoration') {
+    const nextStore = {
+      ...store,
+      decorations: decorations.map((item) => (
+        item.id === id ? { ...item, approved: true } : item
+      )),
       updatedAt: new Date().toISOString(),
     }
     await writeStore(nextStore)

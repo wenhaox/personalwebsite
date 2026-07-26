@@ -31,6 +31,7 @@ interface BoardDecoration {
   y: number
   size: number
   rotation: number
+  approved?: boolean
 }
 
 interface GuestbookBookProps {
@@ -196,15 +197,22 @@ const normalizeDecorationsFromSource = (value: unknown): BoardDecoration[] => {
 
   return value
     .filter((item: Partial<BoardDecoration>) => typeof item.value === 'string' && item.value.trim())
-    .map((item: Partial<BoardDecoration>, index: number): BoardDecoration => ({
-      id: typeof item.id === 'number' ? item.id : Date.now() + index,
-      kind: item.kind === 'photo' ? 'photo' : 'emoji',
-      value: (item.value || '').trim(),
-      x: typeof item.x === 'number' ? item.x : 52 + (index % 4) * 104,
-      y: typeof item.y === 'number' ? item.y : 42 + Math.floor(index / 4) * 98,
-      size: typeof item.size === 'number' ? clamp(item.size, 72, 152) : 90,
-      rotation: typeof item.rotation === 'number' ? clamp(item.rotation, -10, 10) : ((index % 5) - 2) * 1.8,
-    }))
+    .map((item: Partial<BoardDecoration>, index: number): BoardDecoration => {
+      const kind: DecorationKind = item.kind === 'photo' ? 'photo' : 'emoji'
+      // Emoji always approved; missing approved on photos is treated as approved (legacy).
+      const approved = kind === 'emoji' ? true : item.approved !== false
+
+      return {
+        id: typeof item.id === 'number' ? item.id : Date.now() + index,
+        kind,
+        value: (item.value || '').trim(),
+        x: typeof item.x === 'number' ? item.x : 52 + (index % 4) * 104,
+        y: typeof item.y === 'number' ? item.y : 42 + Math.floor(index / 4) * 98,
+        size: typeof item.size === 'number' ? clamp(item.size, 72, 152) : 90,
+        rotation: typeof item.rotation === 'number' ? clamp(item.rotation, -10, 10) : ((index % 5) - 2) * 1.8,
+        approved,
+      }
+    })
 }
 
 const saveGuestbookRemote = async (payload: { entries: GuestbookEntry[]; decorations: BoardDecoration[] }) => {
@@ -261,6 +269,7 @@ export default function GuestbookBook({
   const [message, setMessage] = useState('')
   const [messageError, setMessageError] = useState('')
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
+  const [customEmoji, setCustomEmoji] = useState('')
   const [isUrlPopoverOpen, setIsUrlPopoverOpen] = useState(false)
   const [photoUrl, setPhotoUrl] = useState('')
   const [photoFeedback, setPhotoFeedback] = useState('')
@@ -839,6 +848,7 @@ export default function GuestbookBook({
       value,
       size,
       rotation: ((Date.now() % 7) - 3) * 1.4,
+      approved: kind === 'emoji',
       ...placement,
     }
 
@@ -847,20 +857,23 @@ export default function GuestbookBook({
   }
 
   const addEmoji = (value: string) => {
-    addDecoration('emoji', value, 84)
+    const trimmed = value.trim()
+    if (!trimmed) return
+    addDecoration('emoji', trimmed, 84)
+    setCustomEmoji('')
     setIsEmojiPickerOpen(false)
   }
 
   const addPhotoDecoration = (): boolean => {
     const normalized = normalizePhotoInput(photoUrl)
     if (!normalized || !isLikelyImageUrl(normalized)) {
-      setPhotoFeedback('Use a full image URL or upload a file.')
+      setPhotoFeedback('Use a full image / GIF URL or upload a file.')
       return false
     }
 
     const value = normalized.startsWith('data:image/') ? normalized : encodeURI(normalized)
     addDecoration('photo', value, compact ? 112 : 126)
-    setPhotoFeedback('Photo added.')
+    setPhotoFeedback('Sent for approval.')
     setPhotoUrl('')
     return true
   }
@@ -870,7 +883,7 @@ export default function GuestbookBook({
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      setPhotoFeedback('Please choose an image file.')
+      setPhotoFeedback('Please choose an image or GIF file.')
       e.target.value = ''
       return
     }
@@ -884,7 +897,7 @@ export default function GuestbookBook({
       }
 
       addDecoration('photo', result, compact ? 112 : 126)
-      setPhotoFeedback('Photo added.')
+      setPhotoFeedback('Sent for approval.')
     }
 
     reader.onerror = () => {
@@ -960,16 +973,39 @@ export default function GuestbookBook({
 
           {isEmojiPickerOpen && (
             <div className="guestboard-emoji-picker-popover">
-              {EMOJI_PICKER.map((emoji) => (
+              <div className="guestboard-emoji-picker-grid">
+                {EMOJI_PICKER.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="guestboard-emoji-picker-item"
+                    onClick={() => addEmoji(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              <div className="guestboard-emoji-custom">
+                <input
+                  value={customEmoji}
+                  onChange={(e) => setCustomEmoji(e.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter') return
+                    event.preventDefault()
+                    addEmoji(customEmoji)
+                  }}
+                  className="guestboard-emoji-custom-input"
+                  placeholder="paste any emoji"
+                  aria-label="Custom emoji"
+                />
                 <button
-                  key={emoji}
                   type="button"
-                  className="guestboard-emoji-picker-item"
-                  onClick={() => addEmoji(emoji)}
+                  className="guestboard-tool-btn"
+                  onClick={() => addEmoji(customEmoji)}
                 >
-                  {emoji}
+                  Add
                 </button>
-              ))}
+              </div>
             </div>
           )}
         </div>
@@ -984,10 +1020,10 @@ export default function GuestbookBook({
               if (photoFeedback) setPhotoFeedback('')
             }}
           >
-            + Image URL
+            + Image / GIF URL
           </button>
           <button type="button" className="guestboard-tool-btn" onClick={() => fileInputRef.current?.click()}>
-            + Image File
+            + Image / GIF
           </button>
 
           {isUrlPopoverOpen && (
@@ -995,7 +1031,7 @@ export default function GuestbookBook({
               ref={photoUrlPopoverRef}
               className="guestboard-url-popover"
               role="dialog"
-              aria-label="Add image URL"
+              aria-label="Add image or GIF URL"
               onMouseLeave={() => setIsUrlPopoverOpen(false)}
             >
               <input
@@ -1011,8 +1047,8 @@ export default function GuestbookBook({
                   if (didAdd) setIsUrlPopoverOpen(false)
                 }}
                 className="guestboard-photo-input"
-                placeholder="https://..."
-                aria-label="Photo URL"
+                placeholder="https://… (giphy/tenor gif links ok)"
+                aria-label="Image or GIF URL"
               />
               <div className="guestboard-url-actions">
                 <button
@@ -1039,7 +1075,7 @@ export default function GuestbookBook({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.gif,image/gif"
             className="sr-only"
             onChange={handleFileUpload}
           />
@@ -1147,15 +1183,23 @@ export default function GuestbookBook({
                   style={{ zIndex: activeItemId === itemId ? 220 : 160 + index }}
                 >
                   <div
-                    className={`guestboard-decoration guestboard-decoration-${item.kind} guestboard-item-drag-handle`}
+                    className={`guestboard-decoration guestboard-decoration-${item.kind} guestboard-item-drag-handle ${item.approved === false ? 'guestboard-decoration-pending' : ''}`}
                     style={{
                       '--guestboard-rotation': `${item.rotation}deg`,
                     } as CSSProperties}
                   >
                     {item.kind === 'photo' ? (
-                      <div className="guestboard-decoration-photo" style={{ backgroundImage: `url(${item.value})` }}></div>
+                      <img
+                        src={item.value}
+                        alt=""
+                        className="guestboard-decoration-photo"
+                        draggable={false}
+                      />
                     ) : (
                       <span className="guestboard-decoration-symbol">{item.value}</span>
+                    )}
+                    {item.approved === false && (
+                      <span className="guestboard-decoration-pending-badge" aria-hidden="true">Pending</span>
                     )}
                   </div>
                 </Rnd>

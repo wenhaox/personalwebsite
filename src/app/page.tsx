@@ -95,7 +95,7 @@ export default function Home() {
           <p className="about-seq-line about-seq-line-3">
             Some other things I enjoy are getting outside around blue hour, touring spaces, finding a good drink in a new neighborhood,{' '}
             <a
-              href="https://knowyourmeme.com/memes/jordan-poole-effect-jordan-poole-baddies"
+              href="https://media.giphy.com/media/lZM1XihINads6Jk3lB/giphy.gif"
               target="_blank"
               rel="noopener noreferrer"
               className="about-quick-link underline decoration-accent hover:text-accent transition-colors"

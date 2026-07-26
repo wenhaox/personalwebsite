@@ -137,18 +137,14 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   },
   {
     category: 'Meme',
-    item: 'Jordan Poole Effect',
-    description: 'Warriors brainrot. Still funny every time',
+    item: "let's kiss",
+    description: 'Cat said what we were all thinking',
     date: 'This week',
-    image: '/recently/meme-poole-effect.jpg',
+    image: '/recently/meme-lets-kiss.png',
     links: [
       {
-        url: 'https://knowyourmeme.com/memes/jordan-poole-effect-jordan-poole-baddies',
-        text: 'Poole Effect on KYM',
-      },
-      {
-        url: 'https://www.nba.com/warriors',
-        text: 'Warriors',
+        url: 'https://media.giphy.com/media/lZM1XihINads6Jk3lB/giphy.gif',
+        text: 'Jordan Poole reaction GIF',
       },
     ],
   },
@@ -422,9 +418,9 @@ export default function Recently() {
         id: 'meme',
         kind: 'artifact',
         pixelArt: '/pixel-objects/postcard.svg',
-        fallbackTitle: 'Jordan Poole Effect',
+        fallbackTitle: "let's kiss",
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Warriors brainrot. Still funny every time',
+        fallbackDescription: 'Cat said what we were all thinking',
         item: pick('Meme'),
       },
     ]

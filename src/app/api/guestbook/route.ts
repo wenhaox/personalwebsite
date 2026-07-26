@@ -27,17 +27,26 @@ const buildResponse = (store: GuestbookStore, mode: string, extra?: Record<strin
   )
 )
 
+const isPublicDecoration = (item: unknown) => {
+  if (!isObject(item)) return false
+  if (item.kind === 'emoji') return true
+  if (item.kind === 'photo') return item.approved !== false
+  return item.approved !== false
+}
+
 export async function GET() {
   const { store, mode } = await readStore()
   const publicEntries = store.entries.filter((entry) => {
     if (!isObject(entry)) return false
     return entry.approved !== false
   })
+  const publicDecorations = store.decorations.filter(isPublicDecoration)
 
   return buildResponse(
     {
       ...store,
       entries: publicEntries,
+      decorations: publicDecorations,
     },
     mode,
     {
@@ -71,7 +80,14 @@ const entryId = (entry: Record<string, unknown>) => {
   return Number.isFinite(id) ? id : null
 }
 
+const decorationId = (item: Record<string, unknown>) => {
+  const id = typeof item.id === 'number' ? item.id : Number(item.id)
+  return Number.isFinite(id) ? id : null
+}
+
 const isApprovedEntry = (entry: Record<string, unknown>) => entry.approved !== false
+
+const isApprovedDecoration = (item: Record<string, unknown>) => item.approved !== false
 
 /** Public writes may add/update pending notes and decorations, but cannot self-approve. */
 const mergePublicEntries = (currentEntries: unknown[], incomingEntries: unknown[]) => {
@@ -121,6 +137,75 @@ const mergePublicEntries = (currentEntries: unknown[], incomingEntries: unknown[
   return merged
 }
 
+/** Public writes may add stickers and move them, but cannot self-approve photos/GIFs. */
+const mergePublicDecorations = (currentDecorations: unknown[], incomingDecorations: unknown[]) => {
+  const current = currentDecorations.filter(isObject)
+  const incoming = incomingDecorations.filter(isObject)
+  const currentById = new Map<number, Record<string, unknown>>()
+  for (const item of current) {
+    const id = decorationId(item)
+    if (id != null) currentById.set(id, item)
+  }
+
+  const incomingIds = new Set<number>()
+  const merged: Record<string, unknown>[] = []
+  const seen = new Set<number>()
+
+  for (const item of incoming) {
+    const id = decorationId(item)
+    if (id == null) continue
+    incomingIds.add(id)
+    const existing = currentById.get(id)
+    const kind = item.kind === 'photo' ? 'photo' : 'emoji'
+
+    if (kind === 'emoji') {
+      merged.push({ ...item, kind: 'emoji', approved: true, id })
+      seen.add(id)
+      continue
+    }
+
+    if (existing && existing.kind === 'photo' && isApprovedDecoration(existing)) {
+      merged.push({
+        ...existing,
+        ...item,
+        kind: 'photo',
+        value: existing.value,
+        approved: true,
+        id,
+      })
+      seen.add(id)
+      continue
+    }
+
+    if (existing && existing.kind === 'photo') {
+      merged.push({
+        ...existing,
+        ...item,
+        kind: 'photo',
+        value: existing.value,
+        approved: false,
+        id,
+      })
+      seen.add(id)
+      continue
+    }
+
+    merged.push({ ...item, kind: 'photo', approved: false, id })
+    seen.add(id)
+  }
+
+  for (const item of current) {
+    const id = decorationId(item)
+    if (id == null || seen.has(id)) continue
+    if (!incomingIds.has(id)) {
+      merged.push(item)
+      seen.add(id)
+    }
+  }
+
+  return merged
+}
+
 const upsertStore = async (request: NextRequest) => {
   const incoming = parseIncomingStorePatch(await request.json().catch(() => null))
 
@@ -133,7 +218,9 @@ const upsertStore = async (request: NextRequest) => {
     entries: incoming.entries !== undefined
       ? mergePublicEntries(current.entries, incoming.entries)
       : current.entries,
-    decorations: incoming.decorations ?? current.decorations,
+    decorations: incoming.decorations !== undefined
+      ? mergePublicDecorations(current.decorations, incoming.decorations)
+      : current.decorations,
     updatedAt: new Date().toISOString(),
   }
 
