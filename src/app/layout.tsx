@@ -67,12 +67,29 @@ const crimsonText = Crimson_Text({
 });
 
 export const metadata: Metadata = {
-  title: "Peter Xu",
+  metadataBase: new URL("https://peterxu.space"),
+  title: {
+    default: "Peter Xu",
+    template: "%s · Peter Xu",
+  },
   description: "Peter Xu personal website",
+  applicationName: "Peter Xu",
   icons: {
-    icon: '/brandmark.svg?v=3',
-    shortcut: '/brandmark.svg?v=3',
-    apple: '/brandmark.svg?v=3',
+    icon: "/brandmark.svg?v=3",
+    shortcut: "/brandmark.svg?v=3",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Peter Xu",
+    title: "Peter Xu",
+    description: "Peter Xu personal website",
+    url: "https://peterxu.space",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Peter Xu",
+    description: "Peter Xu personal website",
   },
 };
 
