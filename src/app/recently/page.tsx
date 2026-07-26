@@ -387,7 +387,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/coffee-mug.svg',
         fallbackTitle: 'Granada + Endorffeine',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Granada in Angelino Heights / Echo Park, and Endorffeine in Chinatown.',
+        fallbackDescription: 'Granada is this super cool home cafe in Angelino Heights. Endorffeine is all attention-to-detail pour-over — solo by choice. My dream.',
         item: pick('Coffee'),
       },
       {
