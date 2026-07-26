@@ -303,13 +303,17 @@ export default function Recently() {
 
   const musicItem = useMemo(() => (
     recentlyItems.find((item) => {
+      const category = item.category?.toLowerCase() || ''
+      if (category === 'music' || category === 'audio') return true
       const source = `${item.category} ${item.item}`.toLowerCase()
-      return Boolean(item.spotifyEmbed) || /music|song|album|listen/.test(source)
+      return Boolean(item.spotifyEmbed || item.spotifyEmbeds?.length) || /music|song|album|listen/.test(source)
     }) || null
   ), [recentlyItems])
 
   const movieItem = useMemo(() => (
     recentlyItems.find((item) => {
+      const category = item.category?.toLowerCase() || ''
+      if (category === 'watching' || category === 'movie' || category === 'tv') return true
       const source = `${item.category} ${item.item}`.toLowerCase()
       return /movie|watch|film|tv|severance/.test(source)
     }) || null
@@ -317,8 +321,11 @@ export default function Recently() {
 
   const photoItem = useMemo(() => (
     recentlyItems.find((item) => {
+      const category = item.category?.toLowerCase() || ''
+      // Prefer explicit photo slots — many other items also carry cover images.
+      if (category === 'photo' || category === 'place' || category === 'archive') return true
       const source = `${item.category} ${item.item}`.toLowerCase()
-      return Boolean(item.image) || (Array.isArray(item.images) && item.images.length > 0) || /photo|camera/.test(source)
+      return /photo|camera/.test(source)
     }) || null
   ), [recentlyItems])
 
