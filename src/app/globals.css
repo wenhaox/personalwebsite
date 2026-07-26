@@ -4117,29 +4117,54 @@ body.is-desk-dragging .recently-node-tooltip {
   position: relative;
   flex: 0 0 auto;
   width: 100%;
-  height: 80px;
+  height: 72px;
   background: #121212;
-  border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
+  border-bottom: 0;
   overflow: hidden;
   color-scheme: dark;
-  /* Kill leftover iframe letterboxing / white strip */
   line-height: 0;
   font-size: 0;
+  isolation: isolate;
 }
 
 .recently-node-tooltip-spotify {
   position: absolute;
-  /* Crop past Spotify’s built-in 12px radius so corners (and white gaps) disappear. */
-  top: -14px;
-  right: -14px;
-  bottom: -28px;
-  left: -14px;
-  width: calc(100% + 28px);
-  height: calc(100% + 42px);
+  /* Overscan past Spotify’s white padded chrome on every edge */
+  top: -22px;
+  left: -22px;
+  width: calc(100% + 44px);
+  height: 152px;
   border: 0;
   background: #121212;
   color-scheme: dark;
   border-radius: 0;
+}
+
+/* Music card: keep the whole popup dark so no cream/white shows under the player */
+.recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview),
+.recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) {
+  background: #121212;
+  color: #f4f5ef;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-body,
+.recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-body {
+  background: #121212;
+  padding-top: 0.65rem;
+  padding-bottom: 0.9rem;
+}
+
+.recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-subtitle,
+.recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-subtitle,
+.recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-copy,
+.recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-copy {
+  color: rgba(244, 245, 239, 0.72);
+}
+
+.recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-link,
+.recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-link {
+  color: #c4b5fd;
 }
 
 .recently-node-tooltip-body {
@@ -4837,21 +4862,19 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-node-tooltip-spotify-preview {
-    height: 76px;
+    height: 70px;
   }
 
   .recently-node-tooltip-spotify {
-    top: -14px;
-    right: -14px;
-    bottom: -30px;
-    left: -14px;
-    width: calc(100% + 28px);
-    height: calc(100% + 44px);
+    top: -24px;
+    left: -24px;
+    width: calc(100% + 48px);
+    height: 152px;
   }
 
   .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-body {
     padding-top: 0.55rem;
-    padding-bottom: 0.85rem;
+    padding-bottom: 0.8rem;
   }
 
   .recently-node-tooltip-media {
