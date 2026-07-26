@@ -72,7 +72,7 @@ export const metadata: Metadata = {
     default: "Peter Xu",
     template: "%s · Peter Xu",
   },
-  description: "Peter Xu personal website",
+  description: "Photos, notes, and what I'm into lately.",
   applicationName: "Peter Xu",
   icons: {
     icon: "/brandmark.svg?v=3",
@@ -82,14 +82,14 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Peter Xu",
     title: "Peter Xu",
-    description: "Peter Xu personal website",
+    description: "Photos, notes, and what I'm into lately.",
     url: "https://peterxu.space",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "Peter Xu",
-    description: "Peter Xu personal website",
+    description: "Photos, notes, and what I'm into lately.",
   },
 };
 
