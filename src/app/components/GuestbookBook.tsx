@@ -262,13 +262,11 @@ export default function GuestbookBook({
 }: GuestbookBookProps) {
   const boardViewportRef = useRef<HTMLDivElement | null>(null)
   const boardRef = useRef<HTMLDivElement | null>(null)
-  const trashTargetRef = useRef<HTMLButtonElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const photoUrlToggleRef = useRef<HTMLButtonElement | null>(null)
   const photoUrlPopoverRef = useRef<HTMLDivElement | null>(null)
   const remoteSyncTimerRef = useRef<number | null>(null)
   const boardSizeRef = useRef<{ width: number; height: number } | null>(null)
-  const lastPointerRef = useRef<Record<string, { offsetX: number; offsetY: number }>>({})
   const noteDragStartRef = useRef<Record<string, { x: number; y: number }>>({})
   const [notes, setNotes] = useState<GuestbookNote[]>([])
   const [pendingEntries, setPendingEntries] = useState<GuestbookEntry[]>([])
@@ -284,7 +282,6 @@ export default function GuestbookBook({
   const [submissionFeedback, setSubmissionFeedback] = useState('')
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null)
-  const [isTrashAnimating, setIsTrashAnimating] = useState(false)
   const [boardZoom, setBoardZoom] = useState(1)
   const [hasMutatedEntries, setHasMutatedEntries] = useState(false)
   const [hasMutatedDecorations, setHasMutatedDecorations] = useState(false)
@@ -624,91 +621,6 @@ export default function GuestbookBook({
       }
     }
   }, [decorations, notes])
-
-  const getPointerFromEvent = (event: MouseEvent | TouchEvent) => {
-    if ('touches' in event && event.touches.length > 0) {
-      return { x: event.touches[0].clientX, y: event.touches[0].clientY }
-    }
-
-    if ('changedTouches' in event && event.changedTouches.length > 0) {
-      return { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY }
-    }
-
-    if ('clientX' in event) {
-      return { x: event.clientX, y: event.clientY }
-    }
-
-    return null
-  }
-
-  const trackLastPointer = (
-    itemId: string,
-    event: MouseEvent | TouchEvent,
-    x: number,
-    y: number,
-    width: number,
-    height: number
-  ) => {
-    const pointer = getPointerFromEvent(event)
-    const board = boardRef.current
-    if (!pointer || !board) return
-
-    const boardRect = board.getBoundingClientRect()
-    const pointX = (pointer.x - boardRect.left) / boardZoom
-    const pointY = (pointer.y - boardRect.top) / boardZoom
-
-    lastPointerRef.current[itemId] = {
-      offsetX: clamp(pointX - x, 0, width),
-      offsetY: clamp(pointY - y, 0, height),
-    }
-  }
-
-  const getTrashDropVector = (itemId: string, x: number, y: number, width: number, height: number) => {
-    const board = boardRef.current
-    const trashTarget = trashTargetRef.current
-    if (!board || !trashTarget) {
-      return { shouldTrash: false, vector: { x: 0, y: 0 } }
-    }
-
-    const boardRect = board.getBoundingClientRect()
-    const trashRect = trashTarget.getBoundingClientRect()
-    const pointerOffset = lastPointerRef.current[itemId]
-    const pointX = pointerOffset ? x + pointerOffset.offsetX : x + width / 2
-    const pointY = pointerOffset ? y + pointerOffset.offsetY : y + height / 2
-    const dropCenterX = boardRect.left + (pointX * boardZoom)
-    const dropCenterY = boardRect.top + (pointY * boardZoom)
-
-    const hitPadding = 14
-    const isInsideTrash = (
-      dropCenterX >= trashRect.left - hitPadding &&
-      dropCenterX <= trashRect.right + hitPadding &&
-      dropCenterY >= trashRect.top - hitPadding &&
-      dropCenterY <= trashRect.bottom + hitPadding
-    )
-
-    if (!isInsideTrash) {
-      return { shouldTrash: false, vector: { x: 0, y: 0 } }
-    }
-
-    const trashCenterX = ((trashRect.left - boardRect.left) / boardZoom) + (trashRect.width / 2) / boardZoom
-    const trashCenterY = ((trashRect.top - boardRect.top) / boardZoom) + (trashRect.height / 2) / boardZoom
-
-    return {
-      shouldTrash: true,
-      vector: {
-        x: Math.round(trashCenterX - pointX),
-        y: Math.round(trashCenterY - pointY),
-      },
-    }
-  }
-
-  const startTrashAnimation = (onDone: () => void) => {
-    setIsTrashAnimating(true)
-    onDone()
-    window.setTimeout(() => {
-      setIsTrashAnimating(false)
-    }, 280)
-  }
 
   const getRandomPosition = (width: number, height: number) => {
     const board = boardRef.current
@@ -1121,7 +1033,7 @@ export default function GuestbookBook({
       </div>
 
       <div className="guestbook-delete-hint">
-        Drag to 🗑️ to delete. Click a note then press Backspace/Delete.{enableBoardZoom ? ' Scroll to zoom.' : ''}
+        Click a note then press Backspace/Delete.{enableBoardZoom ? ' Scroll to zoom.' : ''}
       </div>
       {photoFeedback && <div className="guestbook-photo-feedback">{photoFeedback}</div>}
       {submissionFeedback && <div className="guestbook-photo-feedback guestbook-submit-feedback">{submissionFeedback}</div>}
@@ -1172,21 +1084,9 @@ export default function GuestbookBook({
                   position={{ x: item.x, y: item.y }}
                   scale={boardZoom}
                   onDragStart={() => setActiveItemId(itemId)}
-                  onDrag={(event, data) => {
-                    trackLastPointer(itemId, event as MouseEvent | TouchEvent, data.x, data.y, item.size, item.size)
-                  }}
                   onDragStop={(_e, data) => {
-                    const trashResult = getTrashDropVector(itemId, data.x, data.y, item.size, item.size)
-                    if (trashResult.shouldTrash) {
-                      setActiveItemId(null)
-                      startTrashAnimation(() => removeDecoration(item.id))
-                      delete lastPointerRef.current[itemId]
-                      return
-                    }
-
                     updateDecorationPosition(item.id, data.x, data.y, item.size)
                     setActiveItemId(null)
-                    delete lastPointerRef.current[itemId]
                   }}
                   style={{ zIndex: activeItemId === itemId ? 220 : 160 + index }}
                 >
@@ -1231,18 +1131,7 @@ export default function GuestbookBook({
                     setSelectedNoteId(note.id)
                     noteDragStartRef.current[itemId] = { x: note.x, y: note.y }
                   }}
-                  onDrag={(event, data) => {
-                    trackLastPointer(itemId, event as MouseEvent | TouchEvent, data.x, data.y, NOTE_WIDTH, NOTE_HEIGHT)
-                  }}
                   onDragStop={(_e, data) => {
-                    const trashResult = getTrashDropVector(itemId, data.x, data.y, NOTE_WIDTH, NOTE_HEIGHT)
-                    if (trashResult.shouldTrash) {
-                      setActiveItemId(null)
-                      startTrashAnimation(() => removeNote(note.id))
-                      delete lastPointerRef.current[itemId]
-                      return
-                    }
-
                     const dragStart = noteDragStartRef.current[itemId]
                     const movedDistance = dragStart
                       ? Math.hypot(data.x - dragStart.x, data.y - dragStart.y)
@@ -1253,7 +1142,6 @@ export default function GuestbookBook({
                     }
 
                     setActiveItemId(null)
-                    delete lastPointerRef.current[itemId]
                     delete noteDragStartRef.current[itemId]
                   }}
                   style={{ zIndex: activeItemId === itemId ? 120 : 60 + index }}
@@ -1274,17 +1162,6 @@ export default function GuestbookBook({
             </div>
           </div>
         </div>
-
-        <button
-          ref={trashTargetRef}
-          type="button"
-          className={`guestbook-trash-target ${activeItemId ? 'guestbook-trash-target-armed' : ''} ${isTrashAnimating ? 'guestbook-trash-target-active' : ''}`}
-          aria-label="Trash target"
-          title="Drop here to delete"
-          tabIndex={-1}
-        >
-          🗑️
-        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="guestbook-cork-form" noValidate>
