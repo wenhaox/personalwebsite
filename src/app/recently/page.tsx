@@ -23,6 +23,7 @@ interface RecentlyItem {
   audioUrl?: string
   spotifyEmbed?: string
   spotifyEmbeds?: string[]
+  spotifyBackdrop?: string
   podcastEmbed?: string
   image?: string
   images?: string[]
@@ -46,6 +47,7 @@ interface BoardObject {
   links?: RecentlyLink[]
   spotifyEmbed?: string
   spotifyEmbeds?: string[]
+  spotifyBackdrop?: string
 }
 
 const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
@@ -68,6 +70,8 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     description: 'Had these on repeat all week',
     date: 'This week',
     image: '/recently/music-every-summertime.jpg',
+    // Warm sunset tone from the NIKI cover — fills the iframe’s rounded-corner gaps.
+    spotifyBackdrop: '#c47868',
     spotifyEmbeds: [
       'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
       'https://open.spotify.com/embed/track/50otYQj8x1wp6HpdRrLXpY?utm_source=generator&theme=0',
@@ -426,6 +430,7 @@ export default function Recently() {
         image: getPrimaryImage(icon.item),
         spotifyEmbed: embeds?.[0],
         spotifyEmbeds: embeds,
+        spotifyBackdrop: icon.item?.spotifyBackdrop,
         link: links[0],
         links,
       }

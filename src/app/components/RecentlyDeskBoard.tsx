@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import RecentlyIsometricDesk, {
   RecentlyDeskObjectAnchor,
@@ -33,6 +33,7 @@ export interface DeskBoardObject {
   links?: Array<{ url: string; text: string }>
   spotifyEmbed?: string
   spotifyEmbeds?: string[]
+  spotifyBackdrop?: string
 }
 
 interface ObjectPresentation {
@@ -574,21 +575,40 @@ function DeskObjectsLayer({
               ? [hoveredObject.spotifyEmbed]
               : []
           ).length > 0 ? (
-            <div className="recently-node-tooltip-spotify-stack">
+            <div
+              className="recently-node-tooltip-spotify-stack"
+              style={
+                hoveredObject.spotifyBackdrop
+                  ? ({ '--spotify-backdrop': hoveredObject.spotifyBackdrop } as CSSProperties)
+                  : undefined
+              }
+            >
+              {hoveredObject.image ? (
+                <img
+                  src={hoveredObject.image}
+                  alt=""
+                  aria-hidden="true"
+                  className="recently-node-tooltip-spotify-wash"
+                />
+              ) : null}
               {(hoveredObject.spotifyEmbeds?.length
                 ? hoveredObject.spotifyEmbeds
                 : hoveredObject.spotifyEmbed
                   ? [hoveredObject.spotifyEmbed]
                   : []
               ).map((embed, index) => (
-                <iframe
+                <div
                   key={embed}
-                  src={embed}
-                  className={`recently-node-tooltip-spotify ${hoveredObject.spotifyEmbeds && hoveredObject.spotifyEmbeds.length > 1 ? 'is-compact' : ''}`.trim()}
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  title={`${hoveredObject.title} Spotify player ${index + 1}`}
-                />
+                  className={`recently-node-tooltip-spotify-frame ${hoveredObject.spotifyEmbeds && hoveredObject.spotifyEmbeds.length > 1 ? 'is-compact' : ''}`.trim()}
+                >
+                  <iframe
+                    src={embed}
+                    className="recently-node-tooltip-spotify"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    title={`${hoveredObject.title} Spotify player ${index + 1}`}
+                  />
+                </div>
               ))}
             </div>
           ) : null}
