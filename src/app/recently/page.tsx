@@ -68,13 +68,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     item: 'NIKI + GIVĒON',
     description: 'Had these on repeat all week',
     date: 'This week',
-    image: '/recently/music-every-summertime.jpg',
-    // Warm sunset tone from the NIKI cover - fills the iframe’s rounded-corner gaps.
-    spotifyBackdrop: '#c47868',
-    spotifyEmbeds: [
-      'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
-      'https://open.spotify.com/embed/track/50otYQj8x1wp6HpdRrLXpY?utm_source=generator&theme=0',
-    ],
+    image: '/recently/music-niki-giveon.jpg',
     links: [
       { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'NIKI - Every Summertime' },
       { url: 'https://open.spotify.com/track/50otYQj8x1wp6HpdRrLXpY', text: 'GIVĒON - JEZEBEL' },
@@ -129,7 +123,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     item: 'Deep 3 + David Senra',
     description: 'Deep 3 on LeBron, then Senra talking to the Groq founder',
     date: 'This week',
-    image: '/recently/podcast-deep3.jpg',
+    image: '/recently/podcast-deep3-senra.jpg',
     links: [
       {
         url: 'https://podcasts.apple.com/us/podcast/lebron-james-is-leaving-the-lakers-emergency-pod/id1657940794?i=1000774883125',
@@ -277,8 +271,8 @@ export default function Recently() {
     try {
       const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
       const looksCurrent = customRecently.some((item) => (
-        Boolean(item.spotifyBackdrop)
-        || item.image === '/recently/coffee-pour-over.jpg'
+        item.image === '/recently/music-niki-giveon.jpg'
+        || item.image === '/recently/podcast-deep3-senra.jpg'
         || item.item?.toLowerCase().includes('favourite photo')
       ))
       if (customRecently.length > 0 && looksCurrent) {
@@ -411,11 +405,6 @@ export default function Recently() {
 
     return deskIcons.map((icon) => {
       const links = getItemLinks(icon.item)
-      const embeds = icon.item?.spotifyEmbeds?.length
-        ? icon.item.spotifyEmbeds
-        : icon.item?.spotifyEmbed
-          ? [icon.item.spotifyEmbed]
-          : undefined
       return {
         id: icon.id,
         kind: icon.kind,
@@ -425,9 +414,6 @@ export default function Recently() {
         description: icon.item?.description || icon.fallbackDescription,
         emoji: icon.item?.emoji?.trim() || undefined,
         image: getPrimaryImage(icon.item),
-        spotifyEmbed: embeds?.[0],
-        spotifyEmbeds: embeds,
-        spotifyBackdrop: icon.item?.spotifyBackdrop,
         link: links[0],
         links,
       }

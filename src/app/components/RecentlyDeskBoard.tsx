@@ -565,37 +565,8 @@ function DeskObjectsLayer({
             ✕
           </button>
 
-          {hoveredObject.image && !(hoveredObject.spotifyEmbeds?.length || hoveredObject.spotifyEmbed) && (
+          {hoveredObject.image ? (
             <img src={hoveredObject.image} alt={hoveredObject.title} className="recently-node-tooltip-media" />
-          )}
-
-          {(hoveredObject.spotifyEmbeds?.length
-            ? hoveredObject.spotifyEmbeds
-            : hoveredObject.spotifyEmbed
-              ? [hoveredObject.spotifyEmbed]
-              : []
-          ).length > 0 ? (
-            <div className="recently-node-tooltip-spotify-stack">
-              {(hoveredObject.spotifyEmbeds?.length
-                ? hoveredObject.spotifyEmbeds
-                : hoveredObject.spotifyEmbed
-                  ? [hoveredObject.spotifyEmbed]
-                  : []
-              ).map((embed, index) => (
-                <div
-                  key={embed}
-                  className={`recently-node-tooltip-spotify-frame ${hoveredObject.spotifyEmbeds && hoveredObject.spotifyEmbeds.length > 1 ? 'is-compact' : ''}`.trim()}
-                >
-                  <iframe
-                    src={embed}
-                    className="recently-node-tooltip-spotify"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    title={`${hoveredObject.title} Spotify player ${index + 1}`}
-                  />
-                </div>
-              ))}
-            </div>
           ) : null}
 
           <div className="recently-node-tooltip-body">
