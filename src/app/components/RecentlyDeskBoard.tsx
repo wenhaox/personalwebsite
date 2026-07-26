@@ -575,22 +575,7 @@ function DeskObjectsLayer({
               ? [hoveredObject.spotifyEmbed]
               : []
           ).length > 0 ? (
-            <div
-              className="recently-node-tooltip-spotify-stack"
-              style={
-                hoveredObject.spotifyBackdrop
-                  ? ({ '--spotify-backdrop': hoveredObject.spotifyBackdrop } as CSSProperties)
-                  : undefined
-              }
-            >
-              {hoveredObject.image ? (
-                <img
-                  src={hoveredObject.image}
-                  alt=""
-                  aria-hidden="true"
-                  className="recently-node-tooltip-spotify-wash"
-                />
-              ) : null}
+            <div className="recently-node-tooltip-spotify-stack">
               {(hoveredObject.spotifyEmbeds?.length
                 ? hoveredObject.spotifyEmbeds
                 : hoveredObject.spotifyEmbed

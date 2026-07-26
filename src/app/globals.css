@@ -4108,22 +4108,16 @@ body.is-desk-dragging .recently-node-tooltip {
   position: relative;
   flex: 0 0 auto;
   width: 100%;
-  isolation: isolate;
-  background: var(--spotify-backdrop, #121212);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #121212;
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
   overflow: hidden;
 }
 
 .recently-node-tooltip-spotify-wash {
-  position: absolute;
-  inset: -18%;
-  width: 136%;
-  height: 136%;
-  object-fit: cover;
-  filter: blur(22px) saturate(1.25);
-  opacity: 0.88;
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 .recently-node-tooltip-spotify-frame {
@@ -4132,21 +4126,33 @@ body.is-desk-dragging .recently-node-tooltip {
   width: 100%;
   height: 152px;
   overflow: hidden;
-  background: var(--spotify-backdrop, #121212);
+  background: #121212;
+  /* Kill the seam between stacked rounded Spotify cards. */
+  margin-bottom: -14px;
+}
+
+.recently-node-tooltip-spotify-frame:last-child {
+  margin-bottom: 0;
 }
 
 .recently-node-tooltip-spotify-frame.is-compact {
-  height: 80px;
+  height: 72px;
+  margin-bottom: -18px;
+}
+
+.recently-node-tooltip-spotify-frame.is-compact:last-child {
+  margin-bottom: 0;
 }
 
 .recently-node-tooltip-spotify {
   position: absolute;
-  /* Scale past Spotify’s built-in radius so white corner gaps get clipped away. */
-  inset: -10% -6%;
-  width: 112%;
-  height: 120%;
+  /* Crop past Spotify’s 12px radius + internal padding so no light gaps remain. */
+  top: -12px;
+  left: -14px;
+  width: calc(100% + 28px);
+  height: calc(100% + 24px);
   border: 0;
-  background: transparent;
+  background: #121212;
 }
 
 .recently-node-tooltip-body {
@@ -4844,11 +4850,18 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-node-tooltip-spotify-frame {
-    height: 100px;
+    height: 96px;
+    margin-bottom: -12px;
   }
 
   .recently-node-tooltip-spotify-frame.is-compact {
-    height: 76px;
+    height: 68px;
+    margin-bottom: -16px;
+  }
+
+  .recently-node-tooltip-spotify-frame:last-child,
+  .recently-node-tooltip-spotify-frame.is-compact:last-child {
+    margin-bottom: 0;
   }
 
   .recently-node-tooltip-media {
