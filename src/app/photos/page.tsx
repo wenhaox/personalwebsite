@@ -763,7 +763,7 @@ function PhotographyClient() {
           <div className="photo-collage-shell">
             <MasonryPhotoAlbum
               photos={collagePhotos}
-              spacing={8}
+              spacing={6}
               columns={(containerWidth) => {
                 if (containerWidth < 520) return 2
                 if (containerWidth < 900) return 3
