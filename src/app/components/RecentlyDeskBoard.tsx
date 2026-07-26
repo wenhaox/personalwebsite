@@ -27,6 +27,7 @@ export interface DeskBoardObject {
   title: string
   subtitle: string
   description: string
+  emoji?: string
   image?: string
   link?: { url: string; text: string }
   links?: Array<{ url: string; text: string }>
@@ -562,6 +563,10 @@ function DeskObjectsLayer({
             ✕
           </button>
 
+          {hoveredObject.image && (
+            <img src={hoveredObject.image} alt={hoveredObject.title} className="recently-node-tooltip-media" />
+          )}
+
           {hoveredObject.spotifyEmbed && (
             <iframe
               src={hoveredObject.spotifyEmbed}
@@ -572,12 +577,13 @@ function DeskObjectsLayer({
             />
           )}
 
-          {!hoveredObject.spotifyEmbed && hoveredObject.image && (
-            <img src={hoveredObject.image} alt={hoveredObject.title} className="recently-node-tooltip-media" />
-          )}
-
           <div className="recently-node-tooltip-body">
-            <p className="recently-node-tooltip-title">{hoveredObject.title}</p>
+            <p className="recently-node-tooltip-title">
+              {hoveredObject.emoji ? (
+                <span className="recently-node-tooltip-emoji" aria-hidden="true">{hoveredObject.emoji}</span>
+              ) : null}
+              {hoveredObject.title}
+            </p>
             <p className="recently-node-tooltip-subtitle">{hoveredObject.subtitle}</p>
             <p className="recently-node-tooltip-copy">{hoveredObject.description}</p>
 

@@ -4130,6 +4130,15 @@ body.is-desk-dragging .recently-node-tooltip {
   white-space: nowrap;
 }
 
+.recently-node-tooltip-emoji {
+  display: inline-block;
+  margin-right: 0.35rem;
+  font-style: normal;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 0.9em;
+  vertical-align: -0.05em;
+}
+
 .recently-node-tooltip-subtitle {
   margin-top: 0.14rem;
   font-size: 0.62rem;

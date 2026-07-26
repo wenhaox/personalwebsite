@@ -39,6 +39,7 @@ interface BoardObject {
   title: string
   subtitle: string
   description: string
+  emoji?: string
   image?: string
   link?: RecentlyLink
   links?: RecentlyLink[]
@@ -64,6 +65,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     emoji: '🎧',
     description: 'Soft R&B on loop — summer haze from NIKI, then GIVĒON’s new cut.',
     date: 'This week',
+    image: '/recently/music-every-summertime.jpg',
     spotifyEmbed: 'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator',
     links: [
       { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'Every Summertime on Spotify' },
@@ -76,6 +78,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     emoji: '📺',
     description: 'Still thinking about the split — cold offices, quiet dread, perfect framing.',
     date: 'This week',
+    image: '/recently/tv-severance.jpg',
     link: 'https://www.imdb.com/title/tt11280740/',
     linkText: 'View on IMDb',
   },
@@ -95,6 +98,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     emoji: '📚',
     description: 'Timeless lessons on risk, opportunity, and living a good life.',
     date: 'This week',
+    image: '/recently/book-same-as-ever.jpg',
     link: 'https://www.penguinrandomhouse.com/books/720825/same-as-ever-by-morgan-housel/',
     linkText: 'Book page',
   },
@@ -104,6 +108,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     emoji: '☕',
     description: 'Granada in Angelino Heights / Echo Park, and Endorffeine in Chinatown.',
     date: 'This week',
+    image: '/recently/coffee-matcha.jpg',
     links: [
       {
         url: 'https://maps.google.com/?q=1451+Carroll+Ave,+Los+Angeles,+CA+90026',
@@ -121,6 +126,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     emoji: '🎙️',
     description: 'Deep 3 on LeBron’s decision, then Senra with Jonathan Ross on building Groq.',
     date: 'This week',
+    image: '/recently/podcast-deep3.jpg',
     links: [
       {
         url: 'https://podcasts.apple.com/us/podcast/lebron-james-is-leaving-the-lakers-emergency-pod/id1657940794?i=1000774883125',
@@ -399,6 +405,7 @@ export default function Recently() {
         title: icon.item?.item || icon.fallbackTitle,
         subtitle: icon.item?.date || icon.fallbackSubtitle,
         description: icon.item?.description || icon.fallbackDescription,
+        emoji: icon.item?.emoji,
         image: getPrimaryImage(icon.item),
         spotifyEmbed: icon.kind === 'record' ? icon.item?.spotifyEmbed : undefined,
         link: links[0],
