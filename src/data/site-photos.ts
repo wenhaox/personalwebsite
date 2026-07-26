@@ -1760,6 +1760,7 @@ export const SITE_PHOTOS: PhotoItem[] = [
     description: "Vinyl and wine under an orange lamp",
     createdAt: "2025-03-17T19:08:12.000Z",
     imageUrl: "/photos/174-DSCF8797.jpg",
+    favorite: true,
   },
   {
     id: 175,
@@ -1771,6 +1772,7 @@ export const SITE_PHOTOS: PhotoItem[] = [
     description: "A spinning record at the bar",
     createdAt: "2025-03-17T18:10:46.000Z",
     imageUrl: "/photos/175-DSCF8810.jpg",
+    favorite: true,
   },
   {
     id: 176,
@@ -1782,6 +1784,7 @@ export const SITE_PHOTOS: PhotoItem[] = [
     description: "Candles, bottles, and a wood counter",
     createdAt: "2025-03-17T19:08:18.000Z",
     imageUrl: "/photos/176-DSCF8815.jpg",
+    favorite: true,
   },
   {
     id: 177,
@@ -1839,5 +1842,6 @@ export const SITE_PHOTOS: PhotoItem[] = [
     description: "Looking out from a streetcar window",
     createdAt: "2025-03-22T00:02:11.000Z",
     imageUrl: "/photos/181-DSCF8941.jpg",
+    favorite: true,
   },
 ]

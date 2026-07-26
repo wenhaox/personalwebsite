@@ -69,7 +69,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Music',
     item: 'NIKI - Every Summertime',
     description: 'Had this on repeat all week',
-    date: 'This week',
+    date: 'this week',
     spotifyEmbed: 'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
     links: [
       { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'Open on Spotify' },
@@ -79,7 +79,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Watching',
     item: 'Severance',
     description: 'Wild plot. Still thinking about it',
-    date: 'This week',
+    date: 'this week',
     image: '/recently/tv-severance.jpg',
     link: 'https://www.imdb.com/title/tt11280740/',
     linkText: 'View on IMDb',
@@ -88,7 +88,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Photo',
     item: 'Favourite photo I took lately',
     description: 'Oregon coast at dusk',
-    date: 'This week',
+    date: 'this week',
     image: '/photos/076-DSCF1105.jpg',
     link: '/photos',
     linkText: 'Open Photos',
@@ -97,7 +97,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Reading',
     item: 'Same as Ever - Morgan Housel',
     description: 'Short chapters, weirdly useful',
-    date: 'This week',
+    date: 'this week',
     image: '/recently/book-same-as-ever.jpg',
     link: 'https://www.penguinrandomhouse.com/books/672339/same-as-ever-by-morgan-housel/',
     linkText: 'Book page',
@@ -106,7 +106,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Coffee',
     item: 'Granada + Endorffeine',
     description: 'Home cafe vibes + crazy good pour-over, solo by choice',
-    date: 'This week',
+    date: 'this week',
     image: '/recently/coffee-pour-over.jpg',
     links: [
       {
@@ -123,7 +123,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Podcast',
     item: 'Deep 3 + David Senra',
     description: 'Deep 3 on LeBron, then Senra talking to the Groq founder',
-    date: 'This week',
+    date: 'this week',
     image: '/recently/podcast-deep3-senra.jpg',
     links: [
       {
@@ -138,16 +138,10 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   },
   {
     category: 'Meme',
-    item: "I'll be there no matter what — Mbappé",
-    description: 'Classic B/R Football energy',
-    date: 'This week',
+    item: 'I will be there no matter what',
+    description: '',
+    date: 'this week',
     image: '/recently/meme-mbappe-no-matter-what.png',
-    links: [
-      {
-        url: 'https://media.giphy.com/media/lZM1XihINads6Jk3lB/giphy.gif',
-        text: 'Jordan Poole reaction GIF',
-      },
-    ],
   },
 ]
 
@@ -292,11 +286,14 @@ export default function Recently() {
     // Prefer shipped desk content. Drop stale local overrides from older drafts.
     try {
       const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
-      const looksCurrent = customRecently.some((item) => (
-        Boolean(item.spotifyEmbed)
-        || item.image === '/recently/podcast-deep3-senra.jpg'
-        || item.item?.toLowerCase().includes('favourite photo')
-      ))
+      const meme = customRecently.find((item) => item.category?.toLowerCase() === 'meme')
+      const looksCurrent = Boolean(
+        meme
+        && meme.image === '/recently/meme-mbappe-no-matter-what.png'
+        && meme.item === 'I will be there no matter what'
+        && !meme.description
+        && !(meme.links?.length || meme.link)
+      )
       if (customRecently.length > 0 && looksCurrent) {
         setItems(customRecently)
       } else if (customRecently.length > 0) {
@@ -374,7 +371,7 @@ export default function Recently() {
         kind: 'record',
         pixelArt: '/pixel-objects/vinyl-player.svg',
         fallbackTitle: 'Now spinning',
-        fallbackSubtitle: 'This week',
+        fallbackSubtitle: 'this week',
         fallbackDescription: 'What I’ve been listening to',
         item: musicItem || pick('Music', 'Audio'),
       },
@@ -383,7 +380,7 @@ export default function Recently() {
         kind: 'camera',
         pixelArt: '/pixel-objects/fujifilm-camera.svg',
         fallbackTitle: 'Favourite photo I took lately',
-        fallbackSubtitle: 'This week',
+        fallbackSubtitle: 'this week',
         fallbackDescription: 'Oregon coast at dusk',
         item: photoItem || pick('Photo', 'Place', 'Archive'),
       },
@@ -392,7 +389,7 @@ export default function Recently() {
         kind: 'movie',
         pixelArt: '/pixel-objects/film-frame.svg',
         fallbackTitle: 'Severance',
-        fallbackSubtitle: 'This week',
+        fallbackSubtitle: 'this week',
         fallbackDescription: 'Wild plot. Still thinking about it',
         item: movieItem || pick('Watching'),
       },
@@ -401,7 +398,7 @@ export default function Recently() {
         kind: 'artifact',
         pixelArt: '/pixel-objects/microphone.svg',
         fallbackTitle: 'Deep 3 + David Senra',
-        fallbackSubtitle: 'This week',
+        fallbackSubtitle: 'this week',
         fallbackDescription: 'What I’ve been listening to',
         item: pick('Podcast', 'Audio'),
       },
@@ -410,7 +407,7 @@ export default function Recently() {
         kind: 'artifact',
         pixelArt: '/pixel-objects/coffee-mug.svg',
         fallbackTitle: 'Granada + Endorffeine',
-        fallbackSubtitle: 'This week',
+        fallbackSubtitle: 'this week',
         fallbackDescription: 'Home cafe vibes + crazy good pour-over, solo by choice',
         item: pick('Coffee'),
       },
@@ -419,7 +416,7 @@ export default function Recently() {
         kind: 'artifact',
         pixelArt: '/pixel-objects/book-stack.svg',
         fallbackTitle: 'Same as Ever - Morgan Housel',
-        fallbackSubtitle: 'This week',
+        fallbackSubtitle: 'this week',
         fallbackDescription: 'Short chapters, weirdly useful',
         item: pick('Reading'),
       },
@@ -427,9 +424,9 @@ export default function Recently() {
         id: 'meme',
         kind: 'artifact',
         pixelArt: '/pixel-objects/postcard.svg',
-        fallbackTitle: "I'll be there no matter what — Mbappé",
-        fallbackSubtitle: 'This week',
-        fallbackDescription: 'Classic B/R Football energy',
+        fallbackTitle: 'I will be there no matter what',
+        fallbackSubtitle: 'this week',
+        fallbackDescription: '',
         item: pick('Meme'),
       },
     ]
@@ -447,7 +444,7 @@ export default function Recently() {
         pixelArt: icon.pixelArt,
         title: icon.item?.item || icon.fallbackTitle,
         subtitle: icon.item?.date || icon.fallbackSubtitle,
-        description: icon.item?.description || icon.fallbackDescription,
+        description: icon.item?.description ?? icon.fallbackDescription,
         emoji: icon.item?.emoji?.trim() || undefined,
         image: getPrimaryImage(icon.item),
         spotifyEmbed: embeds?.[0],

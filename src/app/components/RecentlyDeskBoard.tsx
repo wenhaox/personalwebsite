@@ -105,6 +105,7 @@ function DeskObjectsLayer({
   const shellRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const dragMovedRef = useRef(false)
   const pressIdRef = useRef<string | null>(null)
+  const pointerDownOnKeepRef = useRef(false)
   const dragOriginRef = useRef<{ id: string; x: number; y: number } | null>(null)
   const dragOffsetRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 })
   const layoutRef = useRef(slotLayout)
@@ -190,7 +191,7 @@ function DeskObjectsLayer({
     setTooltipPlacement(null)
   }, [clearCloseTimeout, clearExitTimeout, clearOpenTimeout])
 
-  // Dice / lamp / water should always dismiss the details card.
+  // Dice / lamp / water should dismiss the details card.
   useEffect(() => {
     const clear = () => hideTooltipImmediate()
     window.addEventListener(RECENTLY_SHUFFLE_EVENT, clear)
@@ -357,28 +358,19 @@ function DeskObjectsLayer({
       return
     }
 
-    const onPointerMove = (event: PointerEvent) => {
-      // Click-opened cards stay put — moving across icons shouldn't dismiss them.
-      if (tooltipPinnedRef.current) return
-      if (event.pointerType && event.pointerType !== 'mouse') return
-      const openId = hoveredIdRef.current
-      if (!openId) return
-      if (isPointerOverOpenUi(event.clientX, event.clientY, openId)) {
-        cancelTooltipClose()
-        return
-      }
-      queueTooltipClose()
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null
+      pointerDownOnKeepRef.current = Boolean(
+        target?.closest('.recently-node-shell, .recently-node-tooltip, .recently-mobile-fun-bar, .sidebar-recently-fun-stack, .mobile-nav, nav')
+      )
     }
 
-    const onPointerDownOutside = (event: PointerEvent) => {
+    const onPointerUp = (event: PointerEvent) => {
       if (!hoveredIdRef.current) return
+      if (pressIdRef.current) return
+      if (pointerDownOnKeepRef.current) return
       const target = event.target as HTMLElement | null
-      if (!target) return
-      // Keep open for the card itself or any desk icon (icon press handles open/switch).
-      if (target.closest('.recently-node-tooltip')) return
-      if (target.closest('.recently-node-shell')) return
-      if (target.closest('.recently-iso-object')) return
-      if (target.closest('.recently-object-slot')) return
+      if (target?.closest('.recently-node-tooltip')) return
       hideTooltipImmediate()
     }
 
@@ -386,25 +378,15 @@ function DeskObjectsLayer({
       if (event.key === 'Escape') hideTooltipFast()
     }
 
-    window.addEventListener('pointermove', onPointerMove)
-    window.addEventListener('pointerdown', onPointerDownOutside, true)
+    window.addEventListener('pointerdown', onPointerDown, true)
+    window.addEventListener('pointerup', onPointerUp, true)
     window.addEventListener('keydown', closeTooltipOnEscape)
     return () => {
-      window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerdown', onPointerDownOutside, true)
+      window.removeEventListener('pointerdown', onPointerDown, true)
+      window.removeEventListener('pointerup', onPointerUp, true)
       window.removeEventListener('keydown', closeTooltipOnEscape)
     }
-  }, [
-    cancelTooltipClose,
-    clearCloseTimeout,
-    draggingId,
-    hideTooltipFast,
-    hideTooltipImmediate,
-    hoveredId,
-    isPointerOverOpenUi,
-    isShuffling,
-    queueTooltipClose,
-  ])
+  }, [clearCloseTimeout, draggingId, hideTooltipFast, hideTooltipImmediate, hoveredId, isShuffling])
 
   useEffect(() => () => {
     clearOpenTimeout()
@@ -603,7 +585,9 @@ function DeskObjectsLayer({
               {hoveredObject.title}
             </p>
             <p className="recently-node-tooltip-subtitle">{hoveredObject.subtitle}</p>
-            <p className="recently-node-tooltip-copy">{hoveredObject.description}</p>
+            {hoveredObject.description?.trim() ? (
+              <p className="recently-node-tooltip-copy">{hoveredObject.description}</p>
+            ) : null}
 
             {(hoveredObject.links?.length
               ? hoveredObject.links
