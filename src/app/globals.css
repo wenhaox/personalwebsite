@@ -637,6 +637,13 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
     justify-content: center !important;
     padding: 0 !important;
   }
+
+  /* Connect: keep Pin free — theme toggle flips to the left. */
+  body:has(.connect-page-root) .mobile-theme-toggle,
+  html:has(.connect-page-root) .mobile-theme-toggle {
+    right: auto !important;
+    left: 1rem !important;
+  }
   
   .mobile-theme-toggle span {
     display: flex !important;
