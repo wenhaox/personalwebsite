@@ -51,3 +51,4 @@ next-env.d.ts
 .photo-geo.json
 .photo-thumbs/
 .photo-sheets/
+.photo-venv/
