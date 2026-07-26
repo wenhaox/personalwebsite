@@ -17,7 +17,7 @@ interface RecentlyLink {
 interface RecentlyItem {
   category: string
   item: string
-  emoji: string
+  emoji?: string
   description: string
   date: string
   audioUrl?: string
@@ -66,25 +66,23 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Music',
     item: 'NIKI + GIVĒON',
-    emoji: '🎧',
     description: 'Had these on repeat all week',
     date: 'This week',
     image: '/recently/music-every-summertime.jpg',
-    // Warm sunset tone from the NIKI cover — fills the iframe’s rounded-corner gaps.
+    // Warm sunset tone from the NIKI cover - fills the iframe’s rounded-corner gaps.
     spotifyBackdrop: '#c47868',
     spotifyEmbeds: [
       'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
       'https://open.spotify.com/embed/track/50otYQj8x1wp6HpdRrLXpY?utm_source=generator&theme=0',
     ],
     links: [
-      { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'NIKI — Every Summertime' },
-      { url: 'https://open.spotify.com/track/50otYQj8x1wp6HpdRrLXpY', text: 'GIVĒON — JEZEBEL' },
+      { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'NIKI - Every Summertime' },
+      { url: 'https://open.spotify.com/track/50otYQj8x1wp6HpdRrLXpY', text: 'GIVĒON - JEZEBEL' },
     ],
   },
   {
     category: 'Watching',
     item: 'Severance',
-    emoji: '📺',
     description: 'Binged both seasons in 4 days',
     date: 'This week',
     image: '/recently/tv-severance.jpg',
@@ -93,8 +91,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   },
   {
     category: 'Photo',
-    item: 'Favorite photo lately',
-    emoji: '📷',
+    item: 'Favourite photo I took lately',
     description: 'Oregon coast at dusk',
     date: 'This week',
     image: '/photos/076-DSCF1105.jpg',
@@ -103,9 +100,8 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   },
   {
     category: 'Reading',
-    item: 'Same as Ever — Morgan Housel',
-    emoji: '📚',
-    description: 'Short chapters — weirdly useful',
+    item: 'Same as Ever - Morgan Housel',
+    description: 'Short chapters, weirdly useful',
     date: 'This week',
     image: '/recently/book-same-as-ever.jpg',
     link: 'https://www.penguinrandomhouse.com/books/720825/same-as-ever-by-morgan-housel/',
@@ -114,8 +110,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Coffee',
     item: 'Granada + Endorffeine',
-    emoji: '☕',
-    description: 'Granada is this super cool home cafe in Angelino Heights — Endorffeine is all attention-to-detail pour-over, solo by choice, my dream',
+    description: 'Granada is this super cool home cafe in Angelino Heights, Endorffeine is all attention-to-detail pour-over, solo by choice, my dream',
     date: 'This week',
     image: '/recently/coffee-pour-over.jpg',
     links: [
@@ -132,18 +127,17 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Podcast',
     item: 'Deep 3 + David Senra',
-    emoji: '🎙️',
     description: 'Deep 3 on LeBron, then Senra talking to the Groq founder',
     date: 'This week',
     image: '/recently/podcast-deep3.jpg',
     links: [
       {
         url: 'https://podcasts.apple.com/us/podcast/lebron-james-is-leaving-the-lakers-emergency-pod/id1657940794?i=1000774883125',
-        text: 'Deep 3 — LeBron emergency pod',
+        text: 'Deep 3 - LeBron emergency pod',
       },
       {
         url: 'https://podcasts.apple.com/us/podcast/jonathan-ross-founder-of-groq/id1836497887?i=1000775505304',
-        text: 'David Senra — Jonathan Ross / Groq',
+        text: 'David Senra - Jonathan Ross / Groq',
       },
     ],
   },
@@ -279,12 +273,15 @@ export default function Recently() {
   const [items, setItems] = useState<RecentlyItem[]>([])
 
   useEffect(() => {
-    // Prefer shipped desk content. Drop stale local overrides from older drafts
-    // unless they already include the current Podcast slot.
+    // Prefer shipped desk content. Drop stale local overrides from older drafts.
     try {
       const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
-      const hasPodcast = customRecently.some((item) => item.category?.toLowerCase() === 'podcast')
-      if (customRecently.length > 0 && hasPodcast) {
+      const looksCurrent = customRecently.some((item) => (
+        Boolean(item.spotifyBackdrop)
+        || item.image === '/recently/coffee-pour-over.jpg'
+        || item.item?.toLowerCase().includes('favourite photo')
+      ))
+      if (customRecently.length > 0 && looksCurrent) {
         setItems(customRecently)
       } else if (customRecently.length > 0) {
         localStorage.removeItem('recentlyItems')
@@ -369,7 +366,7 @@ export default function Recently() {
         id: 'camera',
         kind: 'camera',
         pixelArt: '/pixel-objects/fujifilm-camera.svg',
-        fallbackTitle: 'Favorite photo lately',
+        fallbackTitle: 'Favourite photo I took lately',
         fallbackSubtitle: 'This week',
         fallbackDescription: 'Oregon coast at dusk',
         item: photoItem || pick('Photo', 'Place', 'Archive'),
@@ -398,16 +395,16 @@ export default function Recently() {
         pixelArt: '/pixel-objects/coffee-mug.svg',
         fallbackTitle: 'Granada + Endorffeine',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Granada is this super cool home cafe in Angelino Heights — Endorffeine is all attention-to-detail pour-over, solo by choice, my dream',
+        fallbackDescription: 'Granada is this super cool home cafe in Angelino Heights, Endorffeine is all attention-to-detail pour-over, solo by choice, my dream',
         item: pick('Coffee'),
       },
       {
         id: 'book',
         kind: 'artifact',
         pixelArt: '/pixel-objects/book-stack.svg',
-        fallbackTitle: 'Same as Ever — Morgan Housel',
+        fallbackTitle: 'Same as Ever - Morgan Housel',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Short chapters — weirdly useful',
+        fallbackDescription: 'Short chapters, weirdly useful',
         item: pick('Reading'),
       },
     ]
@@ -426,7 +423,7 @@ export default function Recently() {
         title: icon.item?.item || icon.fallbackTitle,
         subtitle: icon.item?.date || icon.fallbackSubtitle,
         description: icon.item?.description || icon.fallbackDescription,
-        emoji: icon.item?.emoji,
+        emoji: icon.item?.emoji?.trim() || undefined,
         image: getPrimaryImage(icon.item),
         spotifyEmbed: embeds?.[0],
         spotifyEmbeds: embeds,
