@@ -111,7 +111,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Coffee',
     item: 'Granada + Endorffeine',
     emoji: '☕',
-    description: 'Granada in Angelino Heights / Echo Park, and Endorffeine in Chinatown.',
+    description: 'Granada is this super cool home cafe in Angelino Heights. Endorffeine is all attention-to-detail pour-over — solo by choice. My dream.',
     date: 'This week',
     image: '/recently/coffee-la-shops.jpg',
     links: [
