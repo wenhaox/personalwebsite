@@ -69,8 +69,8 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     date: 'This week',
     image: '/recently/music-every-summertime.jpg',
     spotifyEmbeds: [
-      'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator',
-      'https://open.spotify.com/embed/track/50otYQj8x1wp6HpdRrLXpY?utm_source=generator',
+      'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
+      'https://open.spotify.com/embed/track/50otYQj8x1wp6HpdRrLXpY?utm_source=generator&theme=0',
     ],
     links: [
       { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'NIKI — Every Summertime' },

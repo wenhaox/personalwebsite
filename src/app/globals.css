@@ -4108,9 +4108,12 @@ body.is-desk-dragging .recently-node-tooltip {
   display: block;
   width: 100%;
   flex: 0 0 auto;
-  height: 140px;
+  height: 152px;
   border: 0;
-  border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
+  /* Spotify’s player is rounded inside a rectangular iframe — fill corners
+     with the same dark surface so the card background doesn’t peek through. */
+  background: #121212;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .recently-node-tooltip-spotify.is-compact {
