@@ -40,7 +40,6 @@ export default async function OpenGraphImage() {
           background: '#1a1a1a',
         }}
       >
-        {/* Full-bleed photo */}
         <img
           src={photoSrc}
           alt=""
@@ -52,102 +51,111 @@ export default async function OpenGraphImage() {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center 42%',
+            objectPosition: 'center 40%',
           }}
         />
 
-        {/* Soft vignette so type stays readable */}
+        {/* Left / bottom wash so type stays readable in iMessage crops */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
             backgroundImage:
-              'linear-gradient(90deg, rgba(12,10,16,0.72) 0%, rgba(12,10,16,0.28) 48%, rgba(12,10,16,0.12) 100%), linear-gradient(0deg, rgba(12,10,16,0.55) 0%, rgba(12,10,16,0.08) 42%, rgba(12,10,16,0.18) 100%)',
+              'linear-gradient(100deg, rgba(10,8,14,0.78) 0%, rgba(10,8,14,0.42) 38%, rgba(10,8,14,0.08) 68%), linear-gradient(0deg, rgba(10,8,14,0.62) 0%, rgba(10,8,14,0.12) 45%, rgba(10,8,14,0.2) 100%)',
           }}
         />
 
-        {/* Content */}
+        {/* Brand row — top left */}
         <div
           style={{
             position: 'absolute',
-            inset: 0,
+            top: 48,
+            left: 56,
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            padding: '52px 56px',
+            alignItems: 'center',
+            gap: 16,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div
+            style={{
+              display: 'flex',
+              width: 36,
+              height: 36,
+              position: 'relative',
+            }}
+          >
             <div
               style={{
-                display: 'flex',
-                width: 28,
-                height: 28,
-                position: 'relative',
+                position: 'absolute',
+                inset: 0,
+                background: '#c4b5fd',
+                transform: 'rotate(45deg)',
               }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: '#c4b5fd',
-                  transform: 'rotate(45deg)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  bottom: 6,
-                  left: 6,
-                  background: '#a855f7',
-                  opacity: 0.9,
-                  transform: 'rotate(45deg)',
-                }}
-              />
-            </div>
+            />
             <div
               style={{
-                display: 'flex',
-                fontSize: 22,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: 'rgba(244,245,239,0.88)',
-                fontWeight: 500,
+                position: 'absolute',
+                top: 7,
+                right: 7,
+                bottom: 7,
+                left: 7,
+                background: '#a855f7',
+                opacity: 0.92,
+                transform: 'rotate(45deg)',
               }}
-            >
-              peterxu.space
-            </div>
+            />
           </div>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 22,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: 'rgba(244,245,239,0.9)',
+              fontWeight: 500,
+            }}
+          >
+            peterxu.space
+          </div>
+        </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 720 }}>
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 92,
-                lineHeight: 0.95,
-                letterSpacing: '-0.035em',
-                color: '#f4f5ef',
-                fontWeight: 600,
-                fontFamily: fontData ? 'Crimson' : 'serif',
-              }}
-            >
-              Peter Xu
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 30,
-                lineHeight: 1.25,
-                color: 'rgba(244,245,239,0.82)',
-                fontWeight: 400,
-                maxWidth: 560,
-              }}
-            >
-              Photos, notes, and what I’m into lately
-            </div>
+        {/* Name block — lower left, stays in most link-preview crops */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 56,
+            bottom: 54,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            maxWidth: 700,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 96,
+              lineHeight: 0.92,
+              letterSpacing: '-0.04em',
+              color: '#f4f5ef',
+              fontWeight: 600,
+              fontFamily: fontData ? 'Crimson' : 'serif',
+            }}
+          >
+            Peter Xu
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 28,
+              lineHeight: 1.3,
+              color: 'rgba(244,245,239,0.84)',
+              fontWeight: 400,
+              maxWidth: 520,
+            }}
+          >
+            Photos, notes, and what I’m into lately
           </div>
         </div>
       </div>
