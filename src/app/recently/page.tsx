@@ -113,7 +113,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     emoji: '☕',
     description: 'Granada is this super cool home cafe in Angelino Heights. Endorffeine is all attention-to-detail pour-over — solo by choice. My dream.',
     date: 'This week',
-    image: '/recently/coffee-la-shops.jpg',
+    image: '/recently/coffee-pour-over.jpg',
     links: [
       {
         url: 'https://maps.google.com/?q=1451+Carroll+Ave,+Los+Angeles,+CA+90026',
