@@ -644,9 +644,18 @@ function PhotographyClient() {
     return values
   }, [filteredByTag, orderBy, photoTimestampMap, sortBy])
 
-  const collagePhotos = useMemo(() => (
-    [...favoritePhotos]
+  const collagePhotos = useMemo(() => {
+    // Group like colors together so the favorites collage reads as color bands.
+    const colorOrder = ['blue', 'green', 'golden', 'warm', 'monochrome']
+    const colorRank = (color: string) => {
+      const index = colorOrder.indexOf(color.toLowerCase())
+      return index === -1 ? colorOrder.length : index
+    }
+
+    return [...favoritePhotos]
       .sort((a, b) => {
+        const byColor = colorRank(a.color) - colorRank(b.color)
+        if (byColor !== 0) return byColor
         const timeA = photoTimestampMap.get(toIdKey(a.id)) || 0
         const timeB = photoTimestampMap.get(toIdKey(b.id)) || 0
         return timeB - timeA
@@ -662,7 +671,7 @@ function PhotographyClient() {
           key: idKey,
         }
       })
-  ), [favoritePhotos, photoTimestampMap])
+  }, [favoritePhotos, photoTimestampMap])
 
   useEffect(() => {
     if (photos.length === 0) return
