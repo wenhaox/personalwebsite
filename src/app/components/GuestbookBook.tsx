@@ -2,6 +2,8 @@
 
 import { type ChangeEvent, type CSSProperties, type FormEvent, type WheelEvent as ReactWheelEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Rnd } from 'react-rnd'
+import { GUESTBOOK_NOTE_COLORS, useGuestbookCompose } from './GuestbookComposeContext'
+import GuestbookComposeControls from './GuestbookComposeControls'
 
 interface GuestbookEntry {
   id: number
@@ -46,14 +48,7 @@ const NOTE_HEIGHT = 118
 const MIN_BOARD_ZOOM = 0.8
 const MAX_BOARD_ZOOM = 1.9
 const BOARD_ZOOM_STEP = 0.1
-const STICKY_COLORS = [
-  '#ffe8a3', // yellow
-  '#ffd0d6', // pink
-  '#c8e7ff', // blue
-  '#d8f5c8', // green
-  '#e6d4ff', // lilac
-  '#ffd8b8', // peach
-]
+const STICKY_COLORS = [...GUESTBOOK_NOTE_COLORS]
 const DECORATIONS_KEY = 'guestboardDecorations:v2'
 const ENTRIES_KEY = 'guestbookEntries:v2'
 const EMOJI_PICKER = ['✨', '🌿', '🫶', '📷', '☕', '🌤️', '🎵', '🧠', '🪩', '💫', '🌼', '🍀']
@@ -140,16 +135,79 @@ const isLikelyImageUrl = (value: string): boolean => (
   /^https?:\/\//i.test(value) || /^data:image\//i.test(value)
 )
 
-const getFallbackNotePosition = (index: number): { x: number; y: number } => {
-  const column = index % 4
-  const row = Math.floor(index / 4)
-  const laneOffset = row % 2 === 0 ? 0 : 28
-  const waveX = Math.round(Math.sin((index + 1) * 1.27) * 22)
-  const waveY = Math.round(Math.cos((index + 1) * 1.41) * 18)
+const NOTE_LAYOUT_REF = { width: 720, height: 460 }
+
+const getFallbackNotePosition = (
+  index: number,
+  boardWidth = NOTE_LAYOUT_REF.width,
+  boardHeight = NOTE_LAYOUT_REF.height
+): { x: number; y: number } => {
+  const limits = getLimitsForDimensions(boardWidth, boardHeight, NOTE_WIDTH, NOTE_HEIGHT)
+  const cols = Math.max(2, Math.min(5, Math.round(boardWidth / 220)))
+  const rows = Math.max(2, Math.ceil((index + 1) / cols))
+  const col = index % cols
+  const row = Math.floor(index / cols)
+  const cellW = limits.maxX / Math.max(cols - 1, 1)
+  const cellH = limits.maxY / Math.max(Math.max(rows, 2) - 1, 1)
+  const laneOffset = row % 2 === 0 ? 0 : cellW * 0.12
+  const waveX = Math.round(Math.sin((index + 1) * 1.27) * Math.min(28, cellW * 0.08))
+  const waveY = Math.round(Math.cos((index + 1) * 1.41) * Math.min(22, cellH * 0.08))
 
   return {
-    x: Math.max(0, 22 + (column * 205) + laneOffset + waveX),
-    y: Math.max(0, 18 + (row * 165) + waveY),
+    x: clamp(Math.round(col * cellW + laneOffset + waveX), limits.minX, limits.maxX),
+    y: clamp(Math.round(row * cellH + waveY), limits.minY, limits.maxY),
+  }
+}
+
+const scaleLegacyPositionToBoard = (
+  x: number,
+  y: number,
+  boardWidth: number,
+  boardHeight: number,
+  itemWidth: number,
+  itemHeight: number
+) => {
+  const next = getLimitsForDimensions(boardWidth, boardHeight, itemWidth, itemHeight)
+  // Values in 0..1.5 are treated as normalized board fractions.
+  if (x >= 0 && x <= 1.5 && y >= 0 && y <= 1.5) {
+    return {
+      x: clamp(Math.round(x * next.maxX), next.minX, next.maxX),
+      y: clamp(Math.round(y * next.maxY), next.minY, next.maxY),
+    }
+  }
+
+  const prev = getLimitsForDimensions(NOTE_LAYOUT_REF.width, NOTE_LAYOUT_REF.height, itemWidth, itemHeight)
+  return {
+    x: scaleAxisPosition(x, prev.maxX, next.maxX),
+    y: scaleAxisPosition(y, prev.maxY, next.maxY),
+  }
+}
+
+const toNormalizedBoardCoord = (value: number, max: number) => {
+  if (max <= 0) return 0
+  return clamp(Number((value / max).toFixed(4)), 0, 1)
+}
+
+const buildPersistableGuestbookPayload = (
+  entries: GuestbookEntry[],
+  decorations: BoardDecoration[],
+  board: HTMLDivElement | null
+) => {
+  const noteLimits = getLimits(board, NOTE_WIDTH, NOTE_HEIGHT)
+  return {
+    entries: entries.map((entry) => ({
+      ...entry,
+      x: typeof entry.x === 'number' ? toNormalizedBoardCoord(entry.x, noteLimits.maxX) : entry.x,
+      y: typeof entry.y === 'number' ? toNormalizedBoardCoord(entry.y, noteLimits.maxY) : entry.y,
+    })),
+    decorations: decorations.map((item) => {
+      const limits = getLimits(board, item.size, item.size)
+      return {
+        ...item,
+        x: toNormalizedBoardCoord(item.x, limits.maxX),
+        y: toNormalizedBoardCoord(item.y, limits.maxY),
+      }
+    }),
   }
 }
 
@@ -262,18 +320,23 @@ export default function GuestbookBook({
 }: GuestbookBookProps) {
   const boardViewportRef = useRef<HTMLDivElement | null>(null)
   const boardRef = useRef<HTMLDivElement | null>(null)
+  const formRef = useRef<HTMLFormElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const photoUrlToggleRef = useRef<HTMLButtonElement | null>(null)
   const photoUrlPopoverRef = useRef<HTMLDivElement | null>(null)
   const remoteSyncTimerRef = useRef<number | null>(null)
   const boardSizeRef = useRef<{ width: number; height: number } | null>(null)
   const noteDragStartRef = useRef<Record<string, { x: number; y: number }>>({})
+  const {
+    noteColor,
+    setBoardReady: setComposeBoardReady,
+    registerPinHandler,
+  } = useGuestbookCompose()
   const [notes, setNotes] = useState<GuestbookNote[]>([])
   const [pendingEntries, setPendingEntries] = useState<GuestbookEntry[]>([])
   const [decorations, setDecorations] = useState<BoardDecoration[]>([])
   const [message, setMessage] = useState('')
   const [messageError, setMessageError] = useState('')
-  const [noteColor, setNoteColor] = useState(STICKY_COLORS[0])
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
   const [customEmoji, setCustomEmoji] = useState('')
   const [isUrlPopoverOpen, setIsUrlPopoverOpen] = useState(false)
@@ -285,7 +348,6 @@ export default function GuestbookBook({
   const [boardZoom, setBoardZoom] = useState(1)
   const [hasMutatedEntries, setHasMutatedEntries] = useState(false)
   const [hasMutatedDecorations, setHasMutatedDecorations] = useState(false)
-
   const [boardReady, setBoardReady] = useState(false)
 
   const zoomLabel = useMemo(() => `${Math.round(boardZoom * 100)}%`, [boardZoom])
@@ -313,6 +375,61 @@ export default function GuestbookBook({
 
     return [...approvedNotes, ...pending]
   }, [notes, pendingEntries])
+
+  useEffect(() => {
+    setComposeBoardReady(true)
+    registerPinHandler(() => {
+      formRef.current?.requestSubmit()
+    })
+    return () => {
+      setComposeBoardReady(false)
+      registerPinHandler(null)
+    }
+  }, [registerPinHandler, setComposeBoardReady])
+
+  useEffect(() => {
+    const syncComposeAlign = () => {
+      const form = formRef.current
+      if (!form || typeof window === 'undefined') return
+      if (!window.matchMedia('(min-width: 1025px)').matches) {
+        document.documentElement.style.removeProperty('--guestbook-compose-align-top')
+        return
+      }
+      const noteField = form.querySelector('.guestbook-note-input-wrap') as HTMLElement | null
+      const rect = (noteField || form).getBoundingClientRect()
+      // Align sidebar palette/pin row with the top of the note field.
+      document.documentElement.style.setProperty(
+        '--guestbook-compose-align-top',
+        `${Math.round(rect.top)}px`
+      )
+    }
+
+    syncComposeAlign()
+    const frame = window.requestAnimationFrame(syncComposeAlign)
+    const timer = window.setTimeout(syncComposeAlign, 120)
+    const late = window.setTimeout(syncComposeAlign, 480)
+    window.addEventListener('resize', syncComposeAlign)
+    window.addEventListener('scroll', syncComposeAlign, true)
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => syncComposeAlign())
+      : null
+    if (resizeObserver && formRef.current) {
+      resizeObserver.observe(formRef.current)
+      const noteField = formRef.current.querySelector('.guestbook-note-input-wrap')
+      if (noteField) resizeObserver.observe(noteField)
+    }
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+      window.clearTimeout(late)
+      window.removeEventListener('resize', syncComposeAlign)
+      window.removeEventListener('scroll', syncComposeAlign, true)
+      resizeObserver?.disconnect()
+      document.documentElement.style.removeProperty('--guestbook-compose-align-top')
+    }
+  }, [boardReady])
 
   useEffect(() => {
     let isCancelled = false
@@ -399,10 +516,9 @@ export default function GuestbookBook({
     }
 
     remoteSyncTimerRef.current = window.setTimeout(() => {
-      void saveGuestbookRemote({
-        entries: entriesPayload,
-        decorations,
-      }).then((result) => {
+      void saveGuestbookRemote(
+        buildPersistableGuestbookPayload(entriesPayload, decorations, boardRef.current)
+      ).then((result) => {
         if (!result.ok || !result.durable) {
           setSubmissionFeedback(result.hint || 'Could not save to the shared guestbook yet.')
           window.setTimeout(() => setSubmissionFeedback(''), 4200)
@@ -452,13 +568,14 @@ export default function GuestbookBook({
           ? measuredHeight
           : (previousBoardSize?.height ?? Math.max(320, NOTE_HEIGHT + 64)),
       }
-      const shouldScalePosition = Boolean(
+      const sizeChanged = Boolean(
         previousBoardSize &&
         (
           Math.abs(previousBoardSize.width - currentBoardSize.width) > 1 ||
           Math.abs(previousBoardSize.height - currentBoardSize.height) > 1
         )
       )
+      const isFirstMeasure = !previousBoardSize
 
       let hasNoteAdjustment = false
       let hasDecorationAdjustment = false
@@ -469,17 +586,30 @@ export default function GuestbookBook({
         const nextLimits = getLimitsForDimensions(currentBoardSize.width, currentBoardSize.height, NOTE_WIDTH, NOTE_HEIGHT)
         const previousLimits = previousBoardSize
           ? getLimitsForDimensions(previousBoardSize.width, previousBoardSize.height, NOTE_WIDTH, NOTE_HEIGHT)
-          : null
+          : getLimitsForDimensions(NOTE_LAYOUT_REF.width, NOTE_LAYOUT_REF.height, NOTE_WIDTH, NOTE_HEIGHT)
 
         const nextNotes = prev.map((note) => {
-          const scaledX = (shouldScalePosition && previousLimits)
-            ? scaleAxisPosition(note.x, previousLimits.maxX, nextLimits.maxX)
-            : note.x
-          const scaledY = (shouldScalePosition && previousLimits)
-            ? scaleAxisPosition(note.y, previousLimits.maxY, nextLimits.maxY)
-            : note.y
-          const nextX = clamp(Math.round(scaledX), nextLimits.minX, nextLimits.maxX)
-          const nextY = clamp(Math.round(scaledY), nextLimits.minY, nextLimits.maxY)
+          let nextX = note.x
+          let nextY = note.y
+
+          if (isFirstMeasure) {
+            const mapped = scaleLegacyPositionToBoard(
+              note.x,
+              note.y,
+              currentBoardSize.width,
+              currentBoardSize.height,
+              NOTE_WIDTH,
+              NOTE_HEIGHT
+            )
+            nextX = mapped.x
+            nextY = mapped.y
+          } else if (sizeChanged && previousLimits) {
+            nextX = scaleAxisPosition(note.x, previousLimits.maxX, nextLimits.maxX)
+            nextY = scaleAxisPosition(note.y, previousLimits.maxY, nextLimits.maxY)
+          }
+
+          nextX = clamp(Math.round(nextX), nextLimits.minX, nextLimits.maxX)
+          nextY = clamp(Math.round(nextY), nextLimits.minY, nextLimits.maxY)
           if (nextX === note.x && nextY === note.y) return note
           hasNoteAdjustment = true
           return {
@@ -499,15 +629,29 @@ export default function GuestbookBook({
           const nextLimits = getLimitsForDimensions(currentBoardSize.width, currentBoardSize.height, item.size, item.size)
           const previousLimits = previousBoardSize
             ? getLimitsForDimensions(previousBoardSize.width, previousBoardSize.height, item.size, item.size)
-            : null
-          const scaledX = (shouldScalePosition && previousLimits)
-            ? scaleAxisPosition(item.x, previousLimits.maxX, nextLimits.maxX)
-            : item.x
-          const scaledY = (shouldScalePosition && previousLimits)
-            ? scaleAxisPosition(item.y, previousLimits.maxY, nextLimits.maxY)
-            : item.y
-          const nextX = clamp(Math.round(scaledX), nextLimits.minX, nextLimits.maxX)
-          const nextY = clamp(Math.round(scaledY), nextLimits.minY, nextLimits.maxY)
+            : getLimitsForDimensions(NOTE_LAYOUT_REF.width, NOTE_LAYOUT_REF.height, item.size, item.size)
+
+          let nextX = item.x
+          let nextY = item.y
+
+          if (isFirstMeasure) {
+            const mapped = scaleLegacyPositionToBoard(
+              item.x,
+              item.y,
+              currentBoardSize.width,
+              currentBoardSize.height,
+              item.size,
+              item.size
+            )
+            nextX = mapped.x
+            nextY = mapped.y
+          } else if (sizeChanged && previousLimits) {
+            nextX = scaleAxisPosition(item.x, previousLimits.maxX, nextLimits.maxX)
+            nextY = scaleAxisPosition(item.y, previousLimits.maxY, nextLimits.maxY)
+          }
+
+          nextX = clamp(Math.round(nextX), nextLimits.minX, nextLimits.maxX)
+          nextY = clamp(Math.round(nextY), nextLimits.minY, nextLimits.maxY)
           if (nextX === item.x && nextY === item.y) return item
           hasDecorationAdjustment = true
           return {
@@ -630,29 +774,65 @@ export default function GuestbookBook({
     const minY = Math.max(limits.minY, 0)
     const maxX = Math.max(limits.maxX, minX)
     const maxY = Math.max(limits.maxY, minY)
+    const boardW = board?.clientWidth || NOTE_LAYOUT_REF.width
+    const boardH = board?.clientHeight || NOTE_LAYOUT_REF.height
+    // Larger windows get a wider usable field and stronger separation.
+    const spread = clamp(Math.min(boardW / NOTE_LAYOUT_REF.width, boardH / NOTE_LAYOUT_REF.height), 0.75, 1.85)
+    const minSeparation = Math.round(Math.min(NOTE_WIDTH, NOTE_HEIGHT) * (0.85 + spread * 0.45))
+
+    let rangeMinX = minX
+    let rangeMinY = minY
+    let rangeMaxX = maxX
+    let rangeMaxY = maxY
 
     if (board && viewport) {
       const visibleWidth = Math.max(viewport.clientWidth / boardZoom, width)
       const visibleHeight = Math.max(viewport.clientHeight / boardZoom, height)
       const viewportStartX = viewport.scrollLeft / boardZoom
       const viewportStartY = viewport.scrollTop / boardZoom
-      const insetX = Math.max(12, Math.min(40, visibleWidth * 0.08))
-      const insetY = Math.max(10, Math.min(30, visibleHeight * 0.08))
-      const visibleMinX = clamp(Math.round(viewportStartX + insetX), minX, maxX)
-      const visibleMinY = clamp(Math.round(viewportStartY + insetY), minY, maxY)
-      const visibleMaxX = clamp(Math.round(viewportStartX + visibleWidth - width - insetX), minX, maxX)
-      const visibleMaxY = clamp(Math.round(viewportStartY + visibleHeight - height - insetY), minY, maxY)
+      const insetX = Math.max(8, Math.min(28, visibleWidth * (0.07 / spread)))
+      const insetY = Math.max(8, Math.min(24, visibleHeight * (0.07 / spread)))
+      rangeMinX = clamp(Math.round(viewportStartX + insetX), minX, maxX)
+      rangeMinY = clamp(Math.round(viewportStartY + insetY), minY, maxY)
+      rangeMaxX = clamp(Math.round(viewportStartX + visibleWidth - width - insetX), minX, maxX)
+      rangeMaxY = clamp(Math.round(viewportStartY + visibleHeight - height - insetY), minY, maxY)
+    }
 
-      return {
-        x: randomBetween(visibleMinX, Math.max(visibleMinX, visibleMaxX)),
-        y: randomBetween(visibleMinY, Math.max(visibleMinY, visibleMaxY)),
+    const occupied = [
+      ...notes.map((note) => ({ x: note.x, y: note.y, w: NOTE_WIDTH, h: NOTE_HEIGHT })),
+      ...pendingEntries.map((entry) => ({
+        x: typeof entry.x === 'number' ? entry.x : 0,
+        y: typeof entry.y === 'number' ? entry.y : 0,
+        w: NOTE_WIDTH,
+        h: NOTE_HEIGHT,
+      })),
+    ]
+
+    let best = {
+      x: randomBetween(rangeMinX, Math.max(rangeMinX, rangeMaxX)),
+      y: randomBetween(rangeMinY, Math.max(rangeMinY, rangeMaxY)),
+      score: -1,
+    }
+
+    for (let attempt = 0; attempt < 14; attempt += 1) {
+      const candidate = {
+        x: randomBetween(rangeMinX, Math.max(rangeMinX, rangeMaxX)),
+        y: randomBetween(rangeMinY, Math.max(rangeMinY, rangeMaxY)),
       }
+      let nearest = Number.POSITIVE_INFINITY
+      for (const item of occupied) {
+        const dx = (candidate.x + width * 0.5) - (item.x + item.w * 0.5)
+        const dy = (candidate.y + height * 0.5) - (item.y + item.h * 0.5)
+        nearest = Math.min(nearest, Math.hypot(dx, dy))
+      }
+      const score = Number.isFinite(nearest) ? nearest : minSeparation * 2
+      if (score > best.score) {
+        best = { ...candidate, score }
+      }
+      if (score >= minSeparation) break
     }
 
-    return {
-      x: randomBetween(minX, maxX),
-      y: randomBetween(minY, maxY),
-    }
+    return { x: best.x, y: best.y }
   }
 
   const updateNotePosition = (id: number, x: number, y: number) => {
@@ -861,10 +1041,9 @@ export default function GuestbookBook({
     setMessage('')
 
     window.setTimeout(() => {
-      void saveGuestbookRemote({
-        entries: [...entriesPayload, newEntry],
-        decorations,
-      }).then((result) => {
+      void saveGuestbookRemote(
+        buildPersistableGuestbookPayload([...entriesPayload, newEntry], decorations, boardRef.current)
+      ).then((result) => {
         if (result.ok && result.durable) {
           setSubmissionFeedback('Sent for approval.')
         } else {
@@ -1164,55 +1343,33 @@ export default function GuestbookBook({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="guestbook-cork-form" noValidate>
-        <div className={`guestbook-note-input-wrap ${messageError ? 'is-invalid' : ''}`}>
-          <textarea
-            value={message}
-            onChange={(e) => {
-              setMessage(e.target.value)
-              if (messageError && e.target.value.trim()) {
-                setMessageError('')
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                e.currentTarget.form?.requestSubmit()
-              }
-            }}
-            rows={compact ? 2 : 3}
-            className="guestbook-note-input"
-            placeholder="Leave an anonymous note..."
-            maxLength={320}
-            aria-invalid={messageError ? 'true' : 'false'}
-          />
-
-          <div className="guestbook-note-toolbar">
-            <div className="guestbook-note-color-picker" role="group" aria-label="Note color">
-              {STICKY_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`guestbook-note-color-swatch ${noteColor === color ? 'is-selected' : ''}`}
-                  style={{ background: color }}
-                  aria-label={`Choose ${color} note`}
-                  aria-pressed={noteColor === color}
-                  onClick={() => setNoteColor(color)}
-                />
-              ))}
-            </div>
-            <button
-              type="submit"
-              className="guestbook-pin-button guestbook-pin-button-inline"
-              aria-label="Pin note"
-              title="Pin note"
-            >
-              📌
-            </button>
+      <form ref={formRef} onSubmit={handleSubmit} className="guestbook-cork-form" noValidate>
+        <div className="guestbook-compose-row">
+          <GuestbookComposeControls layout="sidebar" className="guestbook-compose-with-field" />
+          <div className={`guestbook-note-input-wrap ${messageError ? 'is-invalid' : ''}`}>
+            <textarea
+              value={message}
+              onChange={(e) => {
+                setMessage(e.target.value)
+                if (messageError && e.target.value.trim()) {
+                  setMessageError('')
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  e.currentTarget.form?.requestSubmit()
+                }
+              }}
+              rows={compact ? 2 : 3}
+              className="guestbook-note-input"
+              placeholder="Leave an anonymous note..."
+              maxLength={320}
+              aria-invalid={messageError ? 'true' : 'false'}
+            />
+            {messageError && <div className="guestbook-note-error">{messageError}</div>}
+            <span className="guestbook-note-counter">{message.length}/320</span>
           </div>
-
-          {messageError && <div className="guestbook-note-error">{messageError}</div>}
-          <span className="guestbook-note-counter">{message.length}/320</span>
         </div>
       </form>
     </div>

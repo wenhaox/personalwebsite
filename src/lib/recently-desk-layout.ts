@@ -4,17 +4,17 @@ export interface DeskSurfaceSlot {
   scale?: number
 }
 
-export const DESK_LAYOUT_STORAGE_KEY = 'recently:desk-layout:v10'
+export const DESK_LAYOUT_STORAGE_KEY = 'recently:desk-layout:v12'
 
-/** Default icon placement (captured from a settled local desk). */
+/** Default icon placement — spread across the usable desk surface. */
 export const DEFAULT_DESK_LAYOUT: Record<string, DeskSurfaceSlot> = {
-  record: { x: 0.28, z: 0.74, scale: 0.82 },
-  camera: { x: 0.72, z: 0.62, scale: 0.82 },
-  movie: { x: 0.58, z: 0.86, scale: 0.82 },
-  podcast: { x: 0.86, z: 0.40, scale: 0.82 },
-  coffee: { x: 0.48, z: 0.38, scale: 0.82 },
-  book: { x: 0.30, z: 0.34, scale: 0.82 },
-  meme: { x: 0.42, z: 0.56, scale: 0.82 },
+  record: { x: 0.14, z: 0.80, scale: 0.82 },
+  camera: { x: 0.86, z: 0.80, scale: 0.82 },
+  movie: { x: 0.50, z: 0.92, scale: 0.82 },
+  podcast: { x: 0.82, z: 0.44, scale: 0.82 },
+  coffee: { x: 0.18, z: 0.44, scale: 0.82 },
+  book: { x: 0.36, z: 0.22, scale: 0.82 },
+  meme: { x: 0.66, z: 0.26, scale: 0.82 },
 }
 
 /** Match RecentlyIsometricDesk.deskSlotToWorld margins. */
@@ -161,6 +161,27 @@ export function buildDefaultLayout(
     layout[id] = named ? { ...named } : { ...slots[index % slots.length] }
   })
   return layout
+}
+
+/** Push UV slots toward the desk edges on wider viewports; keep tighter on small screens. */
+export function spreadSlotsForViewport(
+  slots: DeskSurfaceSlot[],
+  viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280
+): DeskSurfaceSlot[] {
+  // 0 on phones → ~1 on large desktops
+  const t = Math.min(1, Math.max(0, (viewportWidth - 640) / 960))
+  const edge = 0.04 + t * 0.08
+  const center = 0.5
+
+  return slots.map((slot) => {
+    const x = center + (slot.x - center) * (1 + t * 0.28)
+    const z = center + (slot.z - center) * (1 + t * 0.22)
+    return clampSlotToDesk({
+      x: Math.min(1 - edge, Math.max(edge, x)),
+      z: Math.min(1 - edge, Math.max(edge, z)),
+      scale: slot.scale,
+    })
+  })
 }
 
 export function loadDeskLayout(

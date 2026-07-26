@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import RecentlyFunControls from '../components/RecentlyFunControls'
+import { spreadSlotsForViewport } from '@/lib/recently-desk-layout'
 
 const RecentlyDeskBoard = dynamic(() => import('../components/RecentlyDeskBoard'), {
   ssr: false,
@@ -52,15 +53,15 @@ interface BoardObject {
 
 const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
 
-// Fixed 6-slot grid with hard gaps so icons never sit on top of each other.
+// Fixed 7-slot grid — spread across the desk so dice spawns feel roomy.
 const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
-  { x: 0.28, z: 0.74, scale: 0.82 },
-  { x: 0.72, z: 0.62, scale: 0.82 },
-  { x: 0.58, z: 0.86, scale: 0.82 },
-  { x: 0.86, z: 0.40, scale: 0.82 },
-  { x: 0.48, z: 0.38, scale: 0.82 },
-  { x: 0.30, z: 0.34, scale: 0.82 },
-  { x: 0.42, z: 0.56, scale: 0.82 },
+  { x: 0.14, z: 0.80, scale: 0.82 },
+  { x: 0.50, z: 0.92, scale: 0.82 },
+  { x: 0.86, z: 0.80, scale: 0.82 },
+  { x: 0.18, z: 0.44, scale: 0.82 },
+  { x: 0.82, z: 0.44, scale: 0.82 },
+  { x: 0.36, z: 0.22, scale: 0.82 },
+  { x: 0.66, z: 0.26, scale: 0.82 },
 ]
 
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
@@ -137,10 +138,10 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   },
   {
     category: 'Meme',
-    item: "let's kiss",
-    description: 'Cat said what we were all thinking',
+    item: "I'll be there no matter what — Mbappé",
+    description: 'Classic B/R Football energy',
     date: 'This week',
-    image: '/recently/meme-lets-kiss.png',
+    image: '/recently/meme-mbappe-no-matter-what.png',
     links: [
       {
         url: 'https://media.giphy.com/media/lZM1XihINads6Jk3lB/giphy.gif',
@@ -278,6 +279,14 @@ export default function Recently() {
   const [rollSeed, setRollSeed] = useState(1)
   const [isReady, setIsReady] = useState(true)
   const [items, setItems] = useState<RecentlyItem[]>([])
+  const [viewportWidth, setViewportWidth] = useState(1280)
+
+  useEffect(() => {
+    const syncViewport = () => setViewportWidth(window.innerWidth)
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+    return () => window.removeEventListener('resize', syncViewport)
+  }, [])
 
   useEffect(() => {
     // Prefer shipped desk content. Drop stale local overrides from older drafts.
@@ -418,9 +427,9 @@ export default function Recently() {
         id: 'meme',
         kind: 'artifact',
         pixelArt: '/pixel-objects/postcard.svg',
-        fallbackTitle: "let's kiss",
+        fallbackTitle: "I'll be there no matter what — Mbappé",
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Cat said what we were all thinking',
+        fallbackDescription: 'Classic B/R Football energy',
         item: pick('Meme'),
       },
     ]
@@ -450,8 +459,8 @@ export default function Recently() {
   }, [movieItem, musicItem, photoItem, recentlyItems])
 
   const shuffledSlots = useMemo(
-    () => shuffleWithSeed(DESK_SLOT_RECTS, rollSeed),
-    [rollSeed]
+    () => shuffleWithSeed(spreadSlotsForViewport(DESK_SLOT_RECTS, viewportWidth), rollSeed),
+    [rollSeed, viewportWidth]
   )
 
   const handleRollShelf = useCallback(() => {

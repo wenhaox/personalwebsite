@@ -5,6 +5,7 @@ import "./globals.css";
 import Navigation from "./components/Navigation";
 import ThemeToggle from "./components/ThemeToggle";
 import PageTransition from "./components/PageTransition";
+import { GuestbookComposeProvider } from "./components/GuestbookComposeContext";
 
 const themeInitScript = `(() => {
   try {
@@ -127,13 +128,15 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body suppressHydrationWarning className={`${geist.variable} ${crimsonText.variable} antialiased`}>
-        <Suspense fallback={navigationFallback}>
-          <Navigation />
-        </Suspense>
-        <main className="ml-80 min-h-screen desktop-main-offset">
-          <PageTransition>{children}</PageTransition>
-        </main>
-        <ThemeToggle />
+        <GuestbookComposeProvider>
+          <Suspense fallback={navigationFallback}>
+            <Navigation />
+          </Suspense>
+          <main className="ml-80 min-h-screen desktop-main-offset">
+            <PageTransition>{children}</PageTransition>
+          </main>
+          <ThemeToggle />
+        </GuestbookComposeProvider>
       </body>
     </html>
   );

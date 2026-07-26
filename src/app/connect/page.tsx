@@ -26,10 +26,10 @@ export default function Connect() {
                 href={item.href}
                 target={item.href.startsWith('http') ? '_blank' : undefined}
                 rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="connect-social-under-link"
+                className="connect-social-under-link sidebar-connect-link"
                 aria-label={item.label}
               >
-                <span className={`connect-social-under-icon ${item.label === 'Email' ? 'is-email' : ''}`}>{item.icon}</span>
+                <span className={`sidebar-connect-icon ${item.label === 'Email' ? 'sidebar-connect-icon-email' : ''}`}>{item.icon}</span>
               </a>
             ))}
           </div>

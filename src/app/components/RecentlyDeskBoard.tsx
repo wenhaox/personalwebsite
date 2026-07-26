@@ -296,19 +296,15 @@ function DeskObjectsLayer({
     const dock = document.querySelector('.recently-popup-dock') as HTMLElement | null
     const funBar = document.querySelector('.recently-mobile-fun-bar') as HTMLElement | null
     const stage = document.querySelector('.recently-board-stage') as HTMLElement | null
-    const gap = 16
+    const gap = 22
 
     const placeAboveFunBar = (funTop: number, ceiling: number) => {
       const nav = document.querySelector('.mobile-nav') as HTMLElement | null
       const navTop = nav?.getBoundingClientRect().top ?? window.innerHeight
-      const navH = nav?.offsetHeight ?? 72
-      const funBarEl = document.querySelector('.recently-mobile-fun-bar') as HTMLElement | null
-      const funH = funBarEl?.offsetHeight ?? 0
-      // Reserve the whole bottom chrome so Connect stays clear of the popup/iframe.
-      const reserved = navH + funH + gap
+      // Always clear the higher chrome edge (fun bar sits above the fixed nav).
       const clearTop = Math.min(funTop, navTop) - gap
-      const bottom = Math.max(reserved, window.innerHeight - clearTop)
-      const maxHeight = Math.max(140, Math.min(340, window.innerHeight - bottom - ceiling - gap))
+      const bottom = Math.max(0, window.innerHeight - clearTop)
+      const maxHeight = Math.max(120, Math.min(300, clearTop - ceiling - gap))
       document.documentElement.style.setProperty('--recently-mobile-popup-max-h', `${maxHeight}px`)
       setTooltipPlacement({
         variant: 'mobile',
@@ -330,12 +326,12 @@ function DeskObjectsLayer({
       return
     }
 
-    document.documentElement.style.setProperty('--recently-mobile-popup-max-h', '22rem')
+    document.documentElement.style.setProperty('--recently-mobile-popup-max-h', '18rem')
     setTooltipPlacement({
       variant: 'mobile',
       left: window.innerWidth / 2,
       top: 0,
-      bottom: 9.5 * 16,
+      bottom: 11 * 16,
     })
   }, [])
 
@@ -375,11 +371,14 @@ function DeskObjectsLayer({
     }
 
     const onPointerDownOutside = (event: PointerEvent) => {
+      if (!hoveredIdRef.current) return
       const target = event.target as HTMLElement | null
       if (!target) return
+      // Keep open for the card itself or any desk icon (icon press handles open/switch).
       if (target.closest('.recently-node-tooltip')) return
       if (target.closest('.recently-node-shell')) return
-      // Nav links / fun controls — close card so Connect stays usable.
+      if (target.closest('.recently-iso-object')) return
+      if (target.closest('.recently-object-slot')) return
       hideTooltipImmediate()
     }
 
@@ -388,11 +387,11 @@ function DeskObjectsLayer({
     }
 
     window.addEventListener('pointermove', onPointerMove)
-    window.addEventListener('pointerdown', onPointerDownOutside)
+    window.addEventListener('pointerdown', onPointerDownOutside, true)
     window.addEventListener('keydown', closeTooltipOnEscape)
     return () => {
       window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerdown', onPointerDownOutside)
+      window.removeEventListener('pointerdown', onPointerDownOutside, true)
       window.removeEventListener('keydown', closeTooltipOnEscape)
     }
   }, [
@@ -573,7 +572,7 @@ function DeskObjectsLayer({
             <img
               src={hoveredObject.image}
               alt={hoveredObject.title}
-              className={`recently-node-tooltip-media ${hoveredObject.image.includes('meme-lets-kiss') ? 'is-contain' : ''}`.trim()}
+              className={`recently-node-tooltip-media ${hoveredObject.image.includes('meme-mbappe') ? 'is-contain' : ''}`.trim()}
             />
           ) : null}
 

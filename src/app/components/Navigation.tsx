@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import RecentlyFunControls from './RecentlyFunControls'
+import GuestbookComposeControls from './GuestbookComposeControls'
 
 type PhotoSort = 'theme' | 'color' | 'location' | 'date'
 
@@ -131,19 +132,24 @@ export default function Navigation() {
         )}
 
         {pathname === '/connect' && (
-          <div className="sidebar-connect-links mobile-hide-photo">
-            {SOCIAL_LINKS.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                target={item.href.startsWith('http') ? '_blank' : undefined}
-                rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="sidebar-connect-link"
-                aria-label={item.label}
-              >
-                <span className={`sidebar-connect-icon ${item.label === 'Email' ? 'sidebar-connect-icon-email' : ''}`}>{item.icon}</span>
-              </a>
-            ))}
+          <div className="sidebar-connect-panel mobile-hide-photo">
+            <div className="sidebar-connect-links">
+              {SOCIAL_LINKS.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target={item.href.startsWith('http') ? '_blank' : undefined}
+                  rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  className="sidebar-connect-link"
+                  aria-label={item.label}
+                >
+                  <span className={`sidebar-connect-icon ${item.label === 'Email' ? 'sidebar-connect-icon-email' : ''}`}>{item.icon}</span>
+                </a>
+              ))}
+            </div>
+            <div className="sidebar-connect-compose-dock">
+              <GuestbookComposeControls layout="sidebar" />
+            </div>
           </div>
         )}
 
