@@ -217,9 +217,25 @@ const saveGuestbookRemote = async (payload: { entries: GuestbookEntry[]; decorat
       body: JSON.stringify(payload),
     })
 
-    return response.ok
+    const data = await response.json().catch(() => ({})) as {
+      durable?: boolean
+      storage?: string
+      hint?: string
+      error?: string
+    }
+
+    if (!response.ok) {
+      return { ok: false, durable: false, hint: data.error || data.hint || 'Could not save guestbook.' }
+    }
+
+    return {
+      ok: true,
+      durable: Boolean(data.durable),
+      hint: typeof data.hint === 'string' ? data.hint : undefined,
+      storage: typeof data.storage === 'string' ? data.storage : undefined,
+    }
   } catch {
-    return false
+    return { ok: false, durable: false, hint: 'Network error while saving guestbook.' }
   }
 }
 
@@ -372,6 +388,11 @@ export default function GuestbookBook({
       void saveGuestbookRemote({
         entries: entriesPayload,
         decorations,
+      }).then((result) => {
+        if (!result.ok || !result.durable) {
+          setSubmissionFeedback(result.hint || 'Could not save to the shared guestbook yet.')
+          window.setTimeout(() => setSubmissionFeedback(''), 4200)
+        }
       })
     }, 420)
 
@@ -903,10 +924,22 @@ export default function GuestbookBook({
 
     setPendingEntries((prev) => [...prev, newEntry])
     setHasMutatedEntries(true)
-    setSubmissionFeedback('Sent for approval.')
+    setSubmissionFeedback('Sending…')
     setMessage('')
 
-    window.setTimeout(() => setSubmissionFeedback(''), 2800)
+    window.setTimeout(() => {
+      void saveGuestbookRemote({
+        entries: [...entriesPayload, newEntry],
+        decorations,
+      }).then((result) => {
+        if (result.ok && result.durable) {
+          setSubmissionFeedback('Sent for approval.')
+        } else {
+          setSubmissionFeedback(result.hint || 'Could not save note on the server.')
+        }
+        window.setTimeout(() => setSubmissionFeedback(''), 4200)
+      })
+    }, 0)
   }
 
   return (

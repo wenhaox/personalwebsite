@@ -68,7 +68,6 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     item: 'NIKI - Every Summertime',
     description: 'Had this on repeat all week',
     date: 'This week',
-    image: '/recently/music-every-summertime.jpg',
     spotifyEmbed: 'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
     links: [
       { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'Open on Spotify' },
@@ -271,7 +270,7 @@ export default function Recently() {
     try {
       const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
       const looksCurrent = customRecently.some((item) => (
-        item.image === '/recently/music-every-summertime.jpg'
+        Boolean(item.spotifyEmbed)
         || item.image === '/recently/podcast-deep3-senra.jpg'
         || item.item?.toLowerCase().includes('favourite photo')
       ))

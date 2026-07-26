@@ -565,7 +565,7 @@ function DeskObjectsLayer({
             ✕
           </button>
 
-          {hoveredObject.image ? (
+          {hoveredObject.image && !(hoveredObject.spotifyEmbeds?.length || hoveredObject.spotifyEmbed) ? (
             <img src={hoveredObject.image} alt={hoveredObject.title} className="recently-node-tooltip-media" />
           ) : null}
 

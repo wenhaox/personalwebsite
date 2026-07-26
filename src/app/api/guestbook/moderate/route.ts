@@ -11,6 +11,8 @@ export const runtime = 'nodejs'
 const getApprovePassword = () => (
   process.env.GUESTBOOK_APPROVE_PASSWORD
   || process.env.ADMIN_PASSWORD
+  // Fallback for older deploys that only set the public admin pin.
+  || process.env.NEXT_PUBLIC_ADMIN_PASSWORD
   || ''
 )
 

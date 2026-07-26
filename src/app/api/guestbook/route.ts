@@ -139,10 +139,24 @@ const upsertStore = async (request: NextRequest) => {
 
   const mode = await writeStore(nextStore)
 
+  if (mode === 'memory' && isProduction) {
+    return NextResponse.json(
+      {
+        ...nextStore,
+        storage: mode,
+        durable: false,
+        error: 'Guestbook storage is not configured on the server.',
+        hint: 'Add UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN in Vercel env, then redeploy.',
+      },
+      {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store' },
+      }
+    )
+  }
+
   return buildResponse(nextStore, mode, {
-    hint: mode === 'memory' && isProduction
-      ? 'Guestbook saved in this browser only until Redis env vars are set on Vercel.'
-      : undefined,
+    hint: undefined,
   })
 }
 
