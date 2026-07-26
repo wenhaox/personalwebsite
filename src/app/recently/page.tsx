@@ -83,7 +83,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Watching',
     item: 'Severance',
-    description: 'Binged both seasons in 4 days',
+    description: 'Binged both seasons in 4 days!',
     date: 'This week',
     image: '/recently/tv-severance.jpg',
     link: 'https://www.imdb.com/title/tt11280740/',
@@ -104,7 +104,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     description: 'Short chapters, weirdly useful',
     date: 'This week',
     image: '/recently/book-same-as-ever.jpg',
-    link: 'https://www.penguinrandomhouse.com/books/720825/same-as-ever-by-morgan-housel/',
+    link: 'https://www.penguinrandomhouse.com/books/672339/same-as-ever-by-morgan-housel/',
     linkText: 'Book page',
   },
   {
@@ -377,7 +377,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/film-frame.svg',
         fallbackTitle: 'Severance',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Binged both seasons in 4 days',
+        fallbackDescription: 'Binged both seasons in 4 days!',
         item: movieItem || pick('Watching'),
       },
       {
