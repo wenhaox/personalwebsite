@@ -4104,16 +4104,21 @@ body.is-desk-dragging .recently-node-tooltip {
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
 }
 
+.recently-node-tooltip-spotify-stack {
+  flex: 0 0 auto;
+  width: 100%;
+  background: #121212;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
+}
+
 .recently-node-tooltip-spotify {
   display: block;
   width: 100%;
-  flex: 0 0 auto;
   height: 152px;
   border: 0;
   /* Spotify’s player is rounded inside a rectangular iframe — fill corners
      with the same dark surface so the card background doesn’t peek through. */
   background: #121212;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .recently-node-tooltip-spotify.is-compact {
