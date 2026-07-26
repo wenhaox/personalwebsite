@@ -4109,60 +4109,13 @@ body.is-desk-dragging .recently-node-tooltip {
   width: 100%;
   background: #121212;
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
-}
-
-.recently-node-tooltip-spotify-switch {
-  display: flex;
-  gap: 0.35rem;
-  padding: 0.45rem 0.55rem 0.2rem;
-  background: #121212;
-}
-
-.recently-node-tooltip-spotify-tab {
-  appearance: none;
-  border: 0;
-  border-radius: 0.35rem;
-  padding: 0.28rem 0.55rem;
-  font-size: 0.62rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.06);
-  cursor: pointer;
-}
-
-.recently-node-tooltip-spotify-tab.is-active {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.recently-node-tooltip-spotify-stack {
-  display: none;
-}
-
-.recently-node-tooltip-spotify-wash {
-  display: none;
-}
-
-.recently-node-tooltip-spotify-frame {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 152px;
   overflow: hidden;
-  background: #121212;
-}
-
-.recently-node-tooltip-spotify-frame.is-compact {
-  height: 80px;
 }
 
 .recently-node-tooltip-spotify {
-  position: absolute;
-  top: -10px;
-  left: -12px;
-  width: calc(100% + 24px);
-  height: calc(100% + 20px);
+  display: block;
+  width: 100%;
+  height: 80px;
   border: 0;
   background: #121212;
 }
@@ -4861,11 +4814,7 @@ body.is-desk-dragging .recently-node-tooltip {
     padding-top: 0;
   }
 
-  .recently-node-tooltip-spotify-frame {
-    height: 96px;
-  }
-
-  .recently-node-tooltip-spotify-frame.is-compact {
+  .recently-node-tooltip-spotify {
     height: 76px;
   }
 

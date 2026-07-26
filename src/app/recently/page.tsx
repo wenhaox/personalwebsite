@@ -65,17 +65,13 @@ const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Music',
-    item: 'NIKI + GIVĒON',
-    description: 'Had these on repeat all week',
+    item: 'NIKI - Every Summertime',
+    description: 'Had this on repeat all week',
     date: 'This week',
-    image: '/recently/music-niki-giveon.jpg',
-    spotifyEmbeds: [
-      'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
-      'https://open.spotify.com/embed/track/50otYQj8x1wp6HpdRrLXpY?utm_source=generator&theme=0',
-    ],
+    image: '/recently/music-every-summertime.jpg',
+    spotifyEmbed: 'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
     links: [
-      { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'NIKI - Every Summertime' },
-      { url: 'https://open.spotify.com/track/50otYQj8x1wp6HpdRrLXpY', text: 'GIVĒON - JEZEBEL' },
+      { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'Open on Spotify' },
     ],
   },
   {
@@ -275,7 +271,7 @@ export default function Recently() {
     try {
       const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
       const looksCurrent = customRecently.some((item) => (
-        item.image === '/recently/music-niki-giveon.jpg'
+        item.image === '/recently/music-every-summertime.jpg'
         || item.image === '/recently/podcast-deep3-senra.jpg'
         || item.item?.toLowerCase().includes('favourite photo')
       ))
