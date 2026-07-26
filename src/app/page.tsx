@@ -93,7 +93,16 @@ export default function Home() {
           </p>
 
           <p className="about-seq-line about-seq-line-3">
-            Some other things I enjoy: getting outside around blue hour, touring spaces, finding a good drink in a new neighborhood, basketball, sci-fi mysteries, snacking on jelly or popcorn.
+            Some other things I enjoy are getting outside around blue hour, touring spaces, finding a good drink in a new neighborhood,{' '}
+            <a
+              href="https://knowyourmeme.com/memes/jordan-poole-effect-jordan-poole-baddies"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
+            >
+              basketball
+            </a>
+            , sci-fi mysteries, snacking on jelly or popcorn.
           </p>
 
           <p className="about-seq-line about-seq-line-4">

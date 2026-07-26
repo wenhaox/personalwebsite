@@ -60,6 +60,7 @@ const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
   { x: 0.86, z: 0.40, scale: 0.82 },
   { x: 0.48, z: 0.38, scale: 0.82 },
   { x: 0.30, z: 0.34, scale: 0.82 },
+  { x: 0.42, z: 0.56, scale: 0.82 },
 ]
 
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
@@ -131,6 +132,23 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
       {
         url: 'https://podcasts.apple.com/us/podcast/jonathan-ross-founder-of-groq/id1836497887?i=1000775505304',
         text: 'David Senra - Jonathan Ross / Groq',
+      },
+    ],
+  },
+  {
+    category: 'Meme',
+    item: 'Jordan Poole Effect',
+    description: 'Warriors brainrot. Still funny every time',
+    date: 'This week',
+    image: '/recently/meme-poole-effect.jpg',
+    links: [
+      {
+        url: 'https://knowyourmeme.com/memes/jordan-poole-effect-jordan-poole-baddies',
+        text: 'Poole Effect on KYM',
+      },
+      {
+        url: 'https://www.nba.com/warriors',
+        text: 'Warriors',
       },
     ],
   },
@@ -399,6 +417,15 @@ export default function Recently() {
         fallbackSubtitle: 'This week',
         fallbackDescription: 'Short chapters, weirdly useful',
         item: pick('Reading'),
+      },
+      {
+        id: 'meme',
+        kind: 'artifact',
+        pixelArt: '/pixel-objects/postcard.svg',
+        fallbackTitle: 'Jordan Poole Effect',
+        fallbackSubtitle: 'This week',
+        fallbackDescription: 'Warriors brainrot. Still funny every time',
+        item: pick('Meme'),
       },
     ]
 
