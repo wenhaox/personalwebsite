@@ -267,6 +267,20 @@ html.theme-switching *::after {
   transform: translateY(0) scale(0.96);
 }
 
+/* Connect: theme toggle on the left so it doesn't cover the Pin control */
+body:has(.connect-page-root) .theme-toggle-icon-only,
+html:has(.connect-page-root) .theme-toggle-icon-only {
+  right: auto;
+  left: 2rem;
+}
+
+@media (min-width: 1025px) {
+  body:has(.connect-page-root) .theme-toggle-icon-only,
+  html:has(.connect-page-root) .theme-toggle-icon-only {
+    left: calc(20rem + 1.5rem);
+  }
+}
+
 /* Hide theme toggle while a photo lightbox is open. */
 body.photo-lightbox-open .theme-toggle-icon-only,
 html:has(.photo-lightbox) .theme-toggle-icon-only {
