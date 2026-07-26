@@ -81,7 +81,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Watching',
     item: 'Severance',
     emoji: '📺',
-    description: 'Can’t stop thinking about this one.',
+    description: 'Binged both seasons in 4 days.',
     date: 'This week',
     image: '/recently/tv-severance.jpg',
     link: 'https://www.imdb.com/title/tt11280740/',
@@ -111,9 +111,9 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Coffee',
     item: 'Granada + Endorffeine',
     emoji: '☕',
-    description: 'Two spots in LA I’ve been going back to.',
+    description: 'Granada in Angelino Heights / Echo Park, and Endorffeine in Chinatown.',
     date: 'This week',
-    image: '/recently/coffee-matcha.jpg',
+    image: '/recently/coffee-la-shops.jpg',
     links: [
       {
         url: 'https://maps.google.com/?q=1451+Carroll+Ave,+Los+Angeles,+CA+90026',
@@ -369,7 +369,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/film-frame.svg',
         fallbackTitle: 'Severance',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Can’t stop thinking about this one.',
+        fallbackDescription: 'Binged both seasons in 4 days.',
         item: movieItem || pick('Watching'),
       },
       {
@@ -387,7 +387,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/coffee-mug.svg',
         fallbackTitle: 'Granada + Endorffeine',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Two spots in LA I’ve been going back to.',
+        fallbackDescription: 'Granada in Angelino Heights / Echo Park, and Endorffeine in Chinatown.',
         item: pick('Coffee'),
       },
       {
