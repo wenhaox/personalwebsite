@@ -22,6 +22,7 @@ interface RecentlyItem {
   date: string
   audioUrl?: string
   spotifyEmbed?: string
+  spotifyEmbeds?: string[]
   podcastEmbed?: string
   image?: string
   images?: string[]
@@ -44,6 +45,7 @@ interface BoardObject {
   link?: RecentlyLink
   links?: RecentlyLink[]
   spotifyEmbed?: string
+  spotifyEmbeds?: string[]
 }
 
 const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
@@ -61,15 +63,18 @@ const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Music',
-    item: 'NIKI — Every Summertime / GIVĒON — JEZEBEL',
+    item: 'NIKI + GIVĒON',
     emoji: '🎧',
     description: 'Had these on repeat all week.',
     date: 'This week',
     image: '/recently/music-every-summertime.jpg',
-    spotifyEmbed: 'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator',
+    spotifyEmbeds: [
+      'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator',
+      'https://open.spotify.com/embed/track/50otYQj8x1wp6HpdRrLXpY?utm_source=generator',
+    ],
     links: [
-      { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'Every Summertime on Spotify' },
-      { url: 'https://open.spotify.com/track/50otYQj8x1wp6HpdRrLXpY', text: 'JEZEBEL on Spotify' },
+      { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'NIKI — Every Summertime' },
+      { url: 'https://open.spotify.com/track/50otYQj8x1wp6HpdRrLXpY', text: 'GIVĒON — JEZEBEL' },
     ],
   },
   {
@@ -84,9 +89,9 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   },
   {
     category: 'Photo',
-    item: 'Oregon Dusk',
+    item: 'Favorite photo lately',
     emoji: '📷',
-    description: 'Caught this on the coast at sunset.',
+    description: 'Oregon coast at dusk.',
     date: 'This week',
     image: '/photos/076-DSCF1105.jpg',
     link: '/photos',
@@ -353,9 +358,9 @@ export default function Recently() {
         id: 'camera',
         kind: 'camera',
         pixelArt: '/pixel-objects/fujifilm-camera.svg',
-        fallbackTitle: 'Oregon Dusk',
+        fallbackTitle: 'Favorite photo lately',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Caught this on the coast at sunset.',
+        fallbackDescription: 'Oregon coast at dusk.',
         item: photoItem || pick('Photo', 'Place', 'Archive'),
       },
       {
@@ -398,6 +403,11 @@ export default function Recently() {
 
     return deskIcons.map((icon) => {
       const links = getItemLinks(icon.item)
+      const embeds = icon.item?.spotifyEmbeds?.length
+        ? icon.item.spotifyEmbeds
+        : icon.item?.spotifyEmbed
+          ? [icon.item.spotifyEmbed]
+          : undefined
       return {
         id: icon.id,
         kind: icon.kind,
@@ -407,7 +417,8 @@ export default function Recently() {
         description: icon.item?.description || icon.fallbackDescription,
         emoji: icon.item?.emoji,
         image: getPrimaryImage(icon.item),
-        spotifyEmbed: icon.kind === 'record' ? icon.item?.spotifyEmbed : undefined,
+        spotifyEmbed: embeds?.[0],
+        spotifyEmbeds: embeds,
         link: links[0],
         links,
       }

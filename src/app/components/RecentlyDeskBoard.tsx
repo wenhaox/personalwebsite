@@ -32,6 +32,7 @@ export interface DeskBoardObject {
   link?: { url: string; text: string }
   links?: Array<{ url: string; text: string }>
   spotifyEmbed?: string
+  spotifyEmbeds?: string[]
 }
 
 interface ObjectPresentation {
@@ -563,19 +564,25 @@ function DeskObjectsLayer({
             ✕
           </button>
 
-          {hoveredObject.image && (
+          {hoveredObject.image && !(hoveredObject.spotifyEmbeds?.length || hoveredObject.spotifyEmbed) && (
             <img src={hoveredObject.image} alt={hoveredObject.title} className="recently-node-tooltip-media" />
           )}
 
-          {hoveredObject.spotifyEmbed && (
+          {(hoveredObject.spotifyEmbeds?.length
+            ? hoveredObject.spotifyEmbeds
+            : hoveredObject.spotifyEmbed
+              ? [hoveredObject.spotifyEmbed]
+              : []
+          ).map((embed, index) => (
             <iframe
-              src={hoveredObject.spotifyEmbed}
-              className="recently-node-tooltip-spotify"
+              key={embed}
+              src={embed}
+              className={`recently-node-tooltip-spotify ${hoveredObject.spotifyEmbeds && hoveredObject.spotifyEmbeds.length > 1 ? 'is-compact' : ''}`.trim()}
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               loading="lazy"
-              title={`${hoveredObject.title} Spotify player`}
+              title={`${hoveredObject.title} Spotify player ${index + 1}`}
             />
-          )}
+          ))}
 
           <div className="recently-node-tooltip-body">
             <p className="recently-node-tooltip-title">
