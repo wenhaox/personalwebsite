@@ -3,6 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import SiteWarmup from '@/app/components/SiteWarmup'
 
+const POOLE_GIF = 'https://media.giphy.com/media/lZM1XihINads6Jk3lB/giphy.gif'
+
 const getGreetingByHour = (hour: number): string => {
   if (hour >= 5 && hour < 12) return 'Good morning'
   if (hour >= 12 && hour < 17) return 'Good afternoon'
@@ -12,6 +14,7 @@ const getGreetingByHour = (hour: number): string => {
 export default function Home() {
   const [greeting, setGreeting] = useState<string | null>(null)
   const [align, setAlign] = useState<'center' | 'start'>('center')
+  const [showBasketballGif, setShowBasketballGif] = useState(false)
   const shellRef = useRef<HTMLDivElement>(null)
   const stackRef = useRef<HTMLDivElement>(null)
 
@@ -25,6 +28,17 @@ export default function Home() {
 
     return () => window.clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    if (!showBasketballGif) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowBasketballGif(false)
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [showBasketballGif])
 
   useLayoutEffect(() => {
     const shell = shellRef.current
@@ -94,14 +108,13 @@ export default function Home() {
 
           <p className="about-seq-line about-seq-line-3">
             Some other things I enjoy are getting outside around blue hour, touring spaces, finding a good drink in a new neighborhood,{' '}
-            <a
-              href="https://media.giphy.com/media/lZM1XihINads6Jk3lB/giphy.gif"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="about-quick-link underline decoration-accent hover:text-accent transition-colors"
+            <button
+              type="button"
+              className="about-quick-link about-gif-trigger underline decoration-accent hover:text-accent transition-colors"
+              onClick={() => setShowBasketballGif(true)}
             >
               basketball
-            </a>
+            </button>
             , sci-fi mysteries, snacking on jelly or popcorn.
           </p>
 
@@ -117,6 +130,28 @@ export default function Home() {
           </p>
         </div>
       </div>
+
+      {showBasketballGif ? (
+        <div
+          className="about-gif-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Jordan Poole reaction GIF"
+          onClick={() => setShowBasketballGif(false)}
+        >
+          <div className="about-gif-lightbox-panel" onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              className="about-gif-lightbox-close"
+              aria-label="Close"
+              onClick={() => setShowBasketballGif(false)}
+            >
+              ✕
+            </button>
+            <img src={POOLE_GIF} alt="Jordan Poole funny reaction" className="about-gif-lightbox-media" />
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

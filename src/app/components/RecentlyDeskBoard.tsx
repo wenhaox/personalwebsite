@@ -570,7 +570,11 @@ function DeskObjectsLayer({
           </button>
 
           {hoveredObject.image && !(hoveredObject.spotifyEmbeds?.length || hoveredObject.spotifyEmbed) ? (
-            <img src={hoveredObject.image} alt={hoveredObject.title} className="recently-node-tooltip-media" />
+            <img
+              src={hoveredObject.image}
+              alt={hoveredObject.title}
+              className={`recently-node-tooltip-media ${hoveredObject.image.includes('meme-lets-kiss') ? 'is-contain' : ''}`.trim()}
+            />
           ) : null}
 
           {(hoveredObject.spotifyEmbeds?.length

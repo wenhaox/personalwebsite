@@ -1288,7 +1288,7 @@ export default function GuestbookBook({
       </div>
 
       <form onSubmit={handleSubmit} className="guestbook-cork-form" noValidate>
-        <div className="guestbook-note-input-wrap">
+        <div className={`guestbook-note-input-wrap ${messageError ? 'is-invalid' : ''}`}>
           <textarea
             value={message}
             onChange={(e) => {
@@ -1304,37 +1304,38 @@ export default function GuestbookBook({
               }
             }}
             rows={compact ? 2 : 3}
-            className={`guestbook-note-input ${messageError ? 'guestbook-note-input-invalid' : ''}`}
+            className="guestbook-note-input"
             placeholder="Leave an anonymous note..."
             maxLength={320}
             aria-invalid={messageError ? 'true' : 'false'}
           />
+
+          <div className="guestbook-note-toolbar">
+            <div className="guestbook-note-color-picker" role="group" aria-label="Note color">
+              {STICKY_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`guestbook-note-color-swatch ${noteColor === color ? 'is-selected' : ''}`}
+                  style={{ background: color }}
+                  aria-label={`Choose ${color} note`}
+                  aria-pressed={noteColor === color}
+                  onClick={() => setNoteColor(color)}
+                />
+              ))}
+            </div>
+            <button
+              type="submit"
+              className="guestbook-pin-button guestbook-pin-button-inline"
+              aria-label="Pin note"
+              title="Pin note"
+            >
+              📌
+            </button>
+          </div>
+
           {messageError && <div className="guestbook-note-error">{messageError}</div>}
           <span className="guestbook-note-counter">{message.length}/320</span>
-        </div>
-
-        <div className="guestbook-note-compose-bar">
-          <div className="guestbook-note-color-picker" role="group" aria-label="Note color">
-            {STICKY_COLORS.map((color) => (
-              <button
-                key={color}
-                type="button"
-                className={`guestbook-note-color-swatch ${noteColor === color ? 'is-selected' : ''}`}
-                style={{ background: color }}
-                aria-label={`Choose ${color} note`}
-                aria-pressed={noteColor === color}
-                onClick={() => setNoteColor(color)}
-              />
-            ))}
-          </div>
-          <button
-            type="submit"
-            className="guestbook-pin-button guestbook-pin-button-bar"
-            aria-label="Pin note"
-            title="Pin note"
-          >
-            Pin 📌
-          </button>
         </div>
       </form>
     </div>
