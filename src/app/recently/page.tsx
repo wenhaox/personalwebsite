@@ -110,7 +110,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Coffee',
     item: 'Granada + Endorffeine',
-    description: 'Granada is this super cool home cafe in Angelino Heights, Endorffeine is all attention-to-detail pour-over, solo by choice, my dream',
+    description: 'Granada is this super cool home cafe in Angelino Heights, Endorffeine does pour-over with crazy attention to detail, solo by choice, my dream',
     date: 'This week',
     image: '/recently/coffee-pour-over.jpg',
     links: [
@@ -395,7 +395,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/coffee-mug.svg',
         fallbackTitle: 'Granada + Endorffeine',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Granada is this super cool home cafe in Angelino Heights, Endorffeine is all attention-to-detail pour-over, solo by choice, my dream',
+        fallbackDescription: 'Granada is this super cool home cafe in Angelino Heights, Endorffeine does pour-over with crazy attention to detail, solo by choice, my dream',
         item: pick('Coffee'),
       },
       {
