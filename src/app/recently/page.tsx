@@ -54,12 +54,12 @@ const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
 
 // Fixed 6-slot grid with hard gaps so icons never sit on top of each other.
 const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
-  { x: 0.252, z: 0.754, scale: 0.82 },
-  { x: 0.783, z: 0.564, scale: 0.82 },
-  { x: 0.605, z: 0.9, scale: 0.82 },
-  { x: 0.96, z: 0.318, scale: 0.82 },
-  { x: 0.488, z: 0.281, scale: 0.82 },
-  { x: 0.266, z: 0.223, scale: 0.82 },
+  { x: 0.28, z: 0.68, scale: 0.82 },
+  { x: 0.72, z: 0.58, scale: 0.82 },
+  { x: 0.58, z: 0.78, scale: 0.82 },
+  { x: 0.86, z: 0.36, scale: 0.82 },
+  { x: 0.48, z: 0.34, scale: 0.82 },
+  { x: 0.30, z: 0.30, scale: 0.82 },
 ]
 
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [

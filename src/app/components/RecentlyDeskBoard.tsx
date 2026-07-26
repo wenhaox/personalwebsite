@@ -301,10 +301,14 @@ function DeskObjectsLayer({
     const placeAboveFunBar = (funTop: number, ceiling: number) => {
       const nav = document.querySelector('.mobile-nav') as HTMLElement | null
       const navTop = nav?.getBoundingClientRect().top ?? window.innerHeight
-      // Keep popup clear of dice row and bottom nav.
+      const navH = nav?.offsetHeight ?? 72
+      const funBarEl = document.querySelector('.recently-mobile-fun-bar') as HTMLElement | null
+      const funH = funBarEl?.offsetHeight ?? 0
+      // Reserve the whole bottom chrome so Connect stays clear of the popup/iframe.
+      const reserved = navH + funH + gap
       const clearTop = Math.min(funTop, navTop) - gap
-      const bottom = Math.max(gap, window.innerHeight - clearTop)
-      const maxHeight = Math.max(160, Math.min(420, clearTop - ceiling - gap))
+      const bottom = Math.max(reserved, window.innerHeight - clearTop)
+      const maxHeight = Math.max(140, Math.min(340, window.innerHeight - bottom - ceiling - gap))
       document.documentElement.style.setProperty('--recently-mobile-popup-max-h', `${maxHeight}px`)
       setTooltipPlacement({
         variant: 'mobile',
@@ -375,7 +379,7 @@ function DeskObjectsLayer({
       if (!target) return
       if (target.closest('.recently-node-tooltip')) return
       if (target.closest('.recently-node-shell')) return
-      // Fun controls (and anything else outside the icon) clear the card.
+      // Nav links / fun controls — close card so Connect stays usable.
       hideTooltipImmediate()
     }
 

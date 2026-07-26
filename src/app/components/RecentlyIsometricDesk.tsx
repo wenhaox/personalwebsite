@@ -328,7 +328,7 @@ export function deskSlotToWorld(slot: DeskSurfaceSlot): [number, number, number]
   const usableD = DESK.depth - marginZBack - marginZFront
   const x = (slot.x - 0.5) * usableW
   const z = DESK.z - DESK.depth * 0.5 + marginZBack + slot.z * usableD
-  const y = DESK.height + DESK.thickness * 0.5 + 0.04
+  const y = DESK.height + DESK.thickness * 0.5 - 0.02
   return [x, y, z]
 }
 
