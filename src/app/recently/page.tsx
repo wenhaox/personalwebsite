@@ -76,7 +76,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Watching',
     item: 'Severance',
-    description: 'Binged both seasons in 4 days!',
+    description: 'Wild plot. Still thinking about it',
     date: 'This week',
     image: '/recently/tv-severance.jpg',
     link: 'https://www.imdb.com/title/tt11280740/',
@@ -103,7 +103,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Coffee',
     item: 'Granada + Endorffeine',
-    description: 'Granada is this super cool home cafe in Angelino Heights, Endorffeine does pour-over with crazy attention to detail, solo by choice, my dream',
+    description: 'Home cafe vibes + crazy good pour-over, solo by choice',
     date: 'This week',
     image: '/recently/coffee-pour-over.jpg',
     links: [
@@ -370,7 +370,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/film-frame.svg',
         fallbackTitle: 'Severance',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Binged both seasons in 4 days!',
+        fallbackDescription: 'Wild plot. Still thinking about it',
         item: movieItem || pick('Watching'),
       },
       {
@@ -388,7 +388,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/coffee-mug.svg',
         fallbackTitle: 'Granada + Endorffeine',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Granada is this super cool home cafe in Angelino Heights, Endorffeine does pour-over with crazy attention to detail, solo by choice, my dream',
+        fallbackDescription: 'Home cafe vibes + crazy good pour-over, solo by choice',
         item: pick('Coffee'),
       },
       {

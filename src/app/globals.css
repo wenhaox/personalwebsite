@@ -4095,13 +4095,17 @@ body.is-desk-dragging .recently-node-tooltip {
 .recently-node-tooltip-media {
   display: block;
   width: 100%;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
-  max-height: 8rem;
+  /* Scale with the popup width so photo / book / podcast media share one window height. */
+  height: auto;
   aspect-ratio: 16 / 10;
+  max-height: none;
   object-fit: cover;
+  object-position: center;
   border: 0;
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
+  background: color-mix(in oklab, var(--color-muted) 12%, var(--color-card));
 }
 
 .recently-node-tooltip-spotify-preview {
@@ -4838,7 +4842,7 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-node-tooltip-media {
-    max-height: 6.5rem;
+    max-height: none;
     aspect-ratio: 16 / 10;
   }
 
