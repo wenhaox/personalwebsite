@@ -69,6 +69,10 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     description: 'Had these on repeat all week',
     date: 'This week',
     image: '/recently/music-niki-giveon.jpg',
+    spotifyEmbeds: [
+      'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
+      'https://open.spotify.com/embed/track/50otYQj8x1wp6HpdRrLXpY?utm_source=generator&theme=0',
+    ],
     links: [
       { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'NIKI - Every Summertime' },
       { url: 'https://open.spotify.com/track/50otYQj8x1wp6HpdRrLXpY', text: 'GIVĒON - JEZEBEL' },
@@ -405,6 +409,11 @@ export default function Recently() {
 
     return deskIcons.map((icon) => {
       const links = getItemLinks(icon.item)
+      const embeds = icon.item?.spotifyEmbeds?.length
+        ? icon.item.spotifyEmbeds
+        : icon.item?.spotifyEmbed
+          ? [icon.item.spotifyEmbed]
+          : undefined
       return {
         id: icon.id,
         kind: icon.kind,
@@ -414,6 +423,8 @@ export default function Recently() {
         description: icon.item?.description || icon.fallbackDescription,
         emoji: icon.item?.emoji?.trim() || undefined,
         image: getPrimaryImage(icon.item),
+        spotifyEmbed: embeds?.[0],
+        spotifyEmbeds: embeds,
         link: links[0],
         links,
       }

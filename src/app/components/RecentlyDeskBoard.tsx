@@ -117,9 +117,14 @@ function DeskObjectsLayer({
   const closeTimeoutRef = useRef<number | null>(null)
   const exitTimeoutRef = useRef<number | null>(null)
   const [tooltipVisible, setTooltipVisible] = useState(false)
+  const [spotifyTrackIndex, setSpotifyTrackIndex] = useState(0)
 
   const HOVER_CLOSE_MS = 140
   const EXIT_ANIM_MS = 110
+
+  useEffect(() => {
+    setSpotifyTrackIndex(0)
+  }, [hoveredId])
 
   useEffect(() => {
     layoutRef.current = slotLayout
@@ -569,6 +574,53 @@ function DeskObjectsLayer({
             <img src={hoveredObject.image} alt={hoveredObject.title} className="recently-node-tooltip-media" />
           ) : null}
 
+          {(hoveredObject.spotifyEmbeds?.length
+            ? hoveredObject.spotifyEmbeds
+            : hoveredObject.spotifyEmbed
+              ? [hoveredObject.spotifyEmbed]
+              : []
+          ).length > 0 ? (
+            <div className="recently-node-tooltip-spotify-preview">
+              {(hoveredObject.spotifyEmbeds && hoveredObject.spotifyEmbeds.length > 1) ? (
+                <div className="recently-node-tooltip-spotify-switch" role="tablist" aria-label="Choose track">
+                  {(hoveredObject.links?.length
+                    ? hoveredObject.links
+                    : []
+                  ).slice(0, hoveredObject.spotifyEmbeds.length).map((link, index) => {
+                    const label = link.text.split(' - ')[0]?.trim() || `Track ${index + 1}`
+                    const active = index === spotifyTrackIndex
+                    return (
+                      <button
+                        key={link.url}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        className={`recently-node-tooltip-spotify-tab ${active ? 'is-active' : ''}`.trim()}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          setSpotifyTrackIndex(index)
+                        }}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+              <div className="recently-node-tooltip-spotify-frame is-compact">
+                <iframe
+                  key={(hoveredObject.spotifyEmbeds || [hoveredObject.spotifyEmbed!])[spotifyTrackIndex]}
+                  src={(hoveredObject.spotifyEmbeds || [hoveredObject.spotifyEmbed!])[spotifyTrackIndex]}
+                  className="recently-node-tooltip-spotify"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                  title={`${hoveredObject.title} Spotify player`}
+                />
+              </div>
+            </div>
+          ) : null}
+
           <div className="recently-node-tooltip-body">
             <p className="recently-node-tooltip-title">
               {hoveredObject.emoji ? (
@@ -611,6 +663,7 @@ function DeskObjectsLayer({
     tooltipPinned,
     tooltipPlacement,
     tooltipVisible,
+    spotifyTrackIndex,
   ])
 
   return (

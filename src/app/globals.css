@@ -4104,16 +4104,40 @@ body.is-desk-dragging .recently-node-tooltip {
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
 }
 
-.recently-node-tooltip-spotify-stack {
-  position: relative;
+.recently-node-tooltip-spotify-preview {
   flex: 0 0 auto;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
   background: #121212;
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
-  overflow: hidden;
+}
+
+.recently-node-tooltip-spotify-switch {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.45rem 0.55rem 0.2rem;
+  background: #121212;
+}
+
+.recently-node-tooltip-spotify-tab {
+  appearance: none;
+  border: 0;
+  border-radius: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.recently-node-tooltip-spotify-tab.is-active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.recently-node-tooltip-spotify-stack {
+  display: none;
 }
 
 .recently-node-tooltip-spotify-wash {
@@ -4127,30 +4151,18 @@ body.is-desk-dragging .recently-node-tooltip {
   height: 152px;
   overflow: hidden;
   background: #121212;
-  /* Kill the seam between stacked rounded Spotify cards. */
-  margin-bottom: -14px;
-}
-
-.recently-node-tooltip-spotify-frame:last-child {
-  margin-bottom: 0;
 }
 
 .recently-node-tooltip-spotify-frame.is-compact {
-  height: 72px;
-  margin-bottom: -18px;
-}
-
-.recently-node-tooltip-spotify-frame.is-compact:last-child {
-  margin-bottom: 0;
+  height: 80px;
 }
 
 .recently-node-tooltip-spotify {
   position: absolute;
-  /* Crop past Spotify’s 12px radius + internal padding so no light gaps remain. */
-  top: -12px;
-  left: -14px;
-  width: calc(100% + 28px);
-  height: calc(100% + 24px);
+  top: -10px;
+  left: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 20px);
   border: 0;
   background: #121212;
 }
@@ -4851,17 +4863,10 @@ body.is-desk-dragging .recently-node-tooltip {
 
   .recently-node-tooltip-spotify-frame {
     height: 96px;
-    margin-bottom: -12px;
   }
 
   .recently-node-tooltip-spotify-frame.is-compact {
-    height: 68px;
-    margin-bottom: -16px;
-  }
-
-  .recently-node-tooltip-spotify-frame:last-child,
-  .recently-node-tooltip-spotify-frame.is-compact:last-child {
-    margin-bottom: 0;
+    height: 76px;
   }
 
   .recently-node-tooltip-media {
