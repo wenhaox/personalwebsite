@@ -959,6 +959,7 @@ export const SITE_PHOTOS: PhotoItem[] = [
     description: "A jet wake cutting blue water",
     createdAt: "2024-07-04T10:55:01.000Z",
     imageUrl: "/photos/093-DSCF7882.jpg",
+    favorite: true,
   },
   {
     id: 94,
@@ -1842,6 +1843,18 @@ export const SITE_PHOTOS: PhotoItem[] = [
     description: "Looking out from a streetcar window",
     createdAt: "2025-03-22T00:02:11.000Z",
     imageUrl: "/photos/181-DSCF8941.jpg",
+    favorite: true,
+  },
+  {
+    id: 182,
+    title: "Pier Courts",
+    location: "Brooklyn, NY",
+    aspectRatio: "aspect-[3/2]",
+    color: "monochrome",
+    theme: "landscape",
+    description: "Night basketball under the pier lights",
+    createdAt: "2025-07-26T18:07:00.000Z",
+    imageUrl: "/photos/182-DSCF8277.jpg",
     favorite: true,
   },
 ]
