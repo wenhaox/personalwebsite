@@ -4138,8 +4138,8 @@ body.is-desk-dragging .recently-node-tooltip {
   position: relative;
   flex: 0 0 auto;
   width: 100%;
-  /* Tall enough for play controls; short enough to clip Spotify’s bottom white pad */
-  height: 148px;
+  /* A touch taller so a lighter crop still keeps play controls clear */
+  height: 156px;
   background: #121212 !important;
   border-bottom: 0;
   overflow: hidden;
@@ -4151,16 +4151,18 @@ body.is-desk-dragging .recently-node-tooltip {
 
 .recently-node-tooltip-spotify {
   position: absolute;
-  top: -10px;
-  left: -14px;
-  width: calc(100% + 28px);
-  /* Native compact height; bottom white gets clipped by the shorter preview */
-  height: 152px;
+  /* Zoom out a bit — lighter edge crop so controls aren’t flush to the frame */
+  top: -4px;
+  left: -6px;
+  width: calc(100% + 12px);
+  height: 160px;
   border: 0;
   background: #121212 !important;
   color-scheme: dark;
   border-radius: 0;
   display: block;
+  transform: scale(0.97);
+  transform-origin: center top;
 }
 
 /* Hard cover for any remaining white strip under the player chrome */
@@ -4897,18 +4899,20 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-node-tooltip-spotify-preview {
-    height: 148px;
+    height: 156px;
   }
 
   .recently-node-tooltip-spotify {
-    top: -10px;
-    left: -14px;
-    width: calc(100% + 28px);
-    height: 152px;
+    top: -4px;
+    left: -6px;
+    width: calc(100% + 12px);
+    height: 160px;
+    transform: scale(0.97);
+    transform-origin: center top;
   }
 
   .recently-node-tooltip-spotify-mask {
-    height: 20px;
+    height: 16px;
   }
 
   .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-body {
