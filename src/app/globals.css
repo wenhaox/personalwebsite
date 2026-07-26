@@ -4117,7 +4117,8 @@ body.is-desk-dragging .recently-node-tooltip {
   position: relative;
   flex: 0 0 auto;
   width: 100%;
-  height: 72px;
+  /* Full Spotify compact player height so play controls stay visible */
+  height: 152px;
   background: #121212;
   border-bottom: 0;
   overflow: hidden;
@@ -4129,11 +4130,11 @@ body.is-desk-dragging .recently-node-tooltip {
 
 .recently-node-tooltip-spotify {
   position: absolute;
-  /* Overscan past Spotify’s white padded chrome on every edge */
-  top: -22px;
-  left: -22px;
-  width: calc(100% + 44px);
-  height: 152px;
+  /* Only crop the white rounded corners — keep the play button in frame */
+  top: -12px;
+  left: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
   border: 0;
   background: #121212;
   color-scheme: dark;
@@ -4862,14 +4863,14 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-node-tooltip-spotify-preview {
-    height: 70px;
+    height: 152px;
   }
 
   .recently-node-tooltip-spotify {
-    top: -24px;
-    left: -24px;
-    width: calc(100% + 48px);
-    height: 152px;
+    top: -12px;
+    left: -12px;
+    width: calc(100% + 24px);
+    height: calc(100% + 24px);
   }
 
   .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-body {
