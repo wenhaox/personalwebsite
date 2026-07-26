@@ -32,8 +32,8 @@ export default function Navigation() {
     : null
   const orderChoices = selectedSort === 'date'
     ? [{ value: 'newest', label: 'Newest' }, { value: 'oldest', label: 'Oldest' }, { value: 'most', label: 'Most photos' }]
-    : [{ value: 'az', label: 'A–Z' }, { value: 'za', label: 'Z–A' }, { value: 'most', label: 'Most photos' }]
-  const defaultOrder = selectedSort === 'date' ? 'newest' : 'az'
+    : [{ value: 'most', label: 'Most photos' }, { value: 'az', label: 'A–Z' }, { value: 'za', label: 'Z–A' }]
+  const defaultOrder = selectedSort === 'date' ? 'newest' : 'most'
   const selectedOrder = orderChoices.some((option) => option.value === orderParam)
     ? (orderParam as string)
     : defaultOrder
@@ -91,7 +91,7 @@ export default function Navigation() {
                     : selectedSort === item.key
                   const href = item.key === 'all'
                     ? '/photos'
-                    : `/photos?sort=${item.key}&order=${item.key === 'date' ? 'newest' : 'az'}`
+                    : `/photos?sort=${item.key}&order=${item.key === 'date' ? 'newest' : 'most'}`
                   const label = item.label
 
                   return (

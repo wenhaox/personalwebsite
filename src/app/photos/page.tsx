@@ -36,9 +36,9 @@ const TIME_ORDER_OPTIONS: Array<{ key: OrderBy; label: string }> = [
 ]
 
 const ALPHA_ORDER_OPTIONS: Array<{ key: OrderBy; label: string }> = [
+  { key: 'most', label: 'Most photos' },
   { key: 'az', label: 'A–Z' },
   { key: 'za', label: 'Z–A' },
-  { key: 'most', label: 'Most photos' },
 ]
 
 const getOrderOptions = (sortBy: SortBy | null): Array<{ key: OrderBy; label: string }> => (
@@ -46,7 +46,7 @@ const getOrderOptions = (sortBy: SortBy | null): Array<{ key: OrderBy; label: st
 )
 
 const getDefaultOrder = (sortBy: SortBy | null): OrderBy => (
-  sortBy === 'date' ? 'newest' : 'az'
+  sortBy === 'date' ? 'newest' : 'most'
 )
 
 const DEFAULT_PHOTOS: PhotoItem[] = SITE_PHOTOS
@@ -645,8 +645,8 @@ function PhotographyClient() {
   }, [filteredByTag, orderBy, photoTimestampMap, sortBy])
 
   const collagePhotos = useMemo(() => {
-    // Group like colors together so the favorites collage reads as color bands.
-    const colorOrder = ['blue', 'green', 'golden', 'warm', 'monochrome']
+    // Rainbow band order for the favorites collage.
+    const colorOrder = ['warm', 'golden', 'green', 'blue', 'monochrome']
     const colorRank = (color: string) => {
       const index = colorOrder.indexOf(color.toLowerCase())
       return index === -1 ? colorOrder.length : index
