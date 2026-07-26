@@ -74,7 +74,7 @@ const normalizePhoto = (photo: Partial<PhotoItem>, index: number): PhotoItem => 
   aspectRatio: photo.aspectRatio || 'aspect-[4/3]',
   color: photo.color?.trim() || 'neutral',
   theme: photo.theme?.trim() || 'detail',
-  description: photo.description?.trim() || 'A quiet frame from daily life.',
+  description: photo.description?.trim() || 'A quiet frame from daily life',
   createdAt: typeof photo.createdAt === 'string' ? photo.createdAt : undefined,
   imageUrl: typeof photo.imageUrl === 'string' ? photo.imageUrl : undefined,
   favorite: Boolean(photo.favorite),
