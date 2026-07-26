@@ -4,16 +4,15 @@ export interface DeskSurfaceSlot {
   scale?: number
 }
 
-export const DESK_LAYOUT_STORAGE_KEY = 'recently:desk-layout:v6'
+export const DESK_LAYOUT_STORAGE_KEY = 'recently:desk-layout:v7'
 
 /** Default icon placement (captured from a settled local desk). */
 export const DEFAULT_DESK_LAYOUT: Record<string, DeskSurfaceSlot> = {
   record: { x: 0.252, z: 0.754, scale: 0.82 },
   camera: { x: 0.783, z: 0.564, scale: 0.82 },
   movie: { x: 0.605, z: 0.9, scale: 0.82 },
-  headphones: { x: 0.96, z: 0.318, scale: 0.82 },
+  podcast: { x: 0.96, z: 0.318, scale: 0.82 },
   coffee: { x: 0.488, z: 0.281, scale: 0.82 },
-  gamepad: { x: 0.96, z: 0.96, scale: 0.82 },
   book: { x: 0.266, z: 0.223, scale: 0.82 },
 }
 

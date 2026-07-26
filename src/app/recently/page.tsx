@@ -41,113 +41,96 @@ interface BoardObject {
   description: string
   image?: string
   link?: RecentlyLink
+  links?: RecentlyLink[]
   spotifyEmbed?: string
 }
 
 const RECENTLY_SHUFFLE_EVENT = 'recently:shuffle-shelf'
 
-// Fixed 7-slot grid with hard gaps so icons never sit on top of each other.
+// Fixed 6-slot grid with hard gaps so icons never sit on top of each other.
 const DESK_SLOT_RECTS: Array<{ x: number; z: number; scale: number }> = [
   { x: 0.252, z: 0.754, scale: 0.82 },
   { x: 0.783, z: 0.564, scale: 0.82 },
   { x: 0.605, z: 0.9, scale: 0.82 },
   { x: 0.96, z: 0.318, scale: 0.82 },
   { x: 0.488, z: 0.281, scale: 0.82 },
-  { x: 0.96, z: 0.96, scale: 0.82 },
   { x: 0.266, z: 0.223, scale: 0.82 },
 ]
 
 const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Music',
-    item: 'Rosalia - MOTOMAMI',
+    item: 'NIKI — Every Summertime / GIVĒON — JEZEBEL',
     emoji: '🎧',
-    description: 'The production still feels weird and alive every listen.',
+    description: 'Soft R&B on loop — summer haze from NIKI, then GIVĒON’s new cut.',
     date: 'This week',
-    audioUrl: 'https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3',
-    spotifyEmbed: 'https://open.spotify.com/embed/album/5G2f63n7IPVPPjfNIGih7Q',
-    link: 'https://open.spotify.com/album/5G2f63n7IPVPPjfNIGih7Q',
-    linkText: 'Open in Spotify',
-  },
-  {
-    category: 'Watching',
-    item: 'Perfect Days',
-    emoji: '🎬',
-    description: 'Quiet and detailed. I keep thinking about its pacing and framing.',
-    date: 'Last weekend',
-    image: 'https://picsum.photos/id/1018/900/620',
-    link: 'https://www.imdb.com/title/tt27503384/',
-    linkText: 'View on IMDB',
-  },
-  {
-    category: 'Place',
-    item: 'Golden Gate Park sunrise loop',
-    emoji: '🌅',
-    description: 'Cold air, empty paths, and the best start before laptop hours.',
-    date: 'This morning',
-    images: [
-      'https://picsum.photos/id/1036/800/540',
-      'https://picsum.photos/id/1037/800/540',
-      'https://picsum.photos/id/1038/800/540',
+    spotifyEmbed: 'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator',
+    links: [
+      { url: 'https://open.spotify.com/track/68HocO7fx9z0MgDU0ZPHro', text: 'Every Summertime on Spotify' },
+      { url: 'https://open.spotify.com/track/50otYQj8x1wp6HpdRrLXpY', text: 'JEZEBEL on Spotify' },
     ],
   },
   {
-    category: 'Reading',
-    item: 'The Creative Act',
-    emoji: '📚',
-    description: 'Short sections, slow pace, and surprisingly useful prompts.',
+    category: 'Watching',
+    item: 'Severance',
+    emoji: '📺',
+    description: 'Still thinking about the split — cold offices, quiet dread, perfect framing.',
     date: 'This week',
-    link: 'https://www.penguinrandomhouse.com/books/717356/the-creative-act-by-rick-rubin/',
+    link: 'https://www.imdb.com/title/tt11280740/',
+    linkText: 'View on IMDb',
+  },
+  {
+    category: 'Photo',
+    item: 'Oregon Dusk',
+    emoji: '📷',
+    description: 'A walker on the ridge as the sun drops into the Pacific.',
+    date: 'This week',
+    image: '/photos/076-DSCF1105.jpg',
+    link: '/photos',
+    linkText: 'Open Photos',
+  },
+  {
+    category: 'Reading',
+    item: 'Same as Ever — Morgan Housel',
+    emoji: '📚',
+    description: 'Timeless lessons on risk, opportunity, and living a good life.',
+    date: 'This week',
+    link: 'https://www.penguinrandomhouse.com/books/720825/same-as-ever-by-morgan-housel/',
     linkText: 'Book page',
   },
   {
     category: 'Coffee',
-    item: 'Kenya AB pour-over dial-in',
+    item: 'Granada + Endorffeine',
     emoji: '☕',
-    description: 'Brighter cup at a finer grind and slightly cooler water.',
-    date: 'Today',
-  },
-  {
-    category: 'Field notes',
-    item: 'Seacliff tidepool sketch set',
-    emoji: '🧭',
-    description: 'Small notebook studies from a windy late-afternoon walk.',
-    date: 'Last weekend',
-  },
-  {
-    category: 'Build',
-    item: 'Photo reel interaction cleanup',
-    emoji: '🛠️',
-    description: 'Reducing jitter and making filtered rolls feel more stable.',
-    date: 'Tonight',
-  },
-  {
-    category: 'Audio',
-    item: 'Late-night cassette mix',
-    emoji: '📼',
-    description: 'A mellow tape loop for long editing sessions.',
-    date: 'Yesterday',
-  },
-  {
-    category: 'Archive',
-    item: 'Postcard scan batch',
-    emoji: '✉️',
-    description: 'Digitizing old travel cards and notes.',
+    description: 'Granada in Angelino Heights / Echo Park, and Endorffeine in Chinatown.',
     date: 'This week',
+    links: [
+      {
+        url: 'https://maps.google.com/?q=1451+Carroll+Ave,+Los+Angeles,+CA+90026',
+        text: 'Granada on Maps',
+      },
+      {
+        url: 'https://maps.google.com/?q=Endorffeine+727+N+Broadway+%23127,+Los+Angeles,+CA+90012',
+        text: 'Endorffeine on Maps',
+      },
+    ],
   },
   {
-    category: 'Play',
-    item: 'Retro co-op night',
-    emoji: '🎮',
-    description: 'Quick arcade rounds after work.',
-    date: 'Friday',
-  },
-  {
-    category: 'Desk',
-    item: 'Hourglass focus sprint',
-    emoji: '⏳',
-    description: 'Short timed blocks helped with writing.',
-    date: 'Today',
+    category: 'Podcast',
+    item: 'Deep 3 + David Senra',
+    emoji: '🎙️',
+    description: 'Deep 3 on LeBron’s decision, then Senra with Jonathan Ross on building Groq.',
+    date: 'This week',
+    links: [
+      {
+        url: 'https://podcasts.apple.com/us/podcast/lebron-james-is-leaving-the-lakers-emergency-pod/id1657940794?i=1000774883125',
+        text: 'Deep 3 — LeBron emergency pod',
+      },
+      {
+        url: 'https://podcasts.apple.com/us/podcast/jonathan-ross-founder-of-groq/id1836497887?i=1000775505304',
+        text: 'David Senra — Jonathan Ross / Groq',
+      },
+    ],
   },
 ]
 
@@ -217,6 +200,8 @@ const getObjectPresentation = (pixelArt: string, kind: string): ObjectPresentati
       return { ...base, pixelExtraClass: 'has-coffee-steam', showCoffeeSteam: true }
     case '/pixel-objects/radio.svg':
       return { ...base, motionClass: 'is-radio-wiggle' }
+    case '/pixel-objects/microphone.svg':
+      return { ...base, motionClass: 'is-mic-pulse' }
     case '/pixel-objects/headphones.svg':
       return { ...base, motionClass: 'is-headphones-bob' }
     case '/pixel-objects/gamepad.svg':
@@ -248,6 +233,10 @@ const getPrimaryImage = (item: RecentlyItem | null): string | undefined => {
 const getPrimaryLink = (item: RecentlyItem | null): RecentlyLink | undefined => {
   if (!item) return undefined
 
+  if (Array.isArray(item.links) && item.links[0]?.url) {
+    return item.links[0]
+  }
+
   if (typeof item.link === 'string' && item.link.trim()) {
     return {
       url: item.link,
@@ -255,11 +244,16 @@ const getPrimaryLink = (item: RecentlyItem | null): RecentlyLink | undefined => 
     }
   }
 
-  if (Array.isArray(item.links) && item.links[0]?.url) {
-    return item.links[0]
-  }
-
   return undefined
+}
+
+const getItemLinks = (item: RecentlyItem | null): RecentlyLink[] => {
+  if (!item) return []
+  if (Array.isArray(item.links) && item.links.length > 0) {
+    return item.links.filter((link) => Boolean(link?.url))
+  }
+  const primary = getPrimaryLink(item)
+  return primary ? [primary] : []
 }
 
 export default function Recently() {
@@ -270,8 +264,19 @@ export default function Recently() {
   const [items, setItems] = useState<RecentlyItem[]>([])
 
   useEffect(() => {
-    const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
-    setItems(customRecently)
+    // Prefer shipped desk content. Drop stale local overrides from older drafts
+    // unless they already include the current Podcast slot.
+    try {
+      const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
+      const hasPodcast = customRecently.some((item) => item.category?.toLowerCase() === 'podcast')
+      if (customRecently.length > 0 && hasPodcast) {
+        setItems(customRecently)
+      } else if (customRecently.length > 0) {
+        localStorage.removeItem('recentlyItems')
+      }
+    } catch {
+      // ignore corrupt storage
+    }
     setIsReady(true)
   }, [])
 
@@ -295,12 +300,15 @@ export default function Recently() {
   const movieItem = useMemo(() => (
     recentlyItems.find((item) => {
       const source = `${item.category} ${item.item}`.toLowerCase()
-      return /movie|watch|film|tv/.test(source)
+      return /movie|watch|film|tv|severance/.test(source)
     }) || null
   ), [recentlyItems])
 
   const photoItem = useMemo(() => (
-    recentlyItems.find((item) => Boolean(item.image) || (Array.isArray(item.images) && item.images.length > 0)) || null
+    recentlyItems.find((item) => {
+      const source = `${item.category} ${item.item}`.toLowerCase()
+      return Boolean(item.image) || (Array.isArray(item.images) && item.images.length > 0) || /photo|camera/.test(source)
+    }) || null
   ), [recentlyItems])
 
   const boardObjects = useMemo<BoardObject[]>(() => {
@@ -324,6 +332,7 @@ export default function Recently() {
       fallbackSubtitle: string
       fallbackDescription: string
       item: RecentlyItem | null
+      spotifyEmbed?: string
     }> = [
       {
         id: 'record',
@@ -338,69 +347,64 @@ export default function Recently() {
         id: 'camera',
         kind: 'camera',
         pixelArt: '/pixel-objects/fujifilm-camera.svg',
-        fallbackTitle: 'Current photo obsession',
+        fallbackTitle: 'Oregon Dusk',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Captured recently and still replaying in my head.',
-        item: photoItem || pick('Place', 'Archive'),
+        fallbackDescription: 'A walker on the ridge as the sun drops into the Pacific.',
+        item: photoItem || pick('Photo', 'Place', 'Archive'),
       },
       {
         id: 'movie',
         kind: 'movie',
         pixelArt: '/pixel-objects/film-frame.svg',
-        fallbackTitle: 'Current watch',
-        fallbackSubtitle: 'Recent',
-        fallbackDescription: 'A movie scene I keep thinking about.',
+        fallbackTitle: 'Severance',
+        fallbackSubtitle: 'This week',
+        fallbackDescription: 'A show I keep thinking about.',
         item: movieItem || pick('Watching'),
       },
       {
-        id: 'headphones',
+        id: 'podcast',
         kind: 'artifact',
-        pixelArt: '/pixel-objects/headphones.svg',
-        fallbackTitle: 'Late-night cassette mix',
-        fallbackSubtitle: 'Yesterday',
-        fallbackDescription: 'A mellow tape loop for long editing sessions.',
-        item: pick('Audio', 'Music'),
+        pixelArt: '/pixel-objects/microphone.svg',
+        fallbackTitle: 'Deep 3 + David Senra',
+        fallbackSubtitle: 'This week',
+        fallbackDescription: 'Podcasts in rotation right now.',
+        item: pick('Podcast', 'Audio'),
       },
       {
         id: 'coffee',
         kind: 'artifact',
         pixelArt: '/pixel-objects/coffee-mug.svg',
-        fallbackTitle: 'Kenya AB pour-over dial-in',
-        fallbackSubtitle: 'Today',
-        fallbackDescription: 'Brighter cup at a finer grind and slightly cooler water.',
+        fallbackTitle: 'Granada + Endorffeine',
+        fallbackSubtitle: 'This week',
+        fallbackDescription: 'LA coffee stops worth the pin.',
         item: pick('Coffee'),
-      },
-      {
-        id: 'gamepad',
-        kind: 'artifact',
-        pixelArt: '/pixel-objects/gamepad.svg',
-        fallbackTitle: 'Retro co-op night',
-        fallbackSubtitle: 'Friday',
-        fallbackDescription: 'Quick arcade rounds after work.',
-        item: pick('Play'),
       },
       {
         id: 'book',
         kind: 'artifact',
         pixelArt: '/pixel-objects/book-stack.svg',
-        fallbackTitle: 'The Creative Act',
+        fallbackTitle: 'Same as Ever — Morgan Housel',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Short sections, slow pace, and surprisingly useful prompts.',
+        fallbackDescription: 'Timeless lessons on risk, opportunity, and living a good life.',
         item: pick('Reading'),
       },
     ]
 
-    return deskIcons.map((icon) => ({
-      id: icon.id,
-      kind: icon.kind,
-      pixelArt: icon.pixelArt,
-      title: icon.item?.item || icon.fallbackTitle,
-      subtitle: icon.item?.date || icon.fallbackSubtitle,
-      description: icon.item?.description || icon.fallbackDescription,
-      image: getPrimaryImage(icon.item),
-      spotifyEmbed: icon.kind === 'record' ? icon.item?.spotifyEmbed : undefined,
-      link: getPrimaryLink(icon.item),
-    }))
+    return deskIcons.map((icon) => {
+      const links = getItemLinks(icon.item)
+      return {
+        id: icon.id,
+        kind: icon.kind,
+        pixelArt: icon.pixelArt,
+        title: icon.item?.item || icon.fallbackTitle,
+        subtitle: icon.item?.date || icon.fallbackSubtitle,
+        description: icon.item?.description || icon.fallbackDescription,
+        image: getPrimaryImage(icon.item),
+        spotifyEmbed: icon.kind === 'record' ? icon.item?.spotifyEmbed : undefined,
+        link: links[0],
+        links,
+      }
+    })
   }, [movieItem, musicItem, photoItem, recentlyItems])
 
   const shuffledSlots = useMemo(

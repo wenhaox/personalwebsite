@@ -29,6 +29,7 @@ export interface DeskBoardObject {
   description: string
   image?: string
   link?: { url: string; text: string }
+  links?: Array<{ url: string; text: string }>
   spotifyEmbed?: string
 }
 
@@ -580,16 +581,22 @@ function DeskObjectsLayer({
             <p className="recently-node-tooltip-subtitle">{hoveredObject.subtitle}</p>
             <p className="recently-node-tooltip-copy">{hoveredObject.description}</p>
 
-            {hoveredObject.link && (
+            {(hoveredObject.links?.length
+              ? hoveredObject.links
+              : hoveredObject.link
+                ? [hoveredObject.link]
+                : []
+            ).map((link) => (
               <a
-                href={hoveredObject.link.url}
+                key={`${link.url}-${link.text}`}
+                href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="recently-node-tooltip-link"
               >
-                {hoveredObject.link.text} ↗
+                {link.text} ↗
               </a>
-            )}
+            ))}
           </div>
         </div>,
         document.body
