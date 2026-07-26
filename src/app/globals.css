@@ -4105,9 +4105,10 @@ body.is-desk-dragging .recently-node-tooltip {
 }
 
 .recently-node-tooltip-spotify-preview {
+  position: relative;
   flex: 0 0 auto;
   width: 100%;
-  height: 76px;
+  height: 80px;
   background: #121212;
   border-bottom: 1px solid color-mix(in oklab, var(--color-border) 82%, #cbd5e1);
   overflow: hidden;
@@ -4115,13 +4116,18 @@ body.is-desk-dragging .recently-node-tooltip {
 }
 
 .recently-node-tooltip-spotify {
-  display: block;
-  width: calc(100% + 4px);
-  height: 80px;
-  margin: -1px -2px 0;
+  position: absolute;
+  /* Crop past Spotify’s built-in 12px radius so corners (and white gaps) disappear. */
+  top: -12px;
+  right: -12px;
+  bottom: -12px;
+  left: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
   border: 0;
   background: #121212;
   color-scheme: dark;
+  border-radius: 0;
 }
 
 .recently-node-tooltip-body {
@@ -4819,11 +4825,16 @@ body.is-desk-dragging .recently-node-tooltip {
   }
 
   .recently-node-tooltip-spotify-preview {
-    height: 76px;
+    height: 80px;
   }
 
   .recently-node-tooltip-spotify {
-    height: 80px;
+    top: -12px;
+    right: -12px;
+    bottom: -12px;
+    left: -12px;
+    width: calc(100% + 24px);
+    height: calc(100% + 24px);
   }
 
   .recently-node-tooltip-media {
