@@ -65,7 +65,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Music',
     item: 'NIKI + GIVĒON',
     emoji: '🎧',
-    description: 'Had these on repeat all week.',
+    description: 'Had these on repeat all week',
     date: 'This week',
     image: '/recently/music-every-summertime.jpg',
     spotifyEmbeds: [
@@ -81,7 +81,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Watching',
     item: 'Severance',
     emoji: '📺',
-    description: 'Binged both seasons in 4 days.',
+    description: 'Binged both seasons in 4 days',
     date: 'This week',
     image: '/recently/tv-severance.jpg',
     link: 'https://www.imdb.com/title/tt11280740/',
@@ -91,7 +91,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Photo',
     item: 'Favorite photo lately',
     emoji: '📷',
-    description: 'Oregon coast at dusk.',
+    description: 'Oregon coast at dusk',
     date: 'This week',
     image: '/photos/076-DSCF1105.jpg',
     link: '/photos',
@@ -101,7 +101,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Reading',
     item: 'Same as Ever — Morgan Housel',
     emoji: '📚',
-    description: 'Short chapters. Weirdly useful.',
+    description: 'Short chapters — weirdly useful',
     date: 'This week',
     image: '/recently/book-same-as-ever.jpg',
     link: 'https://www.penguinrandomhouse.com/books/720825/same-as-ever-by-morgan-housel/',
@@ -111,7 +111,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Coffee',
     item: 'Granada + Endorffeine',
     emoji: '☕',
-    description: 'Granada is this super cool home cafe in Angelino Heights. Endorffeine is all attention-to-detail pour-over — solo by choice. My dream.',
+    description: 'Granada is this super cool home cafe in Angelino Heights — Endorffeine is all attention-to-detail pour-over, solo by choice, my dream',
     date: 'This week',
     image: '/recently/coffee-pour-over.jpg',
     links: [
@@ -129,7 +129,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
     category: 'Podcast',
     item: 'Deep 3 + David Senra',
     emoji: '🎙️',
-    description: 'Deep 3 on LeBron, then Senra talking to the Groq founder.',
+    description: 'Deep 3 on LeBron, then Senra talking to the Groq founder',
     date: 'This week',
     image: '/recently/podcast-deep3.jpg',
     links: [
@@ -358,7 +358,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/vinyl-player.svg',
         fallbackTitle: 'Now spinning',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'What I’ve been listening to.',
+        fallbackDescription: 'What I’ve been listening to',
         item: musicItem || pick('Music', 'Audio'),
       },
       {
@@ -367,7 +367,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/fujifilm-camera.svg',
         fallbackTitle: 'Favorite photo lately',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Oregon coast at dusk.',
+        fallbackDescription: 'Oregon coast at dusk',
         item: photoItem || pick('Photo', 'Place', 'Archive'),
       },
       {
@@ -376,7 +376,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/film-frame.svg',
         fallbackTitle: 'Severance',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Binged both seasons in 4 days.',
+        fallbackDescription: 'Binged both seasons in 4 days',
         item: movieItem || pick('Watching'),
       },
       {
@@ -385,7 +385,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/microphone.svg',
         fallbackTitle: 'Deep 3 + David Senra',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'What I’ve been listening to.',
+        fallbackDescription: 'What I’ve been listening to',
         item: pick('Podcast', 'Audio'),
       },
       {
@@ -394,7 +394,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/coffee-mug.svg',
         fallbackTitle: 'Granada + Endorffeine',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Granada is this super cool home cafe in Angelino Heights. Endorffeine is all attention-to-detail pour-over — solo by choice. My dream.',
+        fallbackDescription: 'Granada is this super cool home cafe in Angelino Heights — Endorffeine is all attention-to-detail pour-over, solo by choice, my dream',
         item: pick('Coffee'),
       },
       {
@@ -403,7 +403,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/book-stack.svg',
         fallbackTitle: 'Same as Ever — Morgan Housel',
         fallbackSubtitle: 'This week',
-        fallbackDescription: 'Short chapters. Weirdly useful.',
+        fallbackDescription: 'Short chapters — weirdly useful',
         item: pick('Reading'),
       },
     ]
