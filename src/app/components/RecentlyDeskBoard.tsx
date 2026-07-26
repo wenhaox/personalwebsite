@@ -29,6 +29,7 @@ export interface DeskBoardObject {
   description: string
   emoji?: string
   image?: string
+  images?: string[]
   link?: { url: string; text: string }
   links?: Array<{ url: string; text: string }>
   spotifyEmbed?: string
@@ -545,17 +546,30 @@ function DeskObjectsLayer({
               event.stopPropagation()
               hideTooltipFast()
             }}
-            aria-label={`Close details for ${hoveredObject.title}`}
+            aria-label={`Close details for ${hoveredObject.title || hoveredObject.description || 'item'}`}
           >
             ✕
           </button>
 
-          {hoveredObject.image && !(hoveredObject.spotifyEmbeds?.length || hoveredObject.spotifyEmbed) ? (
-            <img
-              src={hoveredObject.image}
-              alt={hoveredObject.title}
-              className={`recently-node-tooltip-media ${hoveredObject.image.includes('meme-mbappe') ? 'is-contain' : ''}`.trim()}
-            />
+          {(hoveredObject.images?.length
+            ? hoveredObject.images
+            : hoveredObject.image
+              ? [hoveredObject.image]
+              : []
+          ).length > 0 && !(hoveredObject.spotifyEmbeds?.length || hoveredObject.spotifyEmbed) ? (
+            <div className={`recently-node-tooltip-media-stack ${hoveredObject.id === 'meme' ? 'is-meme' : ''}`.trim()}>
+              {(hoveredObject.images?.length
+                ? hoveredObject.images
+                : [hoveredObject.image!]
+              ).map((src) => (
+                <img
+                  key={src}
+                  src={src}
+                  alt={hoveredObject.description || hoveredObject.title || 'Meme'}
+                  className="recently-node-tooltip-media"
+                />
+              ))}
+            </div>
           ) : null}
 
           {(hoveredObject.spotifyEmbeds?.length
@@ -578,12 +592,14 @@ function DeskObjectsLayer({
           ) : null}
 
           <div className="recently-node-tooltip-body">
-            <p className="recently-node-tooltip-title">
-              {hoveredObject.emoji ? (
-                <span className="recently-node-tooltip-emoji" aria-hidden="true">{hoveredObject.emoji}</span>
-              ) : null}
-              {hoveredObject.title}
-            </p>
+            {hoveredObject.title.trim() || hoveredObject.emoji ? (
+              <p className="recently-node-tooltip-title">
+                {hoveredObject.emoji ? (
+                  <span className="recently-node-tooltip-emoji" aria-hidden="true">{hoveredObject.emoji}</span>
+                ) : null}
+                {hoveredObject.title}
+              </p>
+            ) : null}
             <p className="recently-node-tooltip-subtitle">{hoveredObject.subtitle}</p>
             {hoveredObject.description?.trim() ? (
               <p className="recently-node-tooltip-copy">{hoveredObject.description}</p>

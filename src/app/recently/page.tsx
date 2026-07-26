@@ -44,6 +44,7 @@ interface BoardObject {
   description: string
   emoji?: string
   image?: string
+  images?: string[]
   link?: RecentlyLink
   links?: RecentlyLink[]
   spotifyEmbed?: string
@@ -138,10 +139,14 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   },
   {
     category: 'Meme',
-    item: 'I will be there no matter what',
-    description: '',
+    item: '',
+    description: 'Please touch me and I will be there no matter what',
     date: 'this week',
-    image: '/recently/meme-mbappe-no-matter-what.png',
+    image: '/recently/meme-please-touch-me.jpg',
+    images: [
+      '/recently/meme-please-touch-me.jpg',
+      '/recently/meme-mbappe-no-matter-what.png',
+    ],
   },
 ]
 
@@ -289,10 +294,10 @@ export default function Recently() {
       const meme = customRecently.find((item) => item.category?.toLowerCase() === 'meme')
       const looksCurrent = Boolean(
         meme
-        && meme.image === '/recently/meme-mbappe-no-matter-what.png'
-        && meme.item === 'I will be there no matter what'
-        && !meme.description
-        && !(meme.links?.length || meme.link)
+        && meme.images?.includes('/recently/meme-please-touch-me.jpg')
+        && meme.images?.includes('/recently/meme-mbappe-no-matter-what.png')
+        && meme.description === 'Please touch me and I will be there no matter what'
+        && !meme.item
       )
       if (customRecently.length > 0 && looksCurrent) {
         setItems(customRecently)
@@ -424,9 +429,9 @@ export default function Recently() {
         id: 'meme',
         kind: 'artifact',
         pixelArt: '/pixel-objects/postcard.svg',
-        fallbackTitle: 'I will be there no matter what',
+        fallbackTitle: '',
         fallbackSubtitle: 'this week',
-        fallbackDescription: '',
+        fallbackDescription: 'Please touch me and I will be there no matter what',
         item: pick('Meme'),
       },
     ]
@@ -438,6 +443,11 @@ export default function Recently() {
         : icon.item?.spotifyEmbed
           ? [icon.item.spotifyEmbed]
           : undefined
+      const images = icon.item?.images?.length
+        ? icon.item.images
+        : getPrimaryImage(icon.item)
+          ? [getPrimaryImage(icon.item)!]
+          : undefined
       return {
         id: icon.id,
         kind: icon.kind,
@@ -446,7 +456,8 @@ export default function Recently() {
         subtitle: icon.item?.date || icon.fallbackSubtitle,
         description: icon.item?.description ?? icon.fallbackDescription,
         emoji: icon.item?.emoji?.trim() || undefined,
-        image: getPrimaryImage(icon.item),
+        image: images?.[0] || getPrimaryImage(icon.item),
+        images,
         spotifyEmbed: embeds?.[0],
         spotifyEmbeds: embeds,
         link: links[0],

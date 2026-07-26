@@ -159,6 +159,26 @@ const getFallbackNotePosition = (
   }
 }
 
+const isNormalizedBoardCoord = (x: number, y: number) => (
+  x >= 0 && x <= 1 && y >= 0 && y <= 1
+)
+
+const mapStoredPositionToBoard = (
+  x: number | undefined,
+  y: number | undefined,
+  index: number,
+  boardWidth: number,
+  boardHeight: number,
+  itemWidth: number,
+  itemHeight: number
+) => {
+  if (typeof x !== 'number' || typeof y !== 'number') {
+    return getFallbackNotePosition(index, boardWidth, boardHeight)
+  }
+
+  return scaleLegacyPositionToBoard(x, y, boardWidth, boardHeight, itemWidth, itemHeight)
+}
+
 const scaleLegacyPositionToBoard = (
   x: number,
   y: number,
@@ -168,8 +188,8 @@ const scaleLegacyPositionToBoard = (
   itemHeight: number
 ) => {
   const next = getLimitsForDimensions(boardWidth, boardHeight, itemWidth, itemHeight)
-  // Values in 0..1.5 are treated as normalized board fractions.
-  if (x >= 0 && x <= 1.5 && y >= 0 && y <= 1.5) {
+  // Values in 0..1 are treated as normalized board fractions (remote save format).
+  if (isNormalizedBoardCoord(x, y)) {
     return {
       x: clamp(Math.round(x * next.maxX), next.minX, next.maxX),
       y: clamp(Math.round(y * next.maxY), next.minY, next.maxY),
@@ -211,13 +231,25 @@ const buildPersistableGuestbookPayload = (
   }
 }
 
-const normalizeNotesFromSource = (value: unknown): GuestbookNote[] => {
+const normalizeNotesFromSource = (
+  value: unknown,
+  boardWidth = NOTE_LAYOUT_REF.width,
+  boardHeight = NOTE_LAYOUT_REF.height
+): GuestbookNote[] => {
   if (!Array.isArray(value)) return []
 
   const normalized = value
     .filter((entry: Partial<GuestbookEntry>) => entry.approved !== false)
     .map((entry: Partial<GuestbookEntry>, index: number) => {
-      const fallback = getFallbackNotePosition(index)
+      const mapped = mapStoredPositionToBoard(
+        typeof entry.x === 'number' ? entry.x : undefined,
+        typeof entry.y === 'number' ? entry.y : undefined,
+        index,
+        boardWidth,
+        boardHeight,
+        NOTE_WIDTH,
+        NOTE_HEIGHT
+      )
 
       return {
         id: typeof entry.id === 'number' ? entry.id : Date.now() + index,
@@ -226,8 +258,8 @@ const normalizeNotesFromSource = (value: unknown): GuestbookNote[] => {
         date: toDisplayDate(entry),
         approved: true,
         createdAt: entry.createdAt,
-        x: typeof entry.x === 'number' ? entry.x : fallback.x,
-        y: typeof entry.y === 'number' ? entry.y : fallback.y,
+        x: mapped.x,
+        y: mapped.y,
         color: typeof entry.color === 'string' ? entry.color : STICKY_COLORS[index % STICKY_COLORS.length],
       }
     })
@@ -235,13 +267,25 @@ const normalizeNotesFromSource = (value: unknown): GuestbookNote[] => {
   return normalized
 }
 
-const normalizePendingEntriesFromSource = (value: unknown): GuestbookEntry[] => {
+const normalizePendingEntriesFromSource = (
+  value: unknown,
+  boardWidth = NOTE_LAYOUT_REF.width,
+  boardHeight = NOTE_LAYOUT_REF.height
+): GuestbookEntry[] => {
   if (!Array.isArray(value)) return []
 
   return value
     .filter((entry: Partial<GuestbookEntry>) => entry.approved === false)
     .map((entry: Partial<GuestbookEntry>, index: number) => {
-      const fallback = getFallbackNotePosition(index)
+      const mapped = mapStoredPositionToBoard(
+        typeof entry.x === 'number' ? entry.x : undefined,
+        typeof entry.y === 'number' ? entry.y : undefined,
+        index,
+        boardWidth,
+        boardHeight,
+        NOTE_WIDTH,
+        NOTE_HEIGHT
+      )
 
       return {
         id: typeof entry.id === 'number' ? entry.id : Date.now() + index,
@@ -250,14 +294,18 @@ const normalizePendingEntriesFromSource = (value: unknown): GuestbookEntry[] => 
         date: toDisplayDate(entry),
         approved: false,
         createdAt: entry.createdAt,
-        x: typeof entry.x === 'number' ? entry.x : fallback.x,
-        y: typeof entry.y === 'number' ? entry.y : fallback.y,
+        x: mapped.x,
+        y: mapped.y,
         color: typeof entry.color === 'string' ? entry.color : STICKY_COLORS[index % STICKY_COLORS.length],
       }
     })
 }
 
-const normalizeDecorationsFromSource = (value: unknown): BoardDecoration[] => {
+const normalizeDecorationsFromSource = (
+  value: unknown,
+  boardWidth = NOTE_LAYOUT_REF.width,
+  boardHeight = NOTE_LAYOUT_REF.height
+): BoardDecoration[] => {
   if (!Array.isArray(value)) return []
 
   return value
@@ -266,14 +314,24 @@ const normalizeDecorationsFromSource = (value: unknown): BoardDecoration[] => {
       const kind: DecorationKind = item.kind === 'photo' ? 'photo' : 'emoji'
       // Emoji always approved; missing approved on photos is treated as approved (legacy).
       const approved = kind === 'emoji' ? true : item.approved !== false
+      const size = typeof item.size === 'number' ? clamp(item.size, 72, 152) : 90
+      const mapped = mapStoredPositionToBoard(
+        typeof item.x === 'number' ? item.x : undefined,
+        typeof item.y === 'number' ? item.y : undefined,
+        index,
+        boardWidth,
+        boardHeight,
+        size,
+        size
+      )
 
       return {
         id: typeof item.id === 'number' ? item.id : Date.now() + index,
         kind,
         value: (item.value || '').trim(),
-        x: typeof item.x === 'number' ? item.x : 52 + (index % 4) * 104,
-        y: typeof item.y === 'number' ? item.y : 42 + Math.floor(index / 4) * 98,
-        size: typeof item.size === 'number' ? clamp(item.size, 72, 152) : 90,
+        x: mapped.x,
+        y: mapped.y,
+        size,
         rotation: typeof item.rotation === 'number' ? clamp(item.rotation, -10, 10) : ((index % 5) - 2) * 1.8,
         approved,
       }
@@ -326,6 +384,7 @@ export default function GuestbookBook({
   const photoUrlPopoverRef = useRef<HTMLDivElement | null>(null)
   const remoteSyncTimerRef = useRef<number | null>(null)
   const boardSizeRef = useRef<{ width: number; height: number } | null>(null)
+  const notesLayoutSizeRef = useRef<{ width: number; height: number } | null>(null)
   const noteDragStartRef = useRef<Record<string, { x: number; y: number }>>({})
   const {
     noteColor,
@@ -435,18 +494,50 @@ export default function GuestbookBook({
     let isCancelled = false
 
     const loadBoard = async () => {
+      // Let the cork board measure once so spawn/load positions aren't stuck on the tiny ref size.
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => resolve())
+        })
+      })
+      if (isCancelled) return
+
+      const layoutSize = () => {
+        const live = boardRef.current
+        if (live && live.clientWidth > 40 && live.clientHeight > 40) {
+          return { width: live.clientWidth, height: live.clientHeight }
+        }
+        if (boardSizeRef.current && boardSizeRef.current.width > 40 && boardSizeRef.current.height > 40) {
+          return boardSizeRef.current
+        }
+        return NOTE_LAYOUT_REF
+      }
+
+      const applyMappedBoard = (
+        nextNotes: GuestbookNote[],
+        nextPending: GuestbookEntry[],
+        nextDecorations: BoardDecoration[],
+        size: { width: number; height: number }
+      ) => {
+        notesLayoutSizeRef.current = size
+        setNotes(nextNotes)
+        setPendingEntries(nextPending)
+        setDecorations(nextDecorations)
+      }
+
       const applyLocalFallback = () => {
         try {
+          const size = layoutSize()
           const localEntries = JSON.parse(localStorage.getItem(ENTRIES_KEY) || 'null')
-          const localNotes = normalizeNotesFromSource(localEntries)
-          const localPendingEntries = normalizePendingEntriesFromSource(localEntries)
+          const localNotes = normalizeNotesFromSource(localEntries, size.width, size.height)
+          const localPendingEntries = normalizePendingEntriesFromSource(localEntries, size.width, size.height)
           const localDecorations = normalizeDecorationsFromSource(
-            JSON.parse(localStorage.getItem(DECORATIONS_KEY) || 'null')
+            JSON.parse(localStorage.getItem(DECORATIONS_KEY) || 'null'),
+            size.width,
+            size.height
           )
           if (isCancelled) return
-          setNotes(localNotes)
-          setPendingEntries(localPendingEntries)
-          setDecorations(localDecorations)
+          applyMappedBoard(localNotes, localPendingEntries, localDecorations, size)
         } catch {
           // Keep empty board.
         }
@@ -462,20 +553,35 @@ export default function GuestbookBook({
         const payload = await response.json()
         if (isCancelled || !payload || typeof payload !== 'object') return
 
-        const remoteNotes = normalizeNotesFromSource((payload as { entries?: unknown[] }).entries)
-        const remotePendingEntries = normalizePendingEntriesFromSource((payload as { entries?: unknown[] }).entries)
-        const remoteDecorations = normalizeDecorationsFromSource((payload as { decorations?: unknown[] }).decorations)
+        const size = layoutSize()
+        const remoteNotes = normalizeNotesFromSource(
+          (payload as { entries?: unknown[] }).entries,
+          size.width,
+          size.height
+        )
+        const remotePendingEntries = normalizePendingEntriesFromSource(
+          (payload as { entries?: unknown[] }).entries,
+          size.width,
+          size.height
+        )
+        const remoteDecorations = normalizeDecorationsFromSource(
+          (payload as { decorations?: unknown[] }).decorations,
+          size.width,
+          size.height
+        )
 
-        setNotes(remoteNotes)
-        setPendingEntries(remotePendingEntries)
-        setDecorations(remoteDecorations)
+        applyMappedBoard(remoteNotes, remotePendingEntries, remoteDecorations, size)
 
-        const remotePayload = [
-          ...remoteNotes.map((note) => ({ ...note, name: 'Anonymous', approved: true })),
-          ...remotePendingEntries.map((entry) => ({ ...entry, name: 'Anonymous', approved: false })),
-        ]
-        localStorage.setItem(ENTRIES_KEY, JSON.stringify(remotePayload))
-        localStorage.setItem(DECORATIONS_KEY, JSON.stringify(remoteDecorations))
+        const persistable = buildPersistableGuestbookPayload(
+          [
+            ...remoteNotes.map((note) => ({ ...note, name: 'Anonymous', approved: true })),
+            ...remotePendingEntries.map((entry) => ({ ...entry, name: 'Anonymous', approved: false })),
+          ],
+          remoteDecorations,
+          boardRef.current
+        )
+        localStorage.setItem(ENTRIES_KEY, JSON.stringify(persistable.entries))
+        localStorage.setItem(DECORATIONS_KEY, JSON.stringify(persistable.decorations))
         // Drop legacy caches that caused the old-notes flash.
         localStorage.removeItem('guestbookEntries')
         localStorage.removeItem('guestboardDecorations')
@@ -496,17 +602,16 @@ export default function GuestbookBook({
   useEffect(() => {
     if (!hasMutatedEntries) return
 
-    localStorage.setItem(
-      ENTRIES_KEY,
-      JSON.stringify(entriesPayload)
-    )
-  }, [entriesPayload, hasMutatedEntries])
+    const payload = buildPersistableGuestbookPayload(entriesPayload, decorations, boardRef.current)
+    localStorage.setItem(ENTRIES_KEY, JSON.stringify(payload.entries))
+  }, [decorations, entriesPayload, hasMutatedEntries])
 
   useEffect(() => {
     if (!hasMutatedDecorations) return
 
-    localStorage.setItem(DECORATIONS_KEY, JSON.stringify(decorations))
-  }, [decorations, hasMutatedDecorations])
+    const payload = buildPersistableGuestbookPayload(entriesPayload, decorations, boardRef.current)
+    localStorage.setItem(DECORATIONS_KEY, JSON.stringify(payload.decorations))
+  }, [decorations, entriesPayload, hasMutatedDecorations])
 
   useEffect(() => {
     if (!hasMutatedEntries && !hasMutatedDecorations) return
@@ -592,7 +697,7 @@ export default function GuestbookBook({
           let nextX = note.x
           let nextY = note.y
 
-          if (isFirstMeasure) {
+          if (isFirstMeasure || isNormalizedBoardCoord(note.x, note.y)) {
             const mapped = scaleLegacyPositionToBoard(
               note.x,
               note.y,
@@ -634,7 +739,7 @@ export default function GuestbookBook({
           let nextX = item.x
           let nextY = item.y
 
-          if (isFirstMeasure) {
+          if (isFirstMeasure || isNormalizedBoardCoord(item.x, item.y)) {
             const mapped = scaleLegacyPositionToBoard(
               item.x,
               item.y,
@@ -663,14 +768,6 @@ export default function GuestbookBook({
 
         return hasDecorationAdjustment ? nextDecorations : prev
       })
-
-      if (hasNoteAdjustment) {
-        setHasMutatedEntries(true)
-      }
-
-      if (hasDecorationAdjustment) {
-        setHasMutatedDecorations(true)
-      }
 
       boardSizeRef.current = currentBoardSize
     }
@@ -721,14 +818,48 @@ export default function GuestbookBook({
 
   useEffect(() => {
     const board = boardRef.current
-    if (!board) return
+    const boardWidth = board?.clientWidth || boardSizeRef.current?.width || 0
+    const boardHeight = board?.clientHeight || boardSizeRef.current?.height || 0
+    if (boardWidth <= 0 || boardHeight <= 0) return
+
+    const previousLayout = notesLayoutSizeRef.current
+    const layoutDrift = Boolean(
+      previousLayout
+      && (
+        Math.abs(previousLayout.width - boardWidth) > 12
+        || Math.abs(previousLayout.height - boardHeight) > 12
+      )
+    )
 
     if (notes.length > 0) {
-      const limits = getLimits(board, NOTE_WIDTH, NOTE_HEIGHT)
+      const limits = getLimitsForDimensions(boardWidth, boardHeight, NOTE_WIDTH, NOTE_HEIGHT)
+      const previousLimits = previousLayout
+        ? getLimitsForDimensions(previousLayout.width, previousLayout.height, NOTE_WIDTH, NOTE_HEIGHT)
+        : null
       let hasNoteAdjustment = false
-      const clampedNotes = notes.map((note) => {
-        const nextX = clamp(Math.round(note.x), limits.minX, limits.maxX)
-        const nextY = clamp(Math.round(note.y), limits.minY, limits.maxY)
+      const clampedNotes = notes.map((note, index) => {
+        let nextX = note.x
+        let nextY = note.y
+
+        if (isNormalizedBoardCoord(note.x, note.y) || note.x > limits.maxX || note.y > limits.maxY) {
+          const mapped = mapStoredPositionToBoard(
+            note.x,
+            note.y,
+            index,
+            boardWidth,
+            boardHeight,
+            NOTE_WIDTH,
+            NOTE_HEIGHT
+          )
+          nextX = mapped.x
+          nextY = mapped.y
+        } else if (layoutDrift && previousLimits) {
+          nextX = scaleAxisPosition(note.x, previousLimits.maxX, limits.maxX)
+          nextY = scaleAxisPosition(note.y, previousLimits.maxY, limits.maxY)
+        }
+
+        nextX = clamp(Math.round(nextX), limits.minX, limits.maxX)
+        nextY = clamp(Math.round(nextY), limits.minY, limits.maxY)
         if (nextX === note.x && nextY === note.y) return note
         hasNoteAdjustment = true
         return {
@@ -740,16 +871,38 @@ export default function GuestbookBook({
 
       if (hasNoteAdjustment) {
         setNotes(clampedNotes)
-        setHasMutatedEntries(true)
       }
     }
 
     if (decorations.length > 0) {
       let hasDecorationAdjustment = false
-      const clampedDecorations = decorations.map((item) => {
-        const limits = getLimits(board, item.size, item.size)
-        const nextX = clamp(Math.round(item.x), limits.minX, limits.maxX)
-        const nextY = clamp(Math.round(item.y), limits.minY, limits.maxY)
+      const clampedDecorations = decorations.map((item, index) => {
+        const limits = getLimitsForDimensions(boardWidth, boardHeight, item.size, item.size)
+        const previousLimits = previousLayout
+          ? getLimitsForDimensions(previousLayout.width, previousLayout.height, item.size, item.size)
+          : null
+        let nextX = item.x
+        let nextY = item.y
+
+        if (isNormalizedBoardCoord(item.x, item.y) || item.x > limits.maxX || item.y > limits.maxY) {
+          const mapped = mapStoredPositionToBoard(
+            item.x,
+            item.y,
+            index,
+            boardWidth,
+            boardHeight,
+            item.size,
+            item.size
+          )
+          nextX = mapped.x
+          nextY = mapped.y
+        } else if (layoutDrift && previousLimits) {
+          nextX = scaleAxisPosition(item.x, previousLimits.maxX, limits.maxX)
+          nextY = scaleAxisPosition(item.y, previousLimits.maxY, limits.maxY)
+        }
+
+        nextX = clamp(Math.round(nextX), limits.minX, limits.maxX)
+        nextY = clamp(Math.round(nextY), limits.minY, limits.maxY)
         if (nextX === item.x && nextY === item.y) return item
         hasDecorationAdjustment = true
         return {
@@ -761,43 +914,38 @@ export default function GuestbookBook({
 
       if (hasDecorationAdjustment) {
         setDecorations(clampedDecorations)
-        setHasMutatedDecorations(true)
       }
     }
-  }, [decorations, notes])
+
+    notesLayoutSizeRef.current = { width: boardWidth, height: boardHeight }
+  }, [boardReady, decorations, notes])
 
   const getRandomPosition = (width: number, height: number) => {
     const board = boardRef.current
-    const viewport = boardViewportRef.current
     const limits = getLimits(board, width, height)
     const minX = Math.max(limits.minX, 0)
     const minY = Math.max(limits.minY, 0)
     const maxX = Math.max(limits.maxX, minX)
     const maxY = Math.max(limits.maxY, minY)
-    const boardW = board?.clientWidth || NOTE_LAYOUT_REF.width
-    const boardH = board?.clientHeight || NOTE_LAYOUT_REF.height
-    // Larger windows get a wider usable field and stronger separation.
-    const spread = clamp(Math.min(boardW / NOTE_LAYOUT_REF.width, boardH / NOTE_LAYOUT_REF.height), 0.75, 1.85)
-    const minSeparation = Math.round(Math.min(NOTE_WIDTH, NOTE_HEIGHT) * (0.85 + spread * 0.45))
+    const boardW = board?.clientWidth || boardSizeRef.current?.width || NOTE_LAYOUT_REF.width
+    const boardH = board?.clientHeight || boardSizeRef.current?.height || NOTE_LAYOUT_REF.height
+    const occupiedCount = notes.length + pendingEntries.length
+    // Spread across the full cork board — not just the current viewport corner.
+    const insetX = Math.max(16, Math.round(boardW * 0.04))
+    const insetY = Math.max(16, Math.round(boardH * 0.04))
+    let rangeMinX = clamp(minX + insetX, minX, maxX)
+    let rangeMinY = clamp(minY + insetY, minY, maxY)
+    let rangeMaxX = clamp(maxX - insetX, minX, maxX)
+    let rangeMaxY = clamp(maxY - insetY, minY, maxY)
 
-    let rangeMinX = minX
-    let rangeMinY = minY
-    let rangeMaxX = maxX
-    let rangeMaxY = maxY
-
-    if (board && viewport) {
-      const visibleWidth = Math.max(viewport.clientWidth / boardZoom, width)
-      const visibleHeight = Math.max(viewport.clientHeight / boardZoom, height)
-      const viewportStartX = viewport.scrollLeft / boardZoom
-      const viewportStartY = viewport.scrollTop / boardZoom
-      const insetX = Math.max(8, Math.min(28, visibleWidth * (0.07 / spread)))
-      const insetY = Math.max(8, Math.min(24, visibleHeight * (0.07 / spread)))
-      rangeMinX = clamp(Math.round(viewportStartX + insetX), minX, maxX)
-      rangeMinY = clamp(Math.round(viewportStartY + insetY), minY, maxY)
-      rangeMaxX = clamp(Math.round(viewportStartX + visibleWidth - width - insetX), minX, maxX)
-      rangeMaxY = clamp(Math.round(viewportStartY + visibleHeight - height - insetY), minY, maxY)
+    if (rangeMaxX <= rangeMinX || rangeMaxY <= rangeMinY) {
+      rangeMinX = minX
+      rangeMinY = minY
+      rangeMaxX = maxX
+      rangeMaxY = maxY
     }
 
+    const minSeparation = Math.round(Math.min(NOTE_WIDTH, NOTE_HEIGHT) * 0.95)
     const occupied = [
       ...notes.map((note) => ({ x: note.x, y: note.y, w: NOTE_WIDTH, h: NOTE_HEIGHT })),
       ...pendingEntries.map((entry) => ({
@@ -814,7 +962,7 @@ export default function GuestbookBook({
       score: -1,
     }
 
-    for (let attempt = 0; attempt < 14; attempt += 1) {
+    for (let attempt = 0; attempt < 36; attempt += 1) {
       const candidate = {
         x: randomBetween(rangeMinX, Math.max(rangeMinX, rangeMaxX)),
         y: randomBetween(rangeMinY, Math.max(rangeMinY, rangeMaxY)),
@@ -829,10 +977,19 @@ export default function GuestbookBook({
       if (score > best.score) {
         best = { ...candidate, score }
       }
-      if (score >= minSeparation) break
+      if (score >= minSeparation) {
+        return { x: best.x, y: best.y }
+      }
     }
 
-    return { x: best.x, y: best.y }
+    // Deterministic spread if random keeps colliding.
+    const fallback = getFallbackNotePosition(occupiedCount, boardW, boardH)
+    const jitterX = randomBetween(-24, 24)
+    const jitterY = randomBetween(-18, 18)
+    return {
+      x: clamp(fallback.x + jitterX, minX, maxX),
+      y: clamp(fallback.y + jitterY, minY, maxY),
+    }
   }
 
   const updateNotePosition = (id: number, x: number, y: number) => {
