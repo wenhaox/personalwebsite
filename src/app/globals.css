@@ -267,20 +267,6 @@ html.theme-switching *::after {
   transform: translateY(0) scale(0.96);
 }
 
-/* Connect: theme toggle on the left so it doesn't cover the Pin control */
-body:has(.connect-page-root) .theme-toggle-icon-only,
-html:has(.connect-page-root) .theme-toggle-icon-only {
-  right: auto;
-  left: 2rem;
-}
-
-@media (min-width: 1025px) {
-  body:has(.connect-page-root) .theme-toggle-icon-only,
-  html:has(.connect-page-root) .theme-toggle-icon-only {
-    left: calc(20rem + 1.5rem);
-  }
-}
-
 /* Hide theme toggle while a photo lightbox is open. */
 body.photo-lightbox-open .theme-toggle-icon-only,
 html:has(.photo-lightbox) .theme-toggle-icon-only {
@@ -650,13 +636,6 @@ html:has(.photo-lightbox) .theme-toggle-icon-only {
     align-items: center !important;
     justify-content: center !important;
     padding: 0 !important;
-  }
-
-  /* Connect: keep Pin free — theme toggle flips to the left. */
-  body:has(.connect-page-root) .mobile-theme-toggle,
-  html:has(.connect-page-root) .mobile-theme-toggle {
-    right: auto !important;
-    left: 1rem !important;
   }
   
   .mobile-theme-toggle span {
@@ -5724,7 +5703,7 @@ body.is-desk-dragging .recently-node-tooltip {
 
 .guestbook-note-input {
   width: 100%;
-  padding: 0.62rem 3.05rem 0.72rem 0.72rem;
+  padding: 0.62rem 0.72rem 1.45rem;
   font-size: 0.86rem;
   line-height: 1.38;
   border: 1px solid color-mix(in oklab, var(--color-border) 86%, #cbd5e1);
@@ -5779,21 +5758,57 @@ body.is-desk-dragging .recently-node-tooltip {
   filter: brightness(1.03);
 }
 
-.guestbook-pin-button-inside {
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1.95rem;
-  height: 1.95rem;
+.guestbook-note-compose-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.guestbook-note-color-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  flex-wrap: wrap;
+}
+
+.guestbook-note-color-swatch {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-border) 70%, #94a3b8);
+  padding: 0;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.guestbook-note-color-swatch:hover {
+  transform: scale(1.08);
+}
+
+.guestbook-note-color-swatch.is-selected {
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 3.5px var(--color-accent);
+}
+
+.guestbook-pin-button-bar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.2);
+  gap: 0.28rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 0.62rem;
+  font-size: 0.78rem;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.16);
 }
 
-.guestbook-pin-button-inside:hover {
-  transform: translateY(calc(-50% - 1px));
+.guestbook-pin-button-bar:hover {
+  transform: translateY(-1px);
 }
 
 .guestbook-photo-feedback {

@@ -46,7 +46,14 @@ const NOTE_HEIGHT = 118
 const MIN_BOARD_ZOOM = 0.8
 const MAX_BOARD_ZOOM = 1.9
 const BOARD_ZOOM_STEP = 0.1
-const STICKY_COLORS = ['#f7f8fb', '#eef3ff', '#eef8f1', '#f5f0ff', '#fff6f0']
+const STICKY_COLORS = [
+  '#ffe8a3', // yellow
+  '#ffd0d6', // pink
+  '#c8e7ff', // blue
+  '#d8f5c8', // green
+  '#e6d4ff', // lilac
+  '#ffd8b8', // peach
+]
 const DECORATIONS_KEY = 'guestboardDecorations:v2'
 const ENTRIES_KEY = 'guestbookEntries:v2'
 const EMOJI_PICKER = ['✨', '🌿', '🫶', '📷', '☕', '🌤️', '🎵', '🧠', '🪩', '💫', '🌼', '🍀']
@@ -268,6 +275,7 @@ export default function GuestbookBook({
   const [decorations, setDecorations] = useState<BoardDecoration[]>([])
   const [message, setMessage] = useState('')
   const [messageError, setMessageError] = useState('')
+  const [noteColor, setNoteColor] = useState(STICKY_COLORS[0])
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
   const [customEmoji, setCustomEmoji] = useState('')
   const [isUrlPopoverOpen, setIsUrlPopoverOpen] = useState(false)
@@ -931,7 +939,7 @@ export default function GuestbookBook({
       date: toDisplayDate({ createdAt: now.toISOString() }),
       approved: false,
       createdAt: now.toISOString(),
-      color: STICKY_COLORS[Math.floor(Math.random() * STICKY_COLORS.length)],
+      color: noteColor,
       ...placement,
     }
 
@@ -1303,13 +1311,29 @@ export default function GuestbookBook({
           />
           {messageError && <div className="guestbook-note-error">{messageError}</div>}
           <span className="guestbook-note-counter">{message.length}/320</span>
+        </div>
+
+        <div className="guestbook-note-compose-bar">
+          <div className="guestbook-note-color-picker" role="group" aria-label="Note color">
+            {STICKY_COLORS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                className={`guestbook-note-color-swatch ${noteColor === color ? 'is-selected' : ''}`}
+                style={{ background: color }}
+                aria-label={`Choose ${color} note`}
+                aria-pressed={noteColor === color}
+                onClick={() => setNoteColor(color)}
+              />
+            ))}
+          </div>
           <button
             type="submit"
-            className="guestbook-pin-button guestbook-pin-button-inside"
-            aria-label="Send note"
-            title="Send note"
+            className="guestbook-pin-button guestbook-pin-button-bar"
+            aria-label="Pin note"
+            title="Pin note"
           >
-            📌
+            Pin 📌
           </button>
         </div>
       </form>
