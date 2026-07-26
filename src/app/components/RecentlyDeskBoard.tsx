@@ -586,7 +586,9 @@ function DeskObjectsLayer({
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                 loading="lazy"
                 title={`${hoveredObject.title} Spotify player`}
+                style={{ backgroundColor: '#121212', colorScheme: 'dark' }}
               />
+              <span className="recently-node-tooltip-spotify-mask" aria-hidden="true" />
             </div>
           ) : null}
 
