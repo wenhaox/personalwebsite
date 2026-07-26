@@ -4816,6 +4816,10 @@ body.is-desk-dragging .recently-node-tooltip {
     flex: 0 1 auto;
   }
 
+  .recently-node-tooltip-spotify.is-compact {
+    height: 76px;
+  }
+
   .recently-node-tooltip-media {
     max-height: 6.5rem;
     aspect-ratio: 16 / 10;
