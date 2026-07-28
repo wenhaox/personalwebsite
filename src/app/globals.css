@@ -2962,7 +2962,8 @@ button.about-gif-trigger {
   }
 
   .connect-board-shell .guestbook-compose-row {
-    align-items: center;
+    --guestbook-mobile-compose-h: 6.9rem;
+    align-items: stretch;
     gap: 0.45rem;
     width: 100%;
     max-width: 100%;
@@ -2975,6 +2976,20 @@ button.about-gif-trigger {
     display: flex;
     flex: 0 0 auto;
     max-width: min(46%, 9.5rem);
+    align-self: stretch;
+    height: var(--guestbook-mobile-compose-h);
+  }
+
+  .connect-board-shell .guestbook-compose-with-field.guestbook-compose-controls,
+  .connect-board-shell .guestbook-compose-with-field .guestbook-compose-palette-block {
+    height: 100%;
+    width: 100%;
+  }
+
+  .connect-board-shell .guestbook-compose-with-field .guestbook-compose-palette-block,
+  .connect-board-shell .guestbook-compose-with-field .guestbook-sidebar-palette,
+  .connect-board-shell .guestbook-compose-with-field .guestbook-note-color-picker.guestbook-sidebar-palette {
+    height: 100%;
   }
 
   .connect-board-shell .guestbook-compose-with-field .guestbook-compose-desktop-label {
@@ -2985,6 +3000,8 @@ button.about-gif-trigger {
   .connect-board-shell .guestbook-compose-with-field .guestbook-note-color-picker.guestbook-sidebar-palette {
     gap: 0.42rem;
     padding: 0.4rem;
+    box-sizing: border-box;
+    justify-content: space-between;
   }
 
   .connect-board-shell .guestbook-compose-with-field .guestbook-note-color-swatches {
@@ -3020,18 +3037,6 @@ button.about-gif-trigger {
     font-size: 0.95rem;
   }
 
-  .connect-board-shell .guestbook-note-input {
-    padding: 0.5rem 0.65rem 1.1rem;
-    font-size: 0.8rem;
-  }
-
-  .connect-board-shell .guestbook-cork-form {
-    min-height: 0;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-
   .connect-board-shell .guestbook-note-input-wrap {
     flex: 1 1 auto;
     min-width: 0;
@@ -3039,6 +3044,28 @@ button.about-gif-trigger {
     max-width: 100%;
     margin-right: 0;
     border-radius: 0.65rem;
+    height: var(--guestbook-mobile-compose-h);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .connect-board-shell .guestbook-note-input {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0.45rem 0.6rem 1.05rem;
+    font-size: 0.8rem;
+    box-sizing: border-box;
+  }
+
+  .connect-board-shell .guestbook-cork-form {
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .connect-board-shell .guestboard-tools,
