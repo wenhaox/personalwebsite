@@ -2974,7 +2974,7 @@ button.about-gif-trigger {
   .connect-board-shell .guestbook-compose-with-field {
     display: flex;
     flex: 0 0 auto;
-    max-width: 42%;
+    max-width: min(46%, 9.5rem);
   }
 
   .connect-board-shell .guestbook-compose-with-field .guestbook-compose-desktop-label {
@@ -2983,26 +2983,41 @@ button.about-gif-trigger {
 
   .connect-board-shell .guestbook-compose-with-field .guestbook-sidebar-palette,
   .connect-board-shell .guestbook-compose-with-field .guestbook-note-color-picker.guestbook-sidebar-palette {
-    gap: 0.3rem;
-    padding: 0.32rem;
+    gap: 0.42rem;
+    padding: 0.4rem;
   }
 
   .connect-board-shell .guestbook-compose-with-field .guestbook-note-color-swatches {
-    grid-template-columns: repeat(3, 0.82rem);
-    grid-template-rows: repeat(2, 0.82rem);
-    gap: 0.26rem;
+    grid-template-columns: repeat(3, 1.55rem);
+    grid-template-rows: repeat(2, 1.55rem);
+    gap: 0.48rem;
   }
 
   .connect-board-shell .guestbook-compose-with-field .guestbook-note-color-swatch {
-    width: 0.82rem;
-    height: 0.82rem;
+    position: relative;
+    width: 1.55rem;
+    height: 1.55rem;
+    /* Expand the tap target without growing the visible dot too much */
+    touch-action: manipulation;
+  }
+
+  .connect-board-shell .guestbook-compose-with-field .guestbook-note-color-swatch::before {
+    content: '';
+    position: absolute;
+    inset: -0.38rem;
+  }
+
+  .connect-board-shell .guestbook-compose-with-field .guestbook-note-color-swatch.is-selected {
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--color-background) 92%, #fff),
+      0 0 0 4px var(--color-accent);
   }
 
   .connect-board-shell .guestbook-compose-with-field .guestbook-pin-button-sidebar {
     width: 100%;
     min-width: 0;
-    height: 1.45rem;
-    font-size: 0.82rem;
+    height: 2rem;
+    font-size: 0.95rem;
   }
 
   .connect-board-shell .guestbook-note-input {
