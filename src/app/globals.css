@@ -4573,7 +4573,7 @@ body.is-desk-dragging .recently-node-tooltip {
   background: #121212 !important;
   border-bottom: 0;
   overflow: hidden;
-  color-scheme: dark;
+  color-scheme: only dark;
   line-height: 0;
   font-size: 0;
   isolation: isolate;
@@ -4588,7 +4588,7 @@ body.is-desk-dragging .recently-node-tooltip {
   height: 160px;
   border: 0;
   background: #121212 !important;
-  color-scheme: dark;
+  color-scheme: only dark;
   border-radius: 0;
   display: block;
   transform: scale(0.97);
@@ -4607,31 +4607,51 @@ body.is-desk-dragging .recently-node-tooltip {
   z-index: 3;
 }
 
-/* Music card: keep the whole popup dark so no cream/white shows under the player */
+/* Music card: keep the whole popup dark so light/dark site theme never bleeds in */
 .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview),
 .recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) {
-  background: #121212;
-  color: #f4f5ef;
-  border-color: rgba(255, 255, 255, 0.1);
+  background: #121212 !important;
+  color: #f4f5ef !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color-scheme: only dark;
+}
+
+.dark .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview),
+.dark .recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) {
+  background: #121212 !important;
+  color: #f4f5ef !important;
 }
 
 .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-body,
 .recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-body {
-  background: #121212;
+  background: #121212 !important;
   padding-top: 0.65rem;
   padding-bottom: 0.9rem;
 }
 
+.recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-title,
+.recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-title,
 .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-subtitle,
 .recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-subtitle,
 .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-copy,
 .recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-copy {
-  color: rgba(244, 245, 239, 0.72);
+  color: rgba(244, 245, 239, 0.72) !important;
+}
+
+.recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-title,
+.recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-title {
+  color: #f4f5ef !important;
 }
 
 .recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-link,
 .recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-link {
-  color: #c4b5fd;
+  color: #c4b5fd !important;
+}
+
+.recently-node-tooltip-portal:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-close,
+.recently-node-tooltip:has(.recently-node-tooltip-spotify-preview) .recently-node-tooltip-close {
+  color: rgba(244, 245, 239, 0.78) !important;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .recently-node-tooltip-body {

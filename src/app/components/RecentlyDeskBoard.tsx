@@ -578,14 +578,26 @@ function DeskObjectsLayer({
               ? [hoveredObject.spotifyEmbed]
               : []
           ).length > 0 ? (
-            <div className="recently-node-tooltip-spotify-preview">
+            <div className="recently-node-tooltip-spotify-preview" data-color-scheme="dark">
               <iframe
-                src={(hoveredObject.spotifyEmbeds || [hoveredObject.spotifyEmbed!])[0]}
+                key={(hoveredObject.spotifyEmbeds || [hoveredObject.spotifyEmbed!])[0]}
+                src={(() => {
+                  const raw = (hoveredObject.spotifyEmbeds || [hoveredObject.spotifyEmbed!])[0]
+                  try {
+                    const url = new URL(raw)
+                    url.searchParams.set('theme', '0')
+                    return url.toString()
+                  } catch {
+                    return raw.includes('theme=')
+                      ? raw.replace(/theme=\d+/, 'theme=0')
+                      : `${raw}${raw.includes('?') ? '&' : '?'}theme=0`
+                  }
+                })()}
                 className="recently-node-tooltip-spotify"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                 loading="lazy"
-                title={`${hoveredObject.title} Spotify player`}
-                style={{ backgroundColor: '#121212', colorScheme: 'dark' }}
+                title={`${hoveredObject.title || 'Music'} Spotify player`}
+                style={{ backgroundColor: '#121212', colorScheme: 'only dark' }}
               />
               <span className="recently-node-tooltip-spotify-mask" aria-hidden="true" />
             </div>

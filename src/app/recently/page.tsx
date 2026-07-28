@@ -69,7 +69,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Music',
     item: 'NIKI - Every Summertime',
-    description: 'Had this on repeat all week',
+    description: 'Summa!',
     date: 'this week',
     spotifyEmbed: 'https://open.spotify.com/embed/track/68HocO7fx9z0MgDU0ZPHro?utm_source=generator&theme=0',
     links: [
@@ -79,7 +79,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Watching',
     item: 'Severance',
-    description: 'Wild plot. Still thinking about it',
+    description: 'Honestly best TV show ever',
     date: 'this week',
     image: '/recently/tv-severance.jpg',
     link: 'https://www.imdb.com/title/tt11280740/',
@@ -106,7 +106,7 @@ const DEFAULT_RECENTLY_ITEMS: RecentlyItem[] = [
   {
     category: 'Coffee',
     item: 'Granada + Endorffeine',
-    description: 'Home cafe vibes + crazy good pour-over, solo by choice',
+    description: 'Most fire home cafe ever + solo by choice aura pour over',
     date: 'this week',
     image: '/recently/coffee-pour-over.jpg',
     links: [
@@ -292,12 +292,14 @@ export default function Recently() {
     try {
       const customRecently = parseArray<RecentlyItem>(localStorage.getItem('recentlyItems'))
       const meme = customRecently.find((item) => item.category?.toLowerCase() === 'meme')
+      const music = customRecently.find((item) => item.category?.toLowerCase() === 'music')
       const looksCurrent = Boolean(
         meme
         && meme.images?.includes('/recently/meme-please-touch-me.jpg')
         && meme.images?.includes('/recently/meme-mbappe-no-matter-what.png')
         && meme.description === 'Please touch me and I will be there no matter what'
         && !meme.item
+        && music?.description === 'Summa!'
       )
       if (customRecently.length > 0 && looksCurrent) {
         setItems(customRecently)
@@ -377,7 +379,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/vinyl-player.svg',
         fallbackTitle: 'Now spinning',
         fallbackSubtitle: 'this week',
-        fallbackDescription: 'What I’ve been listening to',
+        fallbackDescription: 'Summa!',
         item: musicItem || pick('Music', 'Audio'),
       },
       {
@@ -395,7 +397,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/film-frame.svg',
         fallbackTitle: 'Severance',
         fallbackSubtitle: 'this week',
-        fallbackDescription: 'Wild plot. Still thinking about it',
+        fallbackDescription: 'Honestly best TV show ever',
         item: movieItem || pick('Watching'),
       },
       {
@@ -413,7 +415,7 @@ export default function Recently() {
         pixelArt: '/pixel-objects/coffee-mug.svg',
         fallbackTitle: 'Granada + Endorffeine',
         fallbackSubtitle: 'this week',
-        fallbackDescription: 'Home cafe vibes + crazy good pour-over, solo by choice',
+        fallbackDescription: 'Most fire home cafe ever + solo by choice aura pour over',
         item: pick('Coffee'),
       },
       {
